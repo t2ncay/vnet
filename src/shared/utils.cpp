@@ -1,18 +1,24 @@
 #include "utils.h"
-#include "raylib.h"  // <-- ADD THIS
+#ifndef HEADLESS_SERVER
+    #include "raylib.h"
+#endif
 #include <cstdlib>
 #include <ctime>
 #include <cctype>
 #include <cstdio>
-
-// ... rest of the file stays the same ...
 
 // ============================================================
 // TIME UTILITIES - FIXED
 // ============================================================
 
 float GetTimeSeconds(void) {
-    return (float)GetTime(); // Now uses raylib's GetTime() correctly
+#ifndef HEADLESS_SERVER
+    return (float)GetTime();
+#else
+    // For server, use clock() or chrono
+    static clock_t start = clock();
+    return (float)(clock() - start) / CLOCKS_PER_SEC;
+#endif
 }
 
 char* CleanStr(char* str) {

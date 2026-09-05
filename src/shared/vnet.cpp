@@ -1,5 +1,7 @@
 #include "vnet.h"
 #include "vnet_sites.h" 
+#include "vnet_protocol.h"
+#include "vnet_client.h" 
 #include "render.h"
 #include "raylib.h"
 #include <cstdio>
@@ -98,6 +100,15 @@ void UpdateVNET(float dt) {
     g_vnet.serverUptime += dt;
     g_player.runTime += dt;
     g_player.heartbeatTimer += dt;
+    
+    // ============================================================
+    // SEND HEARTBEAT TO SERVER
+    // ============================================================
+    if (IsVNetConnected() && g_player.heartbeatTimer >= 3.0f) {
+        g_player.heartbeatTimer = 0.0f;
+        std::string ping = std::string(VNetCmd::PING) + ":" + g_player.handle + ":" + g_player.currentURL;
+        VNetSendRaw(ping);
+    }
     
     // Cool down CRT heat
     g_player.crtHeat -= dt * 0.5f;

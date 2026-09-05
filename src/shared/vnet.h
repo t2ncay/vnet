@@ -4,6 +4,11 @@
 #include <string>
 #include <vector>
 
+#ifndef HEADLESS_SERVER
+    bool VNetSend(const std::string& cmd, const std::string& payload = "");
+    bool VNetSendRaw(const std::string& data);
+#endif
+
 // ============================================================
 // VNET SITE DATA
 // ============================================================

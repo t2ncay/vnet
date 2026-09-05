@@ -1,5 +1,6 @@
 # ============================================================
-# VNET 3D - Advanced Build Script
+# VNET CLIENT - Build Script
+# VEKTRAOS v9.5 CYBERWARFARE ENGINE
 # ============================================================
 
 # Color functions
@@ -30,7 +31,7 @@ function Write-ProgressBar {
 # ============================================================
 
 Clear-Host
-Write-Header "VNET 3D - BUILD SYSTEM v2.0"
+Write-Header "VNET CLIENT - BUILD SYSTEM v2.1"
 
 # ============================================================
 # PROJECT SETUP
@@ -86,46 +87,115 @@ if (Test-Path "assets/VCR_OSD_MONO_1.001.ttf") {
 }
 
 # ============================================================
-# BUILD
+# SOURCE FILE COLLECTION
 # ============================================================
 
-Write-Header "BUILDING VNET 3D"
+Write-Header "COLLECTING SOURCE FILES"
+
+$clientSources = @(
+    # Client specific
+    "src/client/main.cpp",
+    "src/client/game.cpp",
+    "src/client/render.cpp",
+    "src/client/player.cpp",
+    "src/client/vnet_client.cpp",
+    # Shared
+    "src/shared/vnet.cpp",
+    "src/shared/vnet_sites.cpp",
+    "src/shared/utils.cpp",
+    # Lib
+    "src/lib/vnet_lib.cpp"
+)
+
+# Verify source files exist
+$missingFiles = @()
+foreach ($file in $clientSources) {
+    if (-not (Test-Path $file)) {
+        $missingFiles += $file
+    }
+}
+
+if ($missingFiles.Count -gt 0) {
+    Write-Error "Missing source files:"
+    foreach ($f in $missingFiles) {
+        Write-Host "  - $f" -ForegroundColor Red
+    }
+    exit 1
+}
+
+Write-Success "Found $($clientSources.Count) source files"
+
+# ============================================================
+# BUILD CLIENT
+# ============================================================
+
+Write-Header "BUILDING VNET CLIENT"
 
 # Create build directory
-if (Test-Path "build") {
+if (Test-Path "build_client") {
     Write-Info "Cleaning build directory..."
-    Remove-Item -Recurse -Force "build"
+    Remove-Item -Recurse -Force "build_client"
 }
-New-Item -ItemType Directory -Path "build" -Force | Out-Null
+New-Item -ItemType Directory -Path "build_client" -Force | Out-Null
 Write-Success "Build directory created"
 
-# Get source files
-$srcFiles = Get-ChildItem -Path "src" -Filter "*.cpp"
-$srcCount = $srcFiles.Count
-$objectFiles = @()
-$failedFiles = @()
+# ============================================================
+# INCLUDE PATHS AND DEFINES
+# ============================================================
+# NOTE: These are kept as ARRAYS (not a joined string) so they can be
+# splatted straight into the g++ call below with `@includeDirs`.
+# Passing arrays through the call operator (&) means PowerShell never
+# has to re-parse a giant quoted string, so paths with spaces
+# (like "Game Projects" in $projectDir) just work, no manual escaping.
 
-Write-Info "Found $srcCount source files"
+$projectDirAbs = (Get-Location).Path
+$raylibInclude = "$projectDirAbs/vendor/raylib/include"
+$raylibLib = "$projectDirAbs/vendor/raylib/lib"
+
+Write-Info "Raylib include: $raylibInclude"
+Write-Info "Raylib lib: $raylibLib"
+
+$includeDirs = @(
+    "-I$projectDirAbs",
+    "-I$projectDirAbs/src/client",
+    "-I$projectDirAbs/src/shared",
+    "-I$projectDirAbs/src/lib",
+    "-I$raylibInclude"
+)
+
+$defines = @("-D_CRT_SECURE_NO_WARNINGS", "-D_USE_MATH_DEFINES")
 
 # Compile each source file with progress bar
 Write-Host "`n"
+$objectFiles = @()
+$failedFiles = @()
+$totalFiles = $clientSources.Count
 $i = 0
-foreach ($src in $srcFiles) {
+
+foreach ($src in $clientSources) {
     $i++
-    $obj = "build\$($src.BaseName).o"
-    $filename = $src.Name
-    
-    Write-ProgressBar -Activity "Compiling" -Current $i -Total $srcCount -Status "$filename"
-    
-    g++ -std=c++17 -O2 -g `
-        -I. -I./vendor/raylib/include `
-        -D_WIN32 -DWIN32_LEAN_AND_MEAN -DNOGDI -DNOUSER `
-        -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES `
-        -c $src.FullName -o $obj
-    
-    if ($LASTEXITCODE -ne 0) {
+    $objName = ($src -replace '[/\\]', '_') -replace '\.cpp$', '.o'
+    $obj = "build_client\$objName"
+    $filename = Split-Path $src -Leaf
+
+    Write-ProgressBar -Activity "Compiling Client" -Current $i -Total $totalFiles -Status "$filename"
+
+    $compileArgs = @("-std=c++17", "-O2", "-g") + $includeDirs + $defines + @("-c", $src, "-o", $obj)
+
+    # FIXED: call g++ directly via the call operator with an argument
+    # array, instead of building one giant string and running it
+    # through Invoke-Expression. This is what actually lets 2>&1
+    # merge and capture the compiler's real stderr text reliably.
+    $output = & g++ @compileArgs 2>&1
+    $exitCode = $LASTEXITCODE
+
+    if ($exitCode -ne 0) {
         $failedFiles += $filename
         Write-Host "`n  ❌ $filename - FAILED" -ForegroundColor Red
+        # FIXED: print every diagnostic line g++ produced, not just
+        # the first line that happens to contain the substring "error:"
+        # (that missed linker-style messages and multi-line diagnostics).
+        $output | ForEach-Object { Write-Host "     $_" -ForegroundColor Red }
     } else {
         $objectFiles += $obj
     }
@@ -141,53 +211,43 @@ if ($failedFiles.Count -gt 0) {
     exit 1
 }
 
-Write-Success "All $srcCount files compiled successfully!"
+Write-Success "All $totalFiles files compiled successfully!"
 
 # ============================================================
-# LINKING
+# LINKING CLIENT
 # ============================================================
 
-Write-Header "LINKING"
+Write-Header "LINKING CLIENT"
 
 Write-Info "Linking $($objectFiles.Count) object files..."
 
-# Try different link approaches
-$linkSuccess = $false
-$linkAttempts = @(
-    "-lraylib -lopengl32 -lgdi32 -lwinmm -lshell32 -lwinpthread -lws2_32 -lm",
-    "-static -lraylib -lopengl32 -lgdi32 -lwinmm -lshell32 -lwinpthread -lws2_32 -lm",
-    "vendor/raylib/lib/libraylib.a -lopengl32 -lgdi32 -lwinmm -lshell32 -lwinpthread -lws2_32 -lm"
+Write-Info "Linking..."
+$linkArgs = @("-o", "vnet_client.exe") + $objectFiles + @(
+    "-L$raylibLib", "-lraylib", "-lopengl32", "-lgdi32",
+    "-lwinmm", "-lshell32", "-lwinpthread", "-lws2_32", "-lm"
 )
+$linkOutput = & g++ @linkArgs 2>&1
+$linkExit = $LASTEXITCODE
 
-$attempt = 1
-foreach ($linkFlags in $linkAttempts) {
-    # FIXED: Use ${attempt} to delimit the variable name
-    Write-Info "Link attempt ${attempt}: $linkFlags"
-    
-    $cmd = "g++ -o vnet_demo.exe $objectFiles -L./vendor/raylib/lib $linkFlags"
-    Invoke-Expression $cmd 2>&1 | Out-Null
-    
-    if ($LASTEXITCODE -eq 0) {
-        $linkSuccess = $true
-        Write-Success "Linking successful with attempt ${attempt}"
-        break
-    }
-    $attempt++
+if ($linkExit -ne 0) {
+    Write-Warning "First link attempt failed, trying alternative..."
+    $linkOutput | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
+
+    $linkArgs2 = @("-o", "vnet_client.exe") + $objectFiles + @(
+        "$raylibLib/libraylib.a", "-lopengl32", "-lgdi32",
+        "-lwinmm", "-lshell32", "-lwinpthread", "-lws2_32", "-lm"
+    )
+    $linkOutput = & g++ @linkArgs2 2>&1
+    $linkExit = $LASTEXITCODE
 }
 
-if (-not $linkSuccess) {
-    Write-Error "All linking attempts failed!"
-    Write-Warning "Trying direct link without object files..."
-    
-    # Try direct link
-    g++ -o vnet_demo.exe $objectFiles -L./vendor/raylib/lib -lraylib -lopengl32 -lgdi32 -lwinmm -lshell32 -lwinpthread -lws2_32 -lm 2>&1
-    
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Linking failed!"
-        exit 1
-    }
-    Write-Success "Linking successful with fallback!"
+if ($linkExit -ne 0) {
+    Write-Error "Linking failed!"
+    $linkOutput | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+    exit 1
 }
+
+Write-Success "Linking successful!"
 
 # ============================================================
 # POST-BUILD
@@ -197,7 +257,7 @@ Write-Header "POST-BUILD"
 
 # Clean up object files
 Write-Info "Cleaning up object files..."
-Remove-Item -Path "*.o" -ErrorAction SilentlyContinue
+Remove-Item -Path "build_client\*.o" -ErrorAction SilentlyContinue
 Write-Success "Cleanup complete"
 
 # Copy raylib.dll if it exists
@@ -206,45 +266,37 @@ if (Test-Path "vendor/raylib/lib/raylib.dll") {
     Write-Success "Copied raylib.dll"
 }
 
-# Copy assets
-if (Test-Path "assets") {
-    if (-not (Test-Path "assets/VCR_OSD_MONO_1.001.ttf")) {
-        Write-Warning "VCR font not found in assets folder"
-    }
-}
-
 # ============================================================
 # SUMMARY
 # ============================================================
 
 Write-Header "BUILD SUMMARY"
 
-Write-Success "Executable: $projectDir\vnet_demo.exe"
-Write-Info "Build time: $(Get-Date -Format 'HH:mm:ss')"
-Write-Info "Output size: $([math]::Round((Get-Item vnet_demo.exe).Length / 1KB, 2)) KB"
-
-# Check if executable exists
-if (Test-Path "vnet_demo.exe") {
-    Write-Success "Build completed successfully!"
+if (Test-Path "vnet_client.exe") {
+    $size = [math]::Round((Get-Item vnet_client.exe).Length / 1KB, 2)
+    Write-Success "✅ Client executable: $projectDir\vnet_client.exe"
+    Write-Info "📦 Output size: $size KB"
+    Write-Info "🕐 Build time: $(Get-Date -Format 'HH:mm:ss')"
+    Write-Success "🎉 Client build completed successfully!"
 } else {
-    Write-Error "Build failed - executable not found!"
+    Write-Error "❌ Build failed - executable not found!"
     exit 1
 }
 
 # ============================================================
-# RUN
+# RUN CLIENT
 # ============================================================
 
-Write-Header "RUNNING VNET 3D"
+Write-Header "RUNNING VNET CLIENT"
 
 Write-Host "┌─────────────────────────────────────────────────────────────────┐" -ForegroundColor Magenta
-Write-Host "│  🚀 Press any key to launch the game, or close this window.   │" -ForegroundColor Cyan
+Write-Host "│  🚀 Press any key to launch the client, or close this window. │" -ForegroundColor Cyan
 Write-Host "└─────────────────────────────────────────────────────────────────┘" -ForegroundColor Magenta
 Write-Host ""
 
 $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 if ($key) {
-    Write-Host "🎮 Launching VNET 3D..." -ForegroundColor Green
+    Write-Host "🎮 Launching VNET Client..." -ForegroundColor Green
     Write-Host ""
-    .\vnet_demo.exe
+    .\vnet_client.exe
 }
