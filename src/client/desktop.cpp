@@ -13,6 +13,15 @@
 #include <algorithm>
 
 // ============================================================
+// FORWARD DECLARATIONS - Settings Category Drawers
+// ============================================================
+void DrawSettingsTheme(float x, float y, float w, float h);
+void DrawSettingsAudio(float x, float y, float w, float h);
+void DrawSettingsDisplay(float x, float y, float w, float h);
+void DrawSettingsSecurity(float x, float y, float w, float h);
+void DrawSettingsSystem(float x, float y, float w, float h);
+
+// ============================================================
 // STATIC CALLBACKS - App Launchers
 // ============================================================
 
@@ -1512,17 +1521,94 @@ void Desktop::DrawSettings(const AppWindow& win) {
     float cw = win.w - 8;
     float ch = win.h - m_windowTitleHeight - 8;
     
-    DrawScaledRect(cx, cy, cw, ch, COLOR_BLACK);
+    float t = (float)GetTime();
+    float pulse = sinf(t * 2.0f) * 0.5f + 0.5f;
+    
+    // ---- BACKGROUND ----
+    DrawScaledRect(cx, cy, cw, ch, Color{6, 8, 14, 255});
     DrawScaledRectLines(cx, cy, cw, ch, COLOR_BORDER);
     
-    DrawScaledText("SETTINGS", cx + 20, cy + 20, 16, COLOR_BLOOD);
-    DrawScaledLine(cx + 20, cy + 45, cx + cw - 20, cy + 45, COLOR_BORDER);
+    // ---- HEADER ----
+    float headerH = 50.0f;
+    DrawScaledRect(cx, cy, cw, headerH, Color{14, 18, 28, 255});
+    DrawScaledLine(cx, cy + headerH, cx + cw, cy + headerH, Color{30, 35, 50, 150});
     
-    DrawScaledText("🔊 Audio", cx + 20, cy + 70, 12, COLOR_CYAN);
-    DrawScaledText("🎨 Theme", cx + 20, cy + 100, 12, COLOR_CYAN);
-    DrawScaledText("🖥 Display", cx + 20, cy + 130, 12, COLOR_CYAN);
-    DrawScaledText("🔒 Security", cx + 20, cy + 160, 12, COLOR_CYAN);
-    DrawScaledText("📦 System", cx + 20, cy + 190, 12, COLOR_CYAN);
+    DrawScaledText("⚙ SETTINGS // VEKTRAOS CONTROL PANEL", cx + 16, cy + 14, 14, COLOR_AMBER);
+    
+    // Live system status indicator
+    float statusPulse = sinf(t * 3.0f) * 0.3f + 0.7f;
+    Color statusColor = {40, 240, 100, (unsigned char)(statusPulse * 200 + 55)};
+    DrawScaledRect(cx + cw - 130, cy + 14, 8, 8, statusColor);
+    DrawScaledText("SYSTEM LIVE", cx + cw - 115, cy + 13, 10, COLOR_TOXIC);
+    
+    // ---- SIDEBAR ----
+    float sidebarW = 180.0f;
+    float sidebarX = cx;
+    float sidebarY = cy + headerH;
+    float sidebarH = ch - headerH;
+    
+    DrawScaledRect(sidebarX, sidebarY, sidebarW, sidebarH, Color{10, 12, 20, 220});
+    DrawScaledLine(sidebarX + sidebarW, sidebarY, sidebarX + sidebarW, sidebarY + sidebarH, Color{30, 35, 50, 100});
+    
+    // Sidebar items
+    static int selectedCategory = 0;
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    
+    const char* categories[] = {
+        "🎨 Theme",
+        "🔊 Audio",
+        "🖥 Display",
+        "🔒 Security",
+        "📦 System"
+    };
+    
+    for (int i = 0; i < 5; i++) {
+        float itemY = sidebarY + 20 + i * 45.0f;
+        bool hover = RefRectHover(sidebarX + 8, itemY, sidebarW - 16, 36, refMouse);
+        bool active = (i == selectedCategory);
+        
+        Color bg = active ? Color{40, 45, 70, 200} : (hover ? Color{30, 35, 55, 150} : Color{0,0,0,0});
+        DrawScaledRect(sidebarX + 8, itemY, sidebarW - 16, 36, bg);
+        
+        if (active) {
+            DrawScaledRect(sidebarX + 8, itemY, 3, 36, COLOR_BLOOD);
+        }
+        
+        DrawScaledText(categories[i], sidebarX + 20, itemY + 10, 11, 
+                      active ? COLOR_TOXIC : (hover ? COLOR_CYAN : COLOR_GHOST));
+        
+        if (clicked && hover) {
+            selectedCategory = i;
+        }
+    }
+    
+    // Version info at bottom of sidebar
+    DrawScaledLine(sidebarX + 8, sidebarY + sidebarH - 50, sidebarX + sidebarW - 8, sidebarY + sidebarH - 50, Color{30, 35, 50, 80});
+    DrawScaledText("VEKTRAOS v9.5", sidebarX + 20, sidebarY + sidebarH - 32, 9, COLOR_GHOST);
+    DrawScaledText("CYBERWARFARE ENGINE", sidebarX + 20, sidebarY + sidebarH - 18, 8, {80, 90, 110, 150});
+    
+    // ---- CONTENT AREA ----
+    float contentX = cx + sidebarW + 12;
+    float contentY = cy + headerH + 8;
+    float contentW = cw - sidebarW - 20;
+    float contentH = ch - headerH - 16;
+    
+    // Content background
+    DrawScaledRect(contentX, contentY, contentW, contentH, Color{8, 10, 18, 200});
+    DrawScaledRectLines(contentX, contentY, contentW, contentH, Color{30, 35, 50, 80});
+    
+    // ---- DRAW SELECTED CATEGORY CONTENT ----
+    float contentOffsetX = contentX + 20;
+    float contentOffsetY = contentY + 16;
+    
+    switch (selectedCategory) {
+        case 0: DrawSettingsTheme(contentOffsetX, contentOffsetY, contentW - 40, contentH - 32); break;
+        case 1: DrawSettingsAudio(contentOffsetX, contentOffsetY, contentW - 40, contentH - 32); break;
+        case 2: DrawSettingsDisplay(contentOffsetX, contentOffsetY, contentW - 40, contentH - 32); break;
+        case 3: DrawSettingsSecurity(contentOffsetX, contentOffsetY, contentW - 40, contentH - 32); break;
+        case 4: DrawSettingsSystem(contentOffsetX, contentOffsetY, contentW - 40, contentH - 32); break;
+    }
 }
 
 void Desktop::DrawFeed(const AppWindow& win) {
@@ -1883,6 +1969,505 @@ void Desktop::DrawFeed(const AppWindow& win) {
 // ============================================================
 // GLOBAL ACCESS
 // ============================================================
+
+// ============================================================
+// SETTINGS CATEGORY DRAWERS
+// ============================================================
+
+void DrawSettingsTheme(float x, float y, float w, float h) {
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    float t = (float)GetTime();
+    
+    DrawScaledText("🎨 THEME CONFIGURATOR", x, y, 16, COLOR_CYAN);
+    DrawScaledLine(x, y + 24, x + w, y + 24, Color{30, 35, 50, 100});
+    
+    float rowY = y + 36;
+    float themeSize = 60.0f;
+    float spacing = 12.0f;
+    int perRow = 4;
+    
+    const char* themeNames[] = {
+        "classic", "tokyo", "redroom", "amber",
+        "cyberpunk", "nord", "dracula", "synthwave",
+        "cobalt", "monokai", "gruvbox", "abyss",
+        "solaris", "ghost", "matrix"
+    };
+    int themeCount = sizeof(themeNames) / sizeof(themeNames[0]);
+    
+    // Color previews for each theme
+    Color themeColors[][3] = {
+        {{2,2,4,255}, {220,20,40,255}, {0,220,240,255}},    // classic
+        {{16,18,28,255}, {247,118,142,255}, {122,162,247,255}}, // tokyo
+        {{10,3,5,255}, {255,20,50,255}, {240,45,65,255}},   // redroom
+        {{12,8,2,255}, {240,60,30,255}, {255,175,0,255}},   // amber
+        {{18,10,26,255}, {255,0,85,255}, {0,230,255,255}},  // cyberpunk
+        {{15,20,28,255}, {191,97,106,255}, {136,192,208,255}}, // nord
+        {{18,16,26,255}, {255,85,85,255}, {139,233,253,255}}, // dracula
+        {{12,6,24,255}, {255,30,130,255}, {0,240,255,255}}, // synthwave
+        {{2,12,28,255}, {255,60,90,255}, {0,190,255,255}},  // cobalt
+        {{20,20,20,255}, {255,97,136,255}, {120,220,232,255}}, // monokai
+        {{20,20,18,255}, {251,73,52,255}, {131,165,152,255}}, // gruvbox
+        {{2,6,12,255}, {230,40,70,255}, {0,180,200,255}},   // abyss
+        {{18,6,2,255}, {255,40,20,255}, {255,140,0,255}},   // solaris
+        {{12,14,18,255}, {240,80,100,255}, {160,210,245,255}}, // ghost
+        {{4,10,6,255}, {240,40,70,255}, {0,210,255,255}},   // matrix
+    };
+    
+    // Get current theme
+    std::string currentTheme = "classic";
+    
+    for (int i = 0; i < themeCount; i++) {
+        int col = i % perRow;
+        int row = i / perRow;
+        float tx = x + col * (themeSize + spacing);
+        float ty = rowY + row * (themeSize + spacing + 30);
+        
+        if (ty > y + h - 20) break;
+        
+        bool hover = RefRectHover(tx, ty, themeSize, themeSize, refMouse);
+        bool active = (strcmp(themeNames[i], currentTheme.c_str()) == 0);
+        
+        // Theme preview card
+        DrawScaledRect(tx, ty, themeSize, themeSize, Color{20, 22, 35, 200});
+        DrawScaledRectLines(tx, ty, themeSize, themeSize, 
+                           active ? COLOR_TOXIC : (hover ? COLOR_CYAN : Color{30, 35, 50, 100}));
+        
+        // Color swatches
+        float swatchSize = 14.0f;
+        float swatchY = ty + 8;
+        for (int c = 0; c < 3; c++) {
+            float swatchX = tx + 6 + c * (swatchSize + 4);
+            DrawScaledRect(swatchX, swatchY, swatchSize, swatchSize, themeColors[i][c]);
+            DrawScaledRectLines(swatchX, swatchY, swatchSize, swatchSize, Color{30, 35, 50, 80});
+        }
+        
+        // Theme name
+        DrawScaledText(themeNames[i], tx + 2, ty + themeSize - 16, 8, 
+                      active ? COLOR_TOXIC : COLOR_GHOST);
+        
+        // Active indicator
+        if (active) {
+            DrawScaledRect(tx + themeSize - 14, ty + 4, 10, 10, COLOR_TOXIC);
+            DrawScaledText("✓", tx + themeSize - 12, ty + 3, 9, COLOR_BLACK);
+        }
+        
+        if (clicked && hover) {
+            SetActiveTheme(themeNames[i]);
+            PushCliLog("[SETTINGS]: Theme set to %s", themeNames[i]);
+            // Force UI refresh
+            TriggerJitter(0.15f);
+        }
+    }
+    
+    // Current theme info
+    DrawScaledLine(x, y + h - 40, x + w, y + h - 40, Color{30, 35, 50, 80});
+    char themeInfo[128];
+    snprintf(themeInfo, sizeof(themeInfo), "ACTIVE THEME: %s", currentTheme.c_str());
+    DrawScaledText(themeInfo, x + 10, y + h - 22, 10, COLOR_TOXIC);
+    DrawScaledText("Click any theme card to apply", x + 250, y + h - 22, 9, COLOR_GHOST);
+}
+
+void DrawSettingsAudio(float x, float y, float w, float h) {
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    bool mouseDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+    float t = (float)GetTime();
+    
+    DrawScaledText("🔊 AUDIO CONFIGURATION", x, y, 16, COLOR_CYAN);
+    DrawScaledLine(x, y + 24, x + w, y + 24, Color{30, 35, 50, 100});
+    
+    float rowY = y + 44;
+    float rowH = 50.0f;
+    
+    // ---- MASTER VOLUME ----
+    DrawScaledText("MASTER VOLUME", x, rowY, 12, COLOR_GHOST);
+    
+    float sliderX = x + 180;
+    float sliderY = rowY + 4;
+    float sliderW = w - 200;
+    float sliderH = 18.0f;
+    
+    DrawScaledRect(sliderX, sliderY, sliderW, sliderH, Color{12, 15, 20, 255});
+    DrawScaledRectLines(sliderX, sliderY, sliderW, sliderH, Color{30, 35, 50, 100});
+    
+    float volume = GetMusicPlayer().GetVolume();
+    float fillW = sliderW * volume;
+    if (fillW < 2.0f) fillW = 2.0f;
+    DrawScaledRect(sliderX, sliderY, fillW, sliderH, COLOR_TOXIC);
+    
+    // Volume knob
+    float knobX = sliderX + fillW - 6;
+    DrawScaledRect(knobX, sliderY - 3, 12, sliderH + 6, Color{40, 45, 65, 200});
+    DrawScaledRectLines(knobX, sliderY - 3, 12, sliderH + 6, COLOR_BORDER);
+    
+    // Volume percentage
+    char volStr[16];
+    snprintf(volStr, sizeof(volStr), "%d%%", (int)(volume * 100.0f));
+    DrawScaledText(volStr, sliderX + sliderW + 12, sliderY + 2, 11, COLOR_TOXIC);
+    
+    bool hoverSlider = RefRectHover(sliderX, sliderY - 10, sliderW, sliderH + 20, refMouse);
+    if ((mouseDown && hoverSlider) || (clicked && RefRectHover(knobX - 6, sliderY - 6, 24, sliderH + 12, refMouse))) {
+        Vector2 refMouse = GetRefMousePos();
+        float newVol = (refMouse.x - sliderX) / sliderW;
+        if (newVol < 0.0f) newVol = 0.0f;
+        if (newVol > 1.0f) newVol = 1.0f;
+        GetMusicPlayer().SetVolume(newVol);
+    }
+    
+    rowY += rowH + 8;
+    DrawScaledLine(x + 10, rowY, x + w - 10, rowY, Color{30, 35, 50, 60});
+    rowY += 12;
+    
+    // ---- CURRENT TRACK INFO ----
+    DrawScaledText("NOW PLAYING", x, rowY, 12, COLOR_GHOST);
+    rowY += 22;
+    
+    const MusicTrack* track = GetMusicPlayer().GetCurrentTrack();
+    if (track) {
+        DrawScaledText(track->title.c_str(), x + 10, rowY, 14, track->accentColor);
+        DrawScaledText(track->artist.c_str(), x + 10, rowY + 22, 10, COLOR_GHOST);
+        
+        char durationStr[32];
+        int mins = (int)track->duration / 60;
+        int secs = (int)track->duration % 60;
+        snprintf(durationStr, sizeof(durationStr), "%02d:%02d", mins, secs);
+        DrawScaledText(durationStr, x + w - 60, rowY + 6, 11, COLOR_GHOST);
+    } else {
+        DrawScaledText("No track loaded", x + 10, rowY + 6, 12, COLOR_GHOST);
+    }
+    
+    rowY += 44;
+    DrawScaledLine(x + 10, rowY, x + w - 10, rowY, Color{30, 35, 50, 60});
+    rowY += 12;
+    
+    // ---- AUDIO VISUALIZER SETTINGS ----
+    DrawScaledText("VISUALIZER", x, rowY, 12, COLOR_GHOST);
+    rowY += 22;
+    
+    DrawScaledText("Sensitivity", x + 10, rowY + 4, 10, COLOR_CYAN);
+    // Sensitivity slider
+    float sensX = x + 130;
+    float sensY = rowY + 4;
+    float sensW = 150.0f;
+    float sensH = 12.0f;
+    DrawScaledRect(sensX, sensY, sensW, sensH, Color{12, 15, 20, 255});
+    DrawScaledRectLines(sensX, sensY, sensW, sensH, Color{30, 35, 50, 100});
+    DrawScaledRect(sensX, sensY, sensW * 0.7f, sensH, COLOR_AMBER);
+    DrawScaledText("70%", sensX + sensW + 10, sensY, 9, COLOR_AMBER);
+    
+    rowY += 30;
+}
+
+void DrawSettingsDisplay(float x, float y, float w, float h) {
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    float t = (float)GetTime();
+    
+    DrawScaledText("🖥 DISPLAY SETTINGS", x, y, 16, COLOR_CYAN);
+    DrawScaledLine(x, y + 24, x + w, y + 24, Color{30, 35, 50, 100});
+    
+    float rowY = y + 44;
+    
+    // ---- RESOLUTION ----
+    DrawScaledText("RESOLUTION", x, rowY, 12, COLOR_GHOST);
+    rowY += 22;
+    
+    const char* resolutions[] = {"1920x1080", "1680x1050", "1440x900", "1280x720"};
+    for (int i = 0; i < 4; i++) {
+        float rx = x + 10 + i * 110.0f;
+        bool hover = RefRectHover(rx, rowY, 100, 28, refMouse);
+        bool active = (i == 0);
+        
+        DrawScaledRect(rx, rowY, 100, 28, active ? Color{40, 45, 70, 200} : (hover ? Color{30, 35, 55, 150} : Color{12, 15, 20, 200}));
+        DrawScaledRectLines(rx, rowY, 100, 28, active ? COLOR_TOXIC : (hover ? COLOR_CYAN : Color{30, 35, 50, 100}));
+        DrawScaledText(resolutions[i], rx + 10, rowY + 6, 10, active ? COLOR_TOXIC : COLOR_GHOST);
+        
+        if (clicked && hover) {
+            PushCliLog("[SETTINGS]: Resolution changed to %s", resolutions[i]);
+            TriggerJitter(0.2f);
+        }
+    }
+    
+    rowY += 44;
+    DrawScaledLine(x + 10, rowY, x + w - 10, rowY, Color{30, 35, 50, 60});
+    rowY += 12;
+    
+    // ---- DISPLAY MODE ----
+    DrawScaledText("DISPLAY MODE", x, rowY, 12, COLOR_GHOST);
+    rowY += 22;
+    
+    const char* modes[] = {"Fullscreen", "Windowed", "Borderless"};
+    for (int i = 0; i < 3; i++) {
+        float rx = x + 10 + i * 120.0f;
+        bool hover = RefRectHover(rx, rowY, 110, 28, refMouse);
+        bool active = (i == 0);
+        
+        DrawScaledRect(rx, rowY, 110, 28, active ? Color{40, 45, 70, 200} : (hover ? Color{30, 35, 55, 150} : Color{12, 15, 20, 200}));
+        DrawScaledRectLines(rx, rowY, 110, 28, active ? COLOR_TOXIC : (hover ? COLOR_CYAN : Color{30, 35, 50, 100}));
+        DrawScaledText(modes[i], rx + 15, rowY + 6, 10, active ? COLOR_TOXIC : COLOR_GHOST);
+        
+        if (clicked && hover) {
+            PushCliLog("[SETTINGS]: Display mode changed to %s", modes[i]);
+            if (i == 0 && !IsWindowFullscreen()) {
+                ToggleFullscreen();
+            } else if (i != 0 && IsWindowFullscreen()) {
+                ToggleFullscreen();
+            }
+        }
+    }
+    
+    rowY += 44;
+    DrawScaledLine(x + 10, rowY, x + w - 10, rowY, Color{30, 35, 50, 60});
+    rowY += 12;
+    
+    // ---- CRT EFFECTS ----
+    DrawScaledText("CRT EFFECTS", x, rowY, 12, COLOR_GHOST);
+    rowY += 22;
+    
+    // Toggle switches
+    const char* toggles[] = {"Scanlines", "Vignette", "Chromatic Aberration", "Screen Flicker"};
+    bool toggleStates[] = {true, true, false, true};
+    
+    for (int i = 0; i < 4; i++) {
+        float tx = x + 10 + (i % 2) * 200.0f;
+        float ty = rowY + (i / 2) * 32.0f;
+        bool hover = RefRectHover(tx, ty, 180, 24, refMouse);
+        
+        DrawScaledRect(tx, ty, 180, 24, hover ? Color{30, 35, 55, 150} : Color{12, 15, 20, 200});
+        DrawScaledRectLines(tx, ty, 180, 24, hover ? COLOR_CYAN : Color{30, 35, 50, 80});
+        
+        // Toggle switch
+        float toggleX = tx + 150;
+        float toggleY = ty + 4;
+        float toggleW = 22;
+        float toggleH = 16;
+        bool state = toggleStates[i];
+        
+        DrawScaledRect(toggleX, toggleY, toggleW, toggleH, state ? COLOR_TOXIC : Color{30, 35, 50, 200});
+        DrawScaledRectLines(toggleX, toggleY, toggleW, toggleH, state ? COLOR_TOXIC : Color{50, 55, 70, 150});
+        float knobX = state ? toggleX + toggleW - 12 : toggleX + 2;
+        DrawScaledRect(knobX, toggleY + 2, 10, 12, state ? Color{40, 240, 100, 200} : Color{80, 90, 110, 150});
+        
+        DrawScaledText(toggles[i], tx + 8, ty + 5, 10, state ? COLOR_TOXIC : COLOR_GHOST);
+        
+        if (clicked && hover) {
+            toggleStates[i] = !toggleStates[i];
+            PushCliLog("[SETTINGS]: %s %s", toggles[i], toggleStates[i] ? "ENABLED" : "DISABLED");
+            TriggerJitter(0.1f);
+        }
+    }
+}
+
+void DrawSettingsSecurity(float x, float y, float w, float h) {
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    float t = (float)GetTime();
+    
+    DrawScaledText("🔒 SECURITY & PRIVACY", x, y, 16, COLOR_CYAN);
+    DrawScaledLine(x, y + 24, x + w, y + 24, Color{30, 35, 50, 100});
+    
+    float rowY = y + 44;
+    
+    // ---- ICE SHIELDS ----
+    DrawScaledText("ICE FIREWALL SHIELDS", x, rowY, 12, COLOR_GHOST);
+    rowY += 22;
+    
+    for (int i = 0; i < 3; i++) {
+        float sx = x + 10 + i * 80.0f;
+        bool active = (i < g_player.iceShields);
+        bool hover = RefRectHover(sx, rowY, 70, 50, refMouse);
+        
+        DrawScaledRect(sx, rowY, 70, 50, active ? Color{40, 45, 70, 200} : Color{12, 15, 20, 200});
+        DrawScaledRectLines(sx, rowY, 70, 50, active ? COLOR_CYAN : Color{30, 35, 50, 100});
+        
+        char shieldStr[16];
+        snprintf(shieldStr, sizeof(shieldStr), "ICE %d", i + 1);
+        DrawScaledText(shieldStr, sx + 15, rowY + 8, 10, active ? COLOR_TOXIC : COLOR_GHOST);
+        DrawScaledText(active ? "ON" : "OFF", sx + 20, rowY + 28, 12, active ? COLOR_TOXIC : COLOR_BLOOD);
+        
+        if (active) {
+            float pulse = sinf(t * 3.0f + i) * 0.3f + 0.7f;
+            DrawScaledRect(sx + 30, rowY + 8, 6, 6, {40, 240, 100, (unsigned char)(pulse * 200 + 55)});
+        }
+    }
+    
+    rowY += 60;
+    DrawScaledLine(x + 10, rowY, x + w - 10, rowY, Color{30, 35, 50, 60});
+    rowY += 12;
+    
+    // ---- TRACE PROTECTION ----
+    DrawScaledText("TRACE PROTECTION", x, rowY, 12, COLOR_GHOST);
+    rowY += 22;
+    
+    // Trace bar
+    float barX = x + 10;
+    float barY = rowY + 4;
+    float barW = w - 20;
+    float barH = 20.0f;
+    
+    DrawScaledRect(barX, barY, barW, barH, Color{12, 15, 20, 255});
+    DrawScaledRectLines(barX, barY, barW, barH, Color{30, 35, 50, 100});
+    
+    float traceFill = (g_player.traceLevel / 100.0f) * barW;
+    if (traceFill < 2.0f) traceFill = 2.0f;
+    Color traceColor = g_player.traceLevel > 70 ? COLOR_BLOOD : (g_player.traceLevel > 40 ? COLOR_AMBER : COLOR_TOXIC);
+    DrawScaledRect(barX, barY, traceFill, barH, traceColor);
+    
+    char traceStr[32];
+    snprintf(traceStr, sizeof(traceStr), "TRACE: %d%%", g_player.traceLevel);
+    float traceW = MeasureScaledTextWidth(traceStr, 12);
+    DrawScaledText(traceStr, barX + (barW - traceW) / 2.0f, barY + 3, 12, 
+                  g_player.traceLevel > 50 ? COLOR_BLACK : COLOR_GHOST);
+    
+    rowY += 32;
+    
+    // ---- FLUSH TRACE BUTTON ----
+    bool hoverFlush = RefRectHover(x + 10, rowY, 180, 32, refMouse);
+    DrawScaledRect(x + 10, rowY, 180, 32, hoverFlush ? COLOR_BLOOD : Color{30, 35, 55, 200});
+    DrawScaledRectLines(x + 10, rowY, 180, 32, COLOR_BLOOD);
+    DrawScaledText("FLUSH TRACE (0.10 VCOIN)", x + 20, rowY + 8, 11, hoverFlush ? COLOR_BLACK : COLOR_TOXIC);
+    
+    if (clicked && hoverFlush) {
+        if (g_player.vcoin < 0.10f) {
+            PushCliLog("[SETTINGS]: Insufficient VCOIN for flush");
+        } else {
+            g_player.vcoin -= 0.10f;
+            g_player.traceLevel = (int)(g_player.traceLevel * 0.7f);
+            if (g_player.traceLevel < 0) g_player.traceLevel = 0;
+            PushCliLog("[SETTINGS]: Trace flushed!");
+            TriggerJitter(0.3f);
+        }
+    }
+    
+    // ---- BUY ICE BUTTON ----
+    bool hoverIce = RefRectHover(x + 200, rowY, 160, 32, refMouse);
+    DrawScaledRect(x + 200, rowY, 160, 32, hoverIce ? COLOR_CYAN : Color{30, 35, 55, 200});
+    DrawScaledRectLines(x + 200, rowY, 160, 32, COLOR_CYAN);
+    DrawScaledText("BUY ICE (0.30 VCOIN)", x + 210, rowY + 8, 11, hoverIce ? COLOR_BLACK : COLOR_CYAN);
+    
+    if (clicked && hoverIce) {
+        if (g_player.iceShields >= 3) {
+            PushCliLog("[SETTINGS]: Max ICE shields reached");
+        } else if (g_player.vcoin < 0.30f) {
+            PushCliLog("[SETTINGS]: Insufficient VCOIN");
+        } else {
+            g_player.vcoin -= 0.30f;
+            g_player.iceShields++;
+            PushCliLog("[SETTINGS]: ICE shield purchased! (%d/3)", g_player.iceShields);
+            TriggerJitter(0.2f);
+        }
+    }
+}
+
+void DrawSettingsSystem(float x, float y, float w, float h) {
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    float t = (float)GetTime();
+    float pulse = sinf(t * 2.0f) * 0.3f + 0.7f;
+    
+    DrawScaledText("📦 SYSTEM INFORMATION", x, y, 16, COLOR_CYAN);
+    DrawScaledLine(x, y + 24, x + w, y + 24, Color{30, 35, 50, 100});
+    
+    float rowY = y + 44;
+    
+    // ---- SYSTEM STATS ----
+    struct SysStat {
+        const char* label;
+        char value[64];
+        Color color;
+    };
+    
+    SysStat stats[8];
+    
+    snprintf(stats[0].value, sizeof(stats[0].value), "%s", g_player.handle);
+    stats[0].label = "HANDLE";
+    stats[0].color = COLOR_TOXIC;
+    
+    snprintf(stats[1].value, sizeof(stats[1].value), "%d", g_player.port);
+    stats[1].label = "PORT";
+    stats[1].color = COLOR_CYAN;
+    
+    snprintf(stats[2].value, sizeof(stats[2].value), "%.2f VCOIN", g_player.vcoin);
+    stats[2].label = "VCOIN";
+    stats[2].color = COLOR_TOXIC;
+    
+    snprintf(stats[3].value, sizeof(stats[3].value), "%d%%", g_player.traceLevel);
+    stats[3].label = "TRACE";
+    stats[3].color = g_player.traceLevel > 70 ? COLOR_BLOOD : COLOR_AMBER;
+    
+    snprintf(stats[4].value, sizeof(stats[4].value), "%d/3", g_player.iceShields);
+    stats[4].label = "ICE";
+    stats[4].color = COLOR_CYAN;
+    
+    snprintf(stats[5].value, sizeof(stats[5].value), "%.0f°C", g_player.crtHeat);
+    stats[5].label = "CRT HEAT";
+    stats[5].color = g_player.crtHeat > 75.0f ? COLOR_BLOOD : COLOR_AMBER;
+    
+    snprintf(stats[6].value, sizeof(stats[6].value), "%.0f%%", g_player.neuralParanoia);
+    stats[6].label = "PARANOIA";
+    stats[6].color = g_player.neuralParanoia > 60.0f ? COLOR_BLOOD : COLOR_AMBER;
+    
+    snprintf(stats[7].value, sizeof(stats[7].value), "%d sites", g_player.assignedCount);
+    stats[7].label = "DISCOVERED";
+    stats[7].color = COLOR_GHOST;
+    
+    for (int i = 0; i < 8; i++) {
+        float sx = x + 10 + (i % 2) * 250.0f;
+        float sy = rowY + (i / 2) * 36.0f;
+        
+        DrawScaledText(stats[i].label, sx, sy, 10, COLOR_GHOST);
+        DrawScaledText(stats[i].value, sx + 100, sy, 11, stats[i].color);
+    }
+    
+    rowY += 160;
+    DrawScaledLine(x + 10, rowY, x + w - 10, rowY, Color{30, 35, 50, 60});
+    rowY += 12;
+    
+    // ---- UPTIME ----
+    char uptimeStr[64];
+    int hours = (int)(g_player.runTime / 3600.0f);
+    int minutes = (int)((g_player.runTime - hours * 3600) / 60.0f);
+    int seconds = (int)(g_player.runTime - hours * 3600 - minutes * 60);
+    snprintf(uptimeStr, sizeof(uptimeStr), "UPTIME: %02d:%02d:%02d", hours, minutes, seconds);
+    DrawScaledText(uptimeStr, x + 10, rowY, 12, COLOR_TOXIC);
+    
+    rowY += 30;
+    
+    // ---- SYSTEM STATUS INDICATORS ----
+    DrawScaledText("SYSTEM STATUS", x, rowY, 12, COLOR_GHOST);
+    rowY += 22;
+    
+    // Status grid
+    const char* statusLabels[] = {"Network", "Audio", "VFS", "ICE"};
+    bool statusStates[] = {IsVNetConnected(), true, true, g_player.iceShields > 0};
+    
+    for (int i = 0; i < 4; i++) {
+        float sx = x + 10 + i * 120.0f;
+        float pulse2 = sinf(t * 2.0f + i * 1.5f) * 0.3f + 0.7f;
+        Color statusCol = statusStates[i] ? 
+            Color{40, 240, 100, (unsigned char)(pulse2 * 200 + 55)} : 
+            COLOR_BLOOD;
+        
+        DrawScaledRect(sx, rowY, 8, 8, statusCol);
+        DrawScaledText(statusLabels[i], sx + 14, rowY, 10, statusStates[i] ? COLOR_TOXIC : COLOR_BLOOD);
+    }
+    
+    rowY += 30;
+    
+    // ---- RESET BUTTON ----
+    bool hoverReset = RefRectHover(x + 10, rowY, 160, 32, refMouse);
+    DrawScaledRect(x + 10, rowY, 160, 32, hoverReset ? COLOR_BLOOD : Color{30, 35, 55, 200});
+    DrawScaledRectLines(x + 10, rowY, 160, 32, hoverReset ? COLOR_BLOOD : Color{50, 55, 70, 150});
+    DrawScaledText("RESET SETTINGS", x + 25, rowY + 8, 11, hoverReset ? COLOR_BLACK : COLOR_GHOST);
+    
+    if (clicked && hoverReset) {
+        PushCliLog("[SETTINGS]: Settings reset to default");
+        TriggerJitter(0.3f);
+        SetActiveTheme("classic");
+        GetMusicPlayer().SetVolume(0.7f);
+    }
+}
 
 Desktop& GetDesktop() {
     return Desktop::Get();

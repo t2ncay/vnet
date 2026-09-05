@@ -57,7 +57,7 @@ void DrawVektraWallpaper(float width, float height) {
     DrawScaledRect(badgeX, 8, 140, 50, {40, 20, 25, 220});
     DrawScaledRectLines(badgeX, 8, 140, 50, {160, 30, 40, 180});
     DrawScaledText("TOP SECRET", badgeX + 30, 18, 12, {200, 50, 60, 255});
-    DrawScaledText("// COMSEC // NOFORN", badgeX + 20, 38, 9, {160, 100, 110, 200});
+    DrawScaledText("COMSEC // NOFORN", badgeX + 20, 38, 9, {160, 100, 110, 200});
 
     // ============================================================
     // CENTRAL VEKTRA LOGO / EAGLE

@@ -314,27 +314,29 @@ void MusicPlayer::Draw(float x, float y, float width, float height) {
         DrawScaledText("No track loaded", artX + 6, artY + 22, 11, COLOR_GHOST);
     }
     
-    float controlsY = artY + artSize + 8;
+    // ---- SPACING: Controls start after album art ----
+    float controlsY = artY + artSize + 12.0f;  // Increased from 8 to 12
     
-    // ---- PROGRESS BAR ----
+    // ---- PROGRESS BAR (MOVED TO TOP OF CONTROLS AREA) ----
     float barX = x + 12;
-    float barY = controlsY + 30;
+    float barY = controlsY;
     float barW = width - 24;
     float barH = 4.0f;
     
     DrawProgressBar(barX, barY, barW);
     
-    // ---- CONTROLS WITH PNG ICONS ----
-    DrawControls(x + 12, controlsY, width - 24);
+    // ---- CONTROLS (MOVED DOWN TO NOT OVERLAP PROGRESS BAR) ----
+    float controlsY2 = barY + 24.0f;  // 24px below progress bar
+    DrawControls(x + 12, controlsY2, width - 24);
     
-    // ---- VISUALIZER ----
-    float vizY = controlsY + 58;
+    // ---- VISUALIZER (MOVED FURTHER DOWN) ----
+    float vizY = controlsY2 + 56.0f;  // Below controls
     float vizH = 30.0f;
     DrawVisualizer(x + 12, vizY, width - 24, vizH);
     
     // ---- TRACK LIST ----
-    float listY = vizY + vizH + 8;
-    float listH = height - (listY - y) - 8;
+    float listY = vizY + vizH + 8.0f;
+    float listH = height - (listY - y) - 8.0f;
     if (listH > 40) {
         DrawTrackList(x + 4, listY, width - 8, listH);
     }
@@ -345,30 +347,33 @@ void MusicPlayer::DrawControls(float x, float y, float width) {
     bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
     
     float btnSize = 30.0f;
-    float spacing = 10.0f;
+    float spacing = 8.0f;  // Reduced from 10 to 8
     float totalWidth = btnSize * 6 + spacing * 5;
     float startX = x + (width - totalWidth) / 2.0f;
     
+    // Center buttons vertically in their area
+    float btnY = y;
+    
     // ---- SHUFFLE BUTTON ----
     float btnX = startX;
-    bool hover = RefRectHover(btnX, y, btnSize, btnSize, refMouse);
-    DrawScaledRect(btnX, y, btnSize, btnSize, 
+    bool hover = RefRectHover(btnX, btnY, btnSize, btnSize, refMouse);
+    DrawScaledRect(btnX, btnY, btnSize, btnSize, 
                    hover ? Color{40, 45, 65, 200} : Color{20, 22, 35, 180});
-    DrawScaledRectLines(btnX, y, btnSize, btnSize, 
+    DrawScaledRectLines(btnX, btnY, btnSize, btnSize, 
                         m_playlist.isShuffled ? COLOR_TOXIC : Color{30, 35, 50, 100});
     
     Texture2D shuffleIcon = GetIcon("shuffle");
     if (shuffleIcon.id != 0) {
-        float iconSize = 20.0f;
+        float iconSize = 18.0f;
         float iconX = btnX + (btnSize - iconSize) / 2.0f;
-        float iconY = y + (btnSize - iconSize) / 2.0f;  // FIXED: btnY -> y
+        float iconY = btnY + (btnSize - iconSize) / 2.0f;
         DrawTexturePro(shuffleIcon,
                        {0, 0, (float)shuffleIcon.width, (float)shuffleIcon.height},
                        {SX(iconX), SY(iconY), iconSize * g_uiScale, iconSize * g_uiScale},
                        {0, 0}, 0.0f,
                        m_playlist.isShuffled ? COLOR_TOXIC : COLOR_GHOST);
     } else {
-        DrawScaledText("⟳", btnX + 4, y + 4, 14, 
+        DrawScaledText("⟳", btnX + 4, btnY + 4, 14, 
                        m_playlist.isShuffled ? COLOR_TOXIC : COLOR_GHOST);
     }
     if (clicked && hover) ToggleShuffle();
@@ -376,32 +381,32 @@ void MusicPlayer::DrawControls(float x, float y, float width) {
     btnX += btnSize + spacing;
     
     // ---- PREVIOUS BUTTON ----
-    hover = RefRectHover(btnX, y, btnSize, btnSize, refMouse);
-    DrawScaledRect(btnX, y, btnSize, btnSize, 
+    hover = RefRectHover(btnX, btnY, btnSize, btnSize, refMouse);
+    DrawScaledRect(btnX, btnY, btnSize, btnSize, 
                    hover ? Color{40, 45, 65, 200} : Color{20, 22, 35, 180});
-    DrawScaledRectLines(btnX, y, btnSize, btnSize, Color{30, 35, 50, 100});
+    DrawScaledRectLines(btnX, btnY, btnSize, btnSize, Color{30, 35, 50, 100});
     
     Texture2D prevIcon = GetIcon("prev");
     if (prevIcon.id != 0) {
-        float iconSize = 20.0f;
+        float iconSize = 18.0f;
         float iconX = btnX + (btnSize - iconSize) / 2.0f;
-        float iconY = y + (btnSize - iconSize) / 2.0f;  // FIXED: btnY -> y
+        float iconY = btnY + (btnSize - iconSize) / 2.0f;
         DrawTexturePro(prevIcon,
                        {0, 0, (float)prevIcon.width, (float)prevIcon.height},
                        {SX(iconX), SY(iconY), iconSize * g_uiScale, iconSize * g_uiScale},
                        {0, 0}, 0.0f,
                        hover ? COLOR_TOXIC : COLOR_GHOST);
     } else {
-        DrawScaledText("◄◄", btnX + 2, y + 4, 12, hover ? COLOR_TOXIC : COLOR_GHOST);
+        DrawScaledText("◄◄", btnX + 2, btnY + 4, 12, hover ? COLOR_TOXIC : COLOR_GHOST);
     }
     if (clicked && hover) Previous();
     
     btnX += btnSize + spacing;
     
     // ---- PLAY/PAUSE BUTTON (LARGER, MORE PROMINENT) ----
-    float playBtnSize = 36.0f;
-    float playX = btnX - 3;
-    float playY = y - 3;
+    float playBtnSize = 38.0f;  // Slightly larger
+    float playX = btnX - (playBtnSize - btnSize) / 2.0f;
+    float playY = btnY - (playBtnSize - btnSize) / 2.0f;
     bool playHover = RefRectHover(playX, playY, playBtnSize, playBtnSize, refMouse);
     
     DrawScaledRect(playX, playY, playBtnSize, playBtnSize, 
@@ -412,78 +417,78 @@ void MusicPlayer::DrawControls(float x, float y, float width) {
     if (m_playlist.isPlaying) {
         Texture2D pauseIcon = GetIcon("pause");
         if (pauseIcon.id != 0) {
-            float iconSize = 24.0f;
+            float iconSize = 22.0f;
             float iconX = playX + (playBtnSize - iconSize) / 2.0f;
-            float iconY = playY + (playBtnSize - iconSize) / 2.0f;  // FIXED: btnY -> playY
+            float iconY = playY + (playBtnSize - iconSize) / 2.0f;
             DrawTexturePro(pauseIcon,
                            {0, 0, (float)pauseIcon.width, (float)pauseIcon.height},
                            {SX(iconX), SY(iconY), iconSize * g_uiScale, iconSize * g_uiScale},
                            {0, 0}, 0.0f,
                            playHover ? COLOR_TOXIC : COLOR_CYAN);
         } else {
-            DrawScaledText("||", playX + 10, playY + 7, 14, COLOR_TOXIC);
+            DrawScaledText("||", playX + 11, playY + 7, 14, COLOR_TOXIC);
         }
     } else {
         Texture2D playIcon = GetIcon("play");
         if (playIcon.id != 0) {
-            float iconSize = 24.0f;
+            float iconSize = 22.0f;
             float iconX = playX + (playBtnSize - iconSize) / 2.0f;
-            float iconY = playY + (playBtnSize - iconSize) / 2.0f;  // FIXED: btnY -> playY
+            float iconY = playY + (playBtnSize - iconSize) / 2.0f;
             DrawTexturePro(playIcon,
                            {0, 0, (float)playIcon.width, (float)playIcon.height},
                            {SX(iconX), SY(iconY), iconSize * g_uiScale, iconSize * g_uiScale},
                            {0, 0}, 0.0f,
                            playHover ? COLOR_AMBER : COLOR_TOXIC);
         } else {
-            DrawScaledText("▶", playX + 10, playY + 7, 14, COLOR_AMBER);
+            DrawScaledText("▶", playX + 11, playY + 7, 14, COLOR_AMBER);
         }
     }
     if (clicked && playHover) TogglePlay();
     
-    btnX += playBtnSize + spacing - 3;
+    btnX = playX + playBtnSize + spacing;
     
     // ---- NEXT BUTTON ----
-    hover = RefRectHover(btnX, y, btnSize, btnSize, refMouse);
-    DrawScaledRect(btnX, y, btnSize, btnSize, 
+    hover = RefRectHover(btnX, btnY, btnSize, btnSize, refMouse);
+    DrawScaledRect(btnX, btnY, btnSize, btnSize, 
                    hover ? Color{40, 45, 65, 200} : Color{20, 22, 35, 180});
-    DrawScaledRectLines(btnX, y, btnSize, btnSize, Color{30, 35, 50, 100});
+    DrawScaledRectLines(btnX, btnY, btnSize, btnSize, Color{30, 35, 50, 100});
     
     Texture2D nextIcon = GetIcon("next");
     if (nextIcon.id != 0) {
-        float iconSize = 20.0f;
+        float iconSize = 18.0f;
         float iconX = btnX + (btnSize - iconSize) / 2.0f;
-        float iconY = y + (btnSize - iconSize) / 2.0f;  // FIXED: btnY -> y
+        float iconY = btnY + (btnSize - iconSize) / 2.0f;
         DrawTexturePro(nextIcon,
                        {0, 0, (float)nextIcon.width, (float)nextIcon.height},
                        {SX(iconX), SY(iconY), iconSize * g_uiScale, iconSize * g_uiScale},
                        {0, 0}, 0.0f,
                        hover ? COLOR_TOXIC : COLOR_GHOST);
     } else {
-        DrawScaledText("►►", btnX + 2, y + 4, 12, hover ? COLOR_TOXIC : COLOR_GHOST);
+        DrawScaledText("►►", btnX + 2, btnY + 4, 12, hover ? COLOR_TOXIC : COLOR_GHOST);
     }
     if (clicked && hover) Next();
     
     btnX += btnSize + spacing;
     
     // ---- REPEAT BUTTON ----
-    hover = RefRectHover(btnX, y, btnSize, btnSize, refMouse);
-    DrawScaledRect(btnX, y, btnSize, btnSize, 
+    hover = RefRectHover(btnX, btnY, btnSize, btnSize, refMouse);
+    DrawScaledRect(btnX, btnY, btnSize, btnSize, 
                    hover ? Color{40, 45, 65, 200} : Color{20, 22, 35, 180});
-    DrawScaledRectLines(btnX, y, btnSize, btnSize, 
+    DrawScaledRectLines(btnX, btnY, btnSize, btnSize, 
                         m_playlist.isRepeating ? COLOR_TOXIC : Color{30, 35, 50, 100});
     
     Texture2D repeatIcon = GetIcon("repeat");
     if (repeatIcon.id != 0) {
-        float iconSize = 20.0f;
+        float iconSize = 18.0f;
         float iconX = btnX + (btnSize - iconSize) / 2.0f;
-        float iconY = y + (btnSize - iconSize) / 2.0f;  // FIXED: btnY -> y
+        float iconY = btnY + (btnSize - iconSize) / 2.0f;
         DrawTexturePro(repeatIcon,
                        {0, 0, (float)repeatIcon.width, (float)repeatIcon.height},
                        {SX(iconX), SY(iconY), iconSize * g_uiScale, iconSize * g_uiScale},
                        {0, 0}, 0.0f,
                        m_playlist.isRepeating ? COLOR_TOXIC : COLOR_GHOST);
     } else {
-        DrawScaledText("↻", btnX + 4, y + 4, 14, 
+        DrawScaledText("↻", btnX + 4, btnY + 4, 14, 
                        m_playlist.isRepeating ? COLOR_TOXIC : COLOR_GHOST);
     }
     if (clicked && hover) ToggleRepeat();
