@@ -1330,8 +1330,8 @@ void DrawUI(void) {
     // ============================================================
     // CONNECTION MENU - ALWAYS FIRST (overrides everything)
     // ============================================================
-    if (g_player.isInConnectionMenu) {
-        DrawConnectionScreen();
+    if (g_loginScreen.isActive) {
+        DrawLoginScreen(g_loginScreen);
         return;
     }
 

@@ -1,7 +1,11 @@
 #pragma once
 #include "raylib.h"
+#include "connection/login_screen.h"
 
 #include <string> 
+
+struct LoginScreen;
+void DrawLoginScreen(const LoginScreen& login);
 
 // Color palette
 extern Color COLOR_BLACK;
@@ -23,6 +27,8 @@ extern float g_fontScale;
 extern float g_uiScale;
 extern float g_offsetX;
 extern float g_offsetY;
+
+extern struct LoginScreen g_loginScreen;
 
 void InitColors(void);
 void DrawUI(void);

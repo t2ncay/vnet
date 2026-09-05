@@ -6,12 +6,14 @@
 #include "vnet_client.h"
 #include "vnet_protocol.h" 
 #include "desktop.h"
+#include "connection/login_screen.h"
 
 #include <cstdio>
 #include <cmath>
 
 GameState g_game = {0};
 extern Player g_player;
+LoginScreen g_loginScreen;
 
 // ============================================================
 // SCALE / LETTERBOX CALCULATION
@@ -50,6 +52,8 @@ bool InitGame(void) {
     InitVNETSystem();
     InitPlayer();
     LoadAssets();
+
+    InitLoginScreen(g_loginScreen);
 
     GetDesktop().Init();
     GetMusicPlayer().Init(); 
@@ -114,55 +118,27 @@ void ShutdownGame(void) {
 }
 
 void HandleInput(void) {
+        // ============================================================
+    // LOGIN SCREEN INPUT - REPLACES OLD CONNECTION MENU
     // ============================================================
-    // CONNECTION MENU INPUT
-    // ============================================================
-    if (g_player.isInConnectionMenu) {
-        Vector2 refMouse = GetRefMousePos();
-        bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    if (g_loginScreen.isActive) {
+        bool shouldConnect = HandleLoginInput(g_loginScreen);
+        
+        if (shouldConnect) {
+            if (InitVNetClient(GetLoginIP(g_loginScreen), 8000)) {
+                g_loginScreen.isActive = false;
+                strcpy(g_player.handle, GetLoginHandle(g_loginScreen));
+                PushCliLog("[CONNECT]: Connected to %s as %s", 
+                          GetLoginIP(g_loginScreen), g_player.handle);
+                LoadPage("vnet.dir");
                 
-        bool ipBoxHover = RefRectHover(200, 290, 400, 40, refMouse);
-        if (clicked && ipBoxHover) {
-            g_player.ipBoxFocused = true;
-        }
-        
-        bool btnHover = RefRectHover(270, 370, 260, 40, refMouse);
-        if ((clicked && btnHover) || IsKeyPressed(KEY_ENTER)) {
-            if (strlen(g_player.ipInputBuffer) > 0) {
-                if (InitVNetClient(g_player.ipInputBuffer, 8000)) {
-                    g_player.isInConnectionMenu = false;
-                    PushCliLog("[CONNECT]: Connected to %s", g_player.ipInputBuffer);
-                    LoadPage("vnet.dir");
-                    
-                    std::string pingMsg = std::string(VNetCmd::PING) + ":" + g_player.handle + ":" + g_player.currentURL;
-                    VNetSendRaw(pingMsg);
-                } else {
-                    PushCliLog("[ERROR]: Failed to connect to %s", g_player.ipInputBuffer);
-                }
+                std::string pingMsg = std::string(VNetCmd::PING) + ":" + 
+                                     g_player.handle + ":" + g_player.currentURL;
+                VNetSendRaw(pingMsg);
+            } else {
+                PushCliLog("[ERROR]: Failed to connect to %s", GetLoginIP(g_loginScreen));
             }
         }
-        
-        if (g_player.ipBoxFocused) {
-            int key = GetCharPressed();
-            while (key > 0) {
-                if (key >= 32 && key <= 126) {
-                    size_t len = strlen(g_player.ipInputBuffer);
-                    if (len < sizeof(g_player.ipInputBuffer) - 1) {
-                        g_player.ipInputBuffer[len] = (char)key;
-                        g_player.ipInputBuffer[len + 1] = '\0';
-                    }
-                }
-                key = GetCharPressed();
-            }
-            
-            if (IsKeyPressed(KEY_BACKSPACE)) {
-                int len = (int)strlen(g_player.ipInputBuffer);
-                if (len > 0) {
-                    g_player.ipInputBuffer[len - 1] = '\0';
-                }
-            }
-        }
-        
         return;
     }
 

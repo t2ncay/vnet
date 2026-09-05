@@ -36,3 +36,4 @@ struct GameState {
 };
 
 extern GameState g_game;
+extern struct LoginScreen g_loginScreen;
