@@ -282,7 +282,8 @@ void DrawScaledRectLines(float x, float y, float w, float h, Color color) {
 
 void DrawScaledText(const char* text, float x, float y, float fontSize, Color color) {
     if (g_fontVCR.texture.id != 0) {
-        DrawTextEx(g_fontVCR, text, {SX(x), SY(y)}, fontSize * g_uiScale, 1.0f, color);
+        float globalScale = 1.3f;
+                DrawTextEx(g_fontVCR, text, {SX(x), SY(y)}, fontSize * g_uiScale * globalScale, 1.0f, color);
     } else {
         DrawText(text, (int)SX(x), (int)SY(y), (int)(fontSize * g_uiScale), color);
     }
@@ -321,12 +322,12 @@ void InitColors(void) {
 }
 
 void LoadAssets(void) {
-    g_fontVCR = LoadFont("assets/VCR_OSD_MONO_1.001.ttf");
+    g_fontVCR = LoadFont("assets/JetBrainsMono-Bold.ttf");
     if (g_fontVCR.texture.id == 0) {
-        printf("Warning: Could not load VCR_OSD_MONO font. Using default font.\n");
+        printf("Warning: Could not load JetBrainsMono-Bold font. Using default font.\n");
     } else {
         SetTextureFilter(g_fontVCR.texture, TEXTURE_FILTER_BILINEAR);
-        printf("VCR_OSD_MONO font loaded successfully.\n");
+        printf("JetBrainsMono-Bold font loaded successfully.\n");
     }
     InitColors();
 }

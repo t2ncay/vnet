@@ -35,6 +35,49 @@ static void LaunchFeed() {
     GetDesktop().OpenApp(AppType::Feed, "System Feed");
 }
 
+// icon functions
+
+void Desktop::LoadIcons() {
+    // Load all icon textures
+    // You can use PNG with transparency (good for dark themes)
+    
+    auto loadIcon = [this](const std::string& key, const std::string& path) {
+        Texture2D tex = LoadTexture(path.c_str());
+        if (tex.id != 0) {
+            m_iconTextures[key] = tex;
+            printf("[ICON] Loaded: %s\n", path.c_str());
+        } else {
+            printf("[ICON] Failed to load: %s\n", path.c_str());
+        }
+    };
+    
+    // Load your icons
+    loadIcon("browser", "assets/icons/browser.png");
+    loadIcon("terminal", "assets/icons/terminal.png");
+    loadIcon("profile", "assets/icons/profile.png");
+    loadIcon("settings", "assets/icons/settings.png");
+    loadIcon("feed", "assets/icons/feed.png");
+    loadIcon("folder", "assets/icons/folder.png");
+    loadIcon("about", "assets/icons/about.png");
+}
+
+void Desktop::UnloadIcons() {
+    for (auto& pair : m_iconTextures) {
+        UnloadTexture(pair.second);
+    }
+    m_iconTextures.clear();
+}
+
+Texture2D Desktop::GetIcon(const std::string& key) {
+    auto it = m_iconTextures.find(key);
+    if (it != m_iconTextures.end()) {
+        return it->second;
+    }
+    // Return empty texture if not found
+    Texture2D empty = {0};
+    return empty;
+}
+
 // ============================================================
 // DESKTOP IMPLEMENTATION
 // ============================================================
@@ -46,12 +89,14 @@ void Desktop::Init() {
     m_appGridVisible = false;
     m_currentWorkspace = 0;
     
+    LoadIcons();  // Load icons before creating apps
+    
     m_apps.clear();
-    m_apps.push_back({"Browser", "🌐", "Browse the VNET", LaunchBrowser});
-    m_apps.push_back({"Terminal", "💻", "Command line", LaunchTerminal});
-    m_apps.push_back({"Profile", "👤", "User info", LaunchProfile});
-    m_apps.push_back({"Settings", "⚙", "Preferences", LaunchSettings});
-    m_apps.push_back({"Feed", "📊", "System feed", LaunchFeed});
+    m_apps.push_back({"Browser", "browser", "Browse the VNET", LaunchBrowser});
+    m_apps.push_back({"Terminal", "terminal", "Command line", LaunchTerminal});
+    m_apps.push_back({"Profile", "profile", "User info", LaunchProfile});
+    m_apps.push_back({"Settings", "settings", "Preferences", LaunchSettings});
+    m_apps.push_back({"Feed", "feed", "System feed", LaunchFeed});
     
     m_workspaces.clear();
     m_workspaces.emplace_back("Main");
@@ -65,6 +110,7 @@ void Desktop::Shutdown() {
     m_windows.clear();
     m_apps.clear();
     m_workspaces.clear();
+    UnloadIcons();
 }
 
 // ============================================================
@@ -389,14 +435,33 @@ void Desktop::DrawDesktopIcons() {
         
         bool hover = RefRectHover(x, y, iconSize, iconSize, refMouse);
         
+        // Background
         DrawScaledRect(x, y, iconSize, iconSize, 
                        hover ? Color{40, 45, 65, 200} : Color{20, 22, 35, 150});
         DrawScaledRectLines(x, y, iconSize, iconSize, 
                             hover ? COLOR_BLOOD : Color{30, 35, 50, 100});
         
-        DrawScaledText(m_apps[i].icon.c_str(), 
-                       x + (iconSize - 24) / 2, y + 8, 28, COLOR_CYAN);
+        // Draw icon texture instead of emoji
+        Texture2D icon = GetIcon(m_apps[i].iconKey);
+        if (icon.id != 0) {
+            float iconDrawSize = 40.0f;
+            float iconX = x + (iconSize - iconDrawSize) / 2.0f;
+            float iconY = y + 8.0f;
+            DrawTexturePro(
+                icon,
+                {0, 0, (float)icon.width, (float)icon.height},
+                {SX(iconX), SY(iconY), iconDrawSize * g_uiScale, iconDrawSize * g_uiScale},
+                {0, 0},
+                0.0f,
+                hover ? COLOR_TOXIC : COLOR_CYAN
+            );
+        } else {
+            // Fallback: show text
+            DrawScaledText(m_apps[i].iconKey.c_str(), 
+                           x + (iconSize - 24) / 2, y + 8, 16, COLOR_CYAN);
+        }
         
+        // Icon label
         DrawScaledText(m_apps[i].name.c_str(), 
                        x + 10, y + iconSize - 18, 10, hover ? COLOR_TOXIC : COLOR_GHOST);
     }
@@ -467,7 +532,7 @@ void Desktop::DrawTopBar() {
     
     char vcoin[32];
     snprintf(vcoin, sizeof(vcoin), "VCOIN: %.2f", g_player.vcoin);
-    DrawScaledText(vcoin, REF_WIDTH - 180, barY + 14, 11, COLOR_TOXIC);
+    DrawScaledText(vcoin, REF_WIDTH - 200, barY + 16, 11, COLOR_TOXIC);
 }
 
 void Desktop::DrawWorkspaceIndicator() {
@@ -522,7 +587,7 @@ void Desktop::DrawAppGrid() {
     DrawScaledText("Apps", startX + 20, startY + 10, 16, COLOR_BLOOD);
     DrawScaledLine(startX + 10, startY + 40, startX + 610, startY + 40, COLOR_BORDER);
     
-    for (int i = 0; i < (int)m_apps.size(); i++) {
+        for (int i = 0; i < (int)m_apps.size(); i++) {
         int col = i % cols;
         int row = i / cols;
         float x = startX + col * (iconSize + spacing);
@@ -535,7 +600,24 @@ void Desktop::DrawAppGrid() {
                hover ? Color{40, 45, 65, 200} : Color{20, 22, 35, 200});
         DrawScaledRectLines(x, y, iconSize, iconSize, hover ? COLOR_BLOOD : COLOR_BORDER);
         
-        DrawScaledText(m_apps[i].icon.c_str(), x + (iconSize - 24) / 2, y + 10, 24, COLOR_CYAN);
+        // Draw icon texture
+        Texture2D icon = GetIcon(m_apps[i].iconKey);
+        if (icon.id != 0) {
+            float iconDrawSize = 40.0f;
+            float iconX = x + (iconSize - iconDrawSize) / 2.0f;
+            float iconY = y + 10.0f;
+            DrawTexturePro(
+                icon,
+                {0, 0, (float)icon.width, (float)icon.height},
+                {SX(iconX), SY(iconY), iconDrawSize * g_uiScale, iconDrawSize * g_uiScale},
+                {0, 0},
+                0.0f,
+                hover ? COLOR_TOXIC : COLOR_CYAN
+            );
+        } else {
+            DrawScaledText(m_apps[i].iconKey.c_str(), x + (iconSize - 24) / 2, y + 10, 20, COLOR_CYAN);
+        }
+        
         DrawScaledText(m_apps[i].name.c_str(), x + 10, y + iconSize - 20, 10, COLOR_GHOST);
     }
 }

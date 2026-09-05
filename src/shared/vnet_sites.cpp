@@ -1796,13 +1796,6 @@ void LoadPageContent(const char* url, std::vector<std::string>& pageLines, Playe
                 pageLines.push_back("[HR]");
             }
             
-            // --- SCAN BUTTON ---
-            pageLines.push_back("[SUBTITLE] █ SUBNET DISCOVERY SCANNER");
-            pageLines.push_back("[TEXT] ");
-            pageLines.push_back("[BTN:scan_btn]>>> SCAN FOR NEW SUBNET NODES (240s COOLDOWN) <<<");
-            pageLines.push_back("[TEXT] ");
-            pageLines.push_back("[HR]");
-            
         } else {
             // No sites assigned yet - show connection status
             pageLines.push_back("[BLOOD] [WARNING]: NO SITES ASSIGNED YET!");

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <unordered_map>
 
 // ============================================================
 // GNOME-STYLE DESKTOP
@@ -32,7 +33,7 @@ struct AppWindow {
 
 struct AppIcon {
     std::string name;
-    std::string icon;
+    std::string iconKey;  // Key to look up texture
     std::string description;
     std::function<void()> onClick;
 };
@@ -60,21 +61,17 @@ public:
     bool IsActive() const { return m_active; }
     void Toggle() {  }
     
-    // Window management
     int OpenApp(AppType type, const char* title = nullptr);
     void CloseWindow(int idx);
     void FocusWindow(int idx);
     void MinimizeWindow(int idx);
     void MaximizeWindow(int idx);
 
-    // Workspace management
     void SwitchWorkspace(int idx);
     void MoveWindowToWorkspace(int winIdx, int wsIdx);
 
-    // Check if desktop is blocking input
     bool IsDesktopBlocking() const { return m_active && !m_appGridVisible; }
     
-    // NEW: Check if the browser window is focused (for input forwarding)
     bool IsBrowserFocused() const {
         for (const auto& win : m_windows) {
             if (win.type == AppType::Browser && win.focused && !win.minimized) {
@@ -84,12 +81,11 @@ public:
         return false;
     }
     
-    // NEW: Get the browser window's content area for mouse hit testing
     bool GetBrowserRect(int& x, int& y, int& w, int& h) const {
         for (const auto& win : m_windows) {
             if (win.type == AppType::Browser && !win.minimized) {
                 x = win.x + 4;
-                y = win.y + m_windowTitleHeight + 4 + 50; // URL bar offset
+                y = win.y + m_windowTitleHeight + 4 + 50;
                 w = win.w - 8;
                 h = win.h - m_windowTitleHeight - 8 - 60;
                 return true;
@@ -141,11 +137,15 @@ private:
     // App content renderers
     void DrawBrowser(const AppWindow& win);
     void DrawBrowserConnectionOverlay(float contentX, float contentY, float contentW, float contentH);
-    
     void DrawTerminal(const AppWindow& win);
     void DrawProfile(const AppWindow& win);
     void DrawSettings(const AppWindow& win);
     void DrawFeed(const AppWindow& win);
+
+    // Icon management
+    void LoadIcons();
+    void UnloadIcons();
+    Texture2D GetIcon(const std::string& key);
 
     std::vector<AppWindow> m_windows;
     std::vector<AppIcon> m_apps;
@@ -156,6 +156,9 @@ private:
     bool m_active = false;
     int m_focused = -1;
     bool m_appGridVisible = false;
+    
+    // Icon textures
+    std::unordered_map<std::string, Texture2D> m_iconTextures;
     
     // Layout constants
     float m_topBarHeight = 44.0f;
