@@ -470,39 +470,30 @@ void RunVNTServer(int port) {
             // ============================================================
             // PING
             // ============================================================
-            if (cmd == VNetCmd::PING) {
-                // Parse handle and URL - Format: "PING:handle:url"
+            if (cmd == "PING" || cmd == VNetCmd::PING) {
                 size_t sep = payload.find(':');
                 if (sep != std::string::npos) {
                     std::string handle = payload.substr(0, sep);
                     std::string url = payload.substr(sep + 1);
                     
-                    // Update or register peer
                     bool found = false;
                     for (size_t i = 0; i < g_activePorts.size(); i++) {
                         if (g_activePorts[i] == senderPort) {
                             g_activeURLs[i] = url;
                             g_activeIPs[i] = senderIP;
                             g_activeLastSeen[i] = g_serverUptime;
-                            g_activeHandles[i] = handle;
+                            g_activeHandles[i] = handle; // Fixed: update handle on ping
                             found = true;
                             break;
                         }
                     }
                     
                     if (!found) {
-                        // New peer - assign 20 sites
-                        std::vector<std::string> assigned;
-                        // Add mutual sites
-                        const char* mutualSites[] = {
+                        std::vector<std::string> assigned = {
                             "market.vnet", "vault.vnet", "terminal.vnet",
                             "forum.vnet", "crypto.vnet", "bounty.vnet",
                             "vektrapay.vnet", "hellroom.vnet", "hashbeat.vnet"
                         };
-                        for (int i = 0; i < 9; i++) {
-                            assigned.push_back(mutualSites[i]);
-                        }
-                        // Fill rest randomly
                         while (assigned.size() < 20) {
                             int idx = rand() % g_allSites.size();
                             std::string site = g_allSites[idx];
@@ -525,8 +516,43 @@ void RunVNTServer(int port) {
                         g_activeHandles.push_back(handle);
                         
                         SendKeySync(senderPort, senderIP, dirPayload);
+                    }
+                }
+            }
+            
+            // ============================================================
+            // CHAT
+            // ============================================================
+            else if (cmd == "CHAT" || cmd == VNetCmd::CHAT) {
+                size_t sep = payload.find(':');
+                if (sep != std::string::npos) {
+                    std::string handle = payload.substr(0, sep);
+                    std::string msgText = payload.substr(sep + 1);
+                    BroadcastFeed("[CHAT] <" + handle + ">: " + msgText);
+                }
+            }
+            
+            // ============================================================
+            // WHISPER
+            // ============================================================
+            else if (cmd == "WHISPER" || cmd == VNetCmd::WHISPER) {
+                size_t sep1 = payload.find(':');
+                if (sep1 != std::string::npos) {
+                    std::string fromHandle = payload.substr(0, sep1);
+                    std::string rest = payload.substr(sep1 + 1);
+                    size_t sep2 = rest.find(':');
+                    if (sep2 != std::string::npos) {
+                        std::string toHandle = rest.substr(0, sep2);
+                        std::string msgText = rest.substr(sep2 + 1);
                         
-                        printf("[REGISTRY] New peer from %s:%d (handle: %s)\n", senderIP.c_str(), senderPort, handle.c_str());
+                        for (size_t i = 0; i < g_activeHandles.size(); i++) {
+                            if (g_activeHandles[i] == toHandle) {
+                                // Fixed: VNetResp::WHISPER_IN already contains trailing colon
+                                std::string whisperPacket = std::string(VNetResp::WHISPER_IN) + fromHandle + ":" + msgText;
+                                VNetLib::SendTo(g_serverSock, g_activeIPs[i], g_activePorts[i], whisperPacket);
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -562,44 +588,6 @@ void RunVNTServer(int port) {
                             blocks += g_activeBlocks[i] + (i < g_activeBlocks.size() - 1 ? ";" : "");
                         }
                         VNetLib::SendTo(g_serverSock, senderIP, senderPort, blocks);
-                    }
-                }
-            }
-            
-            // ============================================================
-            // CHAT
-            // ============================================================
-            else if (cmd == VNetCmd::CHAT) {
-                size_t sep = payload.find(':');
-                if (sep != std::string::npos) {
-                    std::string handle = payload.substr(0, sep);
-                    std::string msgText = payload.substr(sep + 1);
-                    BroadcastFeed("[CHAT] <" + handle + ">: " + msgText);
-                }
-            }
-            
-            // ============================================================
-            // WHISPER
-            // ============================================================
-            else if (cmd == VNetCmd::WHISPER) {
-                // Format: from_handle:target_handle:message
-                size_t sep1 = payload.find(':');
-                if (sep1 != std::string::npos) {
-                    std::string fromHandle = payload.substr(0, sep1);
-                    std::string rest = payload.substr(sep1 + 1);
-                    size_t sep2 = rest.find(':');
-                    if (sep2 != std::string::npos) {
-                        std::string toHandle = rest.substr(0, sep2);
-                        std::string msgText = rest.substr(sep2 + 1);
-                        
-                        // Find target
-                        for (size_t i = 0; i < g_activeHandles.size(); i++) {
-                            if (g_activeHandles[i] == toHandle) {
-                                VNetLib::SendTo(g_serverSock, g_activeIPs[i], g_activePorts[i],
-                                              std::string(VNetResp::WHISPER_IN) + fromHandle + ":" + msgText);
-                                break;
-                            }
-                        }
                     }
                 }
             }

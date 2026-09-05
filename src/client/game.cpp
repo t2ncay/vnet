@@ -69,115 +69,6 @@ void UpdateGame(float dt) {
     HandleResize();
     HandleInput();
 
-    // ============================================================
-    // PROCESS NETWORK PACKETS FROM SERVER
-    // ============================================================
-    if (IsVNetConnected()) {
-        auto packets = VNetReceive();
-        for (const auto& packet : packets) {
-            // Parse packet
-            auto parsed = ParsePacket(packet);
-            std::string cmd = parsed.first;
-            std::string payload = parsed.second;
-            
-            // Handle server responses
-            if (cmd == VNetResp::FEED_EVENT) {
-                PushFeedLog(payload.c_str());
-            }
-            else if (cmd == VNetResp::KEY_SYNC) {
-                // Parse key sync - format: KEY_SYNC:k1:k2:k3:k4:k5:k6:k7:k8:loc1:loc2:...:dirPayload
-                // For now, just log it
-                PushCliLog("[SERVER]: Received key sync");
-            }
-            else if (cmd == VNetResp::NEW_BLOCKS) {
-                // Parse new blocks
-                PushCliLog("[SERVER]: New mining blocks available!");
-            }
-            else if (cmd == VNetResp::WHISPER_IN) {
-                // Format: WHISPER_IN:from_handle:message
-                size_t sep = payload.find(':');
-                if (sep != std::string::npos) {
-                    std::string fromHandle = payload.substr(0, sep);
-                    std::string msg = payload.substr(sep + 1);
-                    char buffer[256];
-                    snprintf(buffer, sizeof(buffer), "[WHISPER FROM <%s>]: %s", fromHandle.c_str(), msg.c_str());
-                    PushFeedLog(buffer);
-                    PushCliLog(buffer);
-                }
-            }
-            else if (cmd == VNetResp::EXPLOIT_DOS) {
-                PushCliLog("[ALERT]: INCOMING DOS ATTACK!");
-                PushFeedLog("[DOS ATTACK]: You are being DOSed!");
-                g_player.dosTimer = 8.0f;
-            }
-            else if (cmd == VNetResp::EXPLOIT_TRACE_SPIKE) {
-                PushCliLog("[ALERT]: REVERSE TRACE SPIKE DETECTED!");
-                if (g_player.iceShields > 0) {
-                    g_player.iceShields--;
-                    PushCliLog("[ICE]: ABSORBED TRACE SPIKE! (%d/3 remaining)", g_player.iceShields);
-                } else {
-                    g_player.traceLevel += 35;
-                    if (g_player.traceLevel > 100) g_player.traceLevel = 100;
-                }
-            }
-            else if (cmd == VNetResp::EXPLOIT_REDIRECT) {
-                PushCliLog("[ALERT]: BGP HIJACK DETECTED! REDIRECTING TO %s", payload.c_str());
-                LoadPage(payload.c_str());
-            }
-            else if (cmd == VNetResp::EXPLOIT_SITE_OVERLOADED) {
-                PushCliLog("[ALERT]: SITE %s IS OVERLOADED!", payload.c_str());
-            }
-            else if (cmd == VNetResp::SCAN_RESULT) {
-                PushCliLog("[SCAN RESULT]: Discovered %s", payload.c_str());
-                // Add to discovered sites if not already there
-                bool found = false;
-                for (int i = 0; i < g_player.assignedCount; i++) {
-                    if (strcmp(g_player.assignedSites[i], payload.c_str()) == 0) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found && g_player.assignedCount < 20) {
-                    strcpy(g_player.assignedSites[g_player.assignedCount], payload.c_str());
-                    g_player.assignedCount++;
-                    if (strcmp(g_player.currentURL, "vnet.dir") == 0) {
-                        RefreshPage();
-                    }
-                }
-            }
-            else if (cmd == VNetResp::SATSCAN_RES) {
-                PushCliLog("[SATSCAN RESULTS]:");
-                // Parse and display results
-                std::string remaining = payload;
-                size_t pos;
-                while ((pos = remaining.find(';')) != std::string::npos) {
-                    std::string entry = remaining.substr(0, pos);
-                    remaining = remaining.substr(pos + 1);
-                    // Format: site|traffic|status
-                    size_t sep1 = entry.find('|');
-                    if (sep1 != std::string::npos) {
-                        std::string site = entry.substr(0, sep1);
-                        std::string rest = entry.substr(sep1 + 1);
-                        size_t sep2 = rest.find('|');
-                        if (sep2 != std::string::npos) {
-                            std::string traffic = rest.substr(0, sep2);
-                            std::string status = rest.substr(sep2 + 1);
-                            PushCliLog("  %s | %s KB/s | [%s]", site.c_str(), traffic.c_str(), status.c_str());
-                        }
-                    }
-                }
-            }
-            else if (cmd == VNetResp::EXPLOIT_WINNER) {
-                PushCliLog("[GAME OVER]: %s", payload.c_str());
-                g_player.gameOver = true;
-            }
-            else {
-                // Unknown packet - log it
-                PushCliLog("[NET]: %s", packet.c_str());
-            }
-        }
-    }
-
     UpdateVNET(dt);
     UpdatePlayer(dt);
 
@@ -284,6 +175,97 @@ void HandleInput(void) {
 
     if (IsKeyPressed(KEY_TAB)) {
         g_player.cliOpen = !g_player.cliOpen;
+    }
+
+        // ============================================================
+    // HELLROOM INPUT HANDLING
+    // ============================================================
+    if (strcmp(g_player.currentURL, "hellroom.vnet") == 0) {
+        // Handle input only if not in CLI overlay
+        if (!g_player.cliOpen) {
+            if (g_hellroom.handleFocused) {
+                int key = GetCharPressed();
+                while (key > 0) {
+                    if (key >= 32 && key <= 126) {
+                        size_t len = strlen(g_hellroom.handleInputBuffer);
+                        if (len < sizeof(g_hellroom.handleInputBuffer) - 1) {
+                            g_hellroom.handleInputBuffer[len] = (char)key;
+                            g_hellroom.handleInputBuffer[len + 1] = '\0';
+                        }
+                    }
+                    key = GetCharPressed();
+                }
+                if (IsKeyPressed(KEY_BACKSPACE)) {
+                    int len = (int)strlen(g_hellroom.handleInputBuffer);
+                    if (len > 0) {
+                        g_hellroom.handleInputBuffer[len - 1] = '\0';
+                    }
+                }
+                if (IsKeyPressed(KEY_ENTER)) {
+                    // Update player handle
+                    if (strlen(g_hellroom.handleInputBuffer) > 0) {
+                        strcpy(g_player.handle, g_hellroom.handleInputBuffer);
+                        PushCliLog("[HELLROOM]: Handle updated to %s", g_player.handle);
+                    }
+                    g_hellroom.handleFocused = false;
+                    g_hellroom.chatFocused = true;
+                }
+            } else if (g_hellroom.chatFocused) {
+                int key = GetCharPressed();
+                while (key > 0) {
+                    if (key >= 32 && key <= 126) {
+                        size_t len = strlen(g_hellroom.chatInputBuffer);
+                        if (len < sizeof(g_hellroom.chatInputBuffer) - 1) {
+                            g_hellroom.chatInputBuffer[len] = (char)key;
+                            g_hellroom.chatInputBuffer[len + 1] = '\0';
+                        }
+                    }
+                    key = GetCharPressed();
+                }
+                if (IsKeyPressed(KEY_BACKSPACE)) {
+                    int len = (int)strlen(g_hellroom.chatInputBuffer);
+                    if (len > 0) {
+                        g_hellroom.chatInputBuffer[len - 1] = '\0';
+                    }
+                }
+                if (IsKeyPressed(KEY_ENTER)) {
+                    if (strlen(g_hellroom.chatInputBuffer) > 0) {
+                        // Send message
+                        if (strlen(g_hellroom.chatInputBuffer) >= 3 && 
+                            (strncmp(g_hellroom.chatInputBuffer, "/w ", 3) == 0 || 
+                             strncmp(g_hellroom.chatInputBuffer, "/pm ", 4) == 0)) {
+                            char* cmdStart = g_hellroom.chatInputBuffer;
+                            if (cmdStart[0] == '/' && cmdStart[1] == 'w') {
+                                cmdStart += 3;
+                            } else if (cmdStart[0] == '/' && cmdStart[1] == 'p' && cmdStart[2] == 'm') {
+                                cmdStart += 4;
+                            }
+                            while (*cmdStart == ' ') cmdStart++;
+                            
+                            char target[64] = {0};
+                            char msg[256] = {0};
+                            if (sscanf(cmdStart, "%63s %255[^\n]", target, msg) == 2) {
+                                std::string payload = std::string(g_player.handle) + ":" + target + ":" + msg;
+                                if (IsVNetConnected()) {
+                                    VNetSendRaw(std::string(VNetCmd::WHISPER) + ":" + payload);
+                                }
+                                char buffer[256];
+                                snprintf(buffer, sizeof(buffer), "[WHISPER TO <%s>]: %s", target, msg);
+                                PushCliLog(buffer);
+                                PushFeedLog(buffer);
+                            }
+                        } else {
+                            std::string payload = std::string(g_player.handle) + ":" + g_hellroom.chatInputBuffer;
+                            if (IsVNetConnected()) {
+                                VNetSendRaw(std::string(VNetCmd::CHAT) + ":" + payload);
+                            }
+                        }
+                        g_hellroom.chatInputBuffer[0] = '\0';
+                        TriggerJitter(0.2f);
+                    }
+                }
+            }
+        }
     }
 
     if (g_player.cliOpen) {

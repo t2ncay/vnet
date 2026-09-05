@@ -1,6 +1,8 @@
 #include "render.h"
 #include "vnet.h"
 #include "game.h"
+#include "vnet_client.h"
+#include "vnet_protocol.h"
 #include <cstdio>
 #include <cmath>
 #include <cstdarg>
@@ -889,6 +891,204 @@ void DrawConnectionOverlay(void) {
 }
 
 // ============================================================
+// HELLROOM CHATROOM UI (Port from Vyne Source)
+// ============================================================
+
+void DrawHellroomUI(float jx, float jy, Vector2 refMouse, bool clicked) {
+    float t = (float)GetTime();
+    float pulse = sinf(t * 5.0f) * 0.5f + 0.5f;
+
+    // Header
+    DrawScaledText("HELLROOM.VNET // DEMONIC P2P UNENCRYPTED CHATROOM", 
+                   40 + jx, 95 + jy, 14, COLOR_BLOOD);
+    DrawScaledLine(40 + jx, 115 + jy, 890 + jx, 115 + jy, COLOR_BORDER);
+
+    // Input bar background
+    DrawScaledRect(35 + jx, 125 + jy, 855, 52, COLOR_CLI_BG);
+    DrawScaledLine(35 + jx, 125 + jy, 890 + jx, 125 + jy, COLOR_BORDER);
+    DrawScaledLine(35 + jx, 177 + jy, 890 + jx, 177 + jy, COLOR_BORDER);
+
+    // Handle input box
+    float handleX = 45 + jx;
+    float handleY = 135 + jy;
+    float handleW = 180;
+    float handleH = 32;
+
+    bool handleHover = RefRectHover(handleX, handleY, handleW, handleH, refMouse);
+    if (clicked && handleHover) {
+        g_hellroom.handleFocused = true;
+        g_hellroom.chatFocused = false;
+    }
+
+    DrawScaledRect(handleX, handleY, handleW, handleH, COLOR_BLACK);
+    DrawScaledRectLines(handleX, handleY, handleW, handleH, 
+                        g_hellroom.handleFocused ? COLOR_BLOOD : COLOR_BORDER);
+
+    char handleDisplay[64];
+    if (g_hellroom.handleFocused) {
+        // Show cursor blink when focused
+        const char* cursor = (fmodf(t * 2.0f, 1.0f) > 0.5f) ? "_" : "";
+        snprintf(handleDisplay, sizeof(handleDisplay), "NICK: %s%s", 
+                 g_hellroom.handleInputBuffer, cursor);
+    } else {
+        snprintf(handleDisplay, sizeof(handleDisplay), "NICK: %s", 
+                 g_hellroom.handleInputBuffer);
+    }
+    DrawScaledText(handleDisplay, 52 + jx, 145 + jy, 11, 
+                   g_hellroom.handleFocused ? COLOR_TOXIC : COLOR_AMBER);
+
+    // Chat input box
+    float chatX = 235 + jx;
+    float chatY = 135 + jy;
+    float chatW = 520;
+    float chatH = 32;
+
+    bool chatHover = RefRectHover(chatX, chatY, chatW, chatH, refMouse);
+    if (clicked && chatHover) {
+        g_hellroom.chatFocused = true;
+        g_hellroom.handleFocused = false;
+    }
+
+    DrawScaledRect(chatX, chatY, chatW, chatH, COLOR_BLACK);
+    DrawScaledRectLines(chatX, chatY, chatW, chatH, 
+                        g_hellroom.chatFocused ? COLOR_BLOOD : COLOR_BORDER);
+
+    char chatDisplay[128];
+    if (g_hellroom.chatFocused) {
+        const char* cursor = (fmodf(t * 2.0f, 1.0f) > 0.5f) ? "_" : "";
+        snprintf(chatDisplay, sizeof(chatDisplay), "MSG> %s%s", 
+                 g_hellroom.chatInputBuffer, cursor);
+    } else {
+        snprintf(chatDisplay, sizeof(chatDisplay), "MSG> %s", 
+                 g_hellroom.chatInputBuffer);
+    }
+    // Truncate if too long (55 chars in Vyne)
+    if (strlen(chatDisplay) > 55) {
+        chatDisplay[55] = '\0';
+    }
+    DrawScaledText(chatDisplay, 242 + jx, 145 + jy, 11, 
+                   g_hellroom.chatFocused ? COLOR_TOXIC : COLOR_CYAN);
+
+    // Transmit button
+    float btnX = 765 + jx;
+    float btnY = 135 + jy;
+    float btnW = 115;
+    float btnH = 32;
+
+    bool btnHover = RefRectHover(btnX, btnY, btnW, btnH, refMouse);
+    DrawScaledRect(btnX, btnY, btnW, btnH, btnHover ? COLOR_BLOOD : COLOR_PANEL);
+    DrawScaledRectLines(btnX, btnY, btnW, btnH, COLOR_BLOOD);
+    DrawScaledText("TRANSMIT", 785 + jx, 145 + jy, 11, 
+                   btnHover ? COLOR_BLACK : COLOR_BLOOD);
+
+    // Handle transmit button click
+    if (btnHover && clicked) {
+        if (strlen(g_hellroom.chatInputBuffer) > 0) {
+            // Check for whisper command: /w <nickname> <message> or /pm <nickname> <message>
+            if (strlen(g_hellroom.chatInputBuffer) >= 3 && 
+                (strncmp(g_hellroom.chatInputBuffer, "/w ", 3) == 0 || 
+                 strncmp(g_hellroom.chatInputBuffer, "/pm ", 4) == 0)) {
+                // Whisper command
+                char* cmdStart = g_hellroom.chatInputBuffer;
+                if (cmdStart[0] == '/' && cmdStart[1] == 'w') {
+                    cmdStart += 3;
+                } else if (cmdStart[0] == '/' && cmdStart[1] == 'p' && cmdStart[2] == 'm') {
+                    cmdStart += 4;
+                }
+                // Skip spaces
+                while (*cmdStart == ' ') cmdStart++;
+                
+                char target[64] = {0};
+                char msg[256] = {0};
+                if (sscanf(cmdStart, "%63s %255[^\n]", target, msg) == 2) {
+                    // Send whisper
+                    std::string payload = std::string(g_player.handle) + ":" + target + ":" + msg;
+                    if (IsVNetConnected()) {
+                        VNetSendRaw(std::string(VNetCmd::WHISPER) + ":" + payload);
+                    }
+                    // Local reflection for sender
+                    char buffer[256];
+                    snprintf(buffer, sizeof(buffer), "[WHISPER TO <%s>]: %s", target, msg);
+                    PushCliLog(buffer);
+                    PushFeedLog(buffer);
+                } else {
+                    PushCliLog("[ERROR]: Usage: /w <handle> <message>");
+                }
+            } else {
+                // Regular chat
+                std::string payload = std::string(g_player.handle) + ":" + g_hellroom.chatInputBuffer;
+                if (IsVNetConnected()) {
+                    VNetSendRaw(std::string(VNetCmd::CHAT) + ":" + payload);
+                }
+            }
+            // Clear input
+            g_hellroom.chatInputBuffer[0] = '\0';
+            TriggerJitter(0.2f);
+        }
+    }
+
+    // Chat log area
+    float logX = 35 + jx;
+    float logY = 190 + jy;
+    float logW = 855;
+    float logH = 545;
+
+    DrawScaledRect(logX, logY, logW, logH, COLOR_BLACK);
+    DrawScaledRectLines(logX, logY, logW, logH, COLOR_BORDER);
+
+    DrawScaledText("=== LIVE VNET BROADCAST STREAM & PEER CHAT LOG ===", 
+                   50 + jx, 202 + jy, 11, COLOR_AMBER);
+    DrawScaledLine(50 + jx, 220 + jy, 875 + jx, 220 + jy, COLOR_BORDER);
+
+    // Render chat feed (reverse order - newest at bottom)
+    BeginScissorMode((int)SX(35 + jx), (int)SY(190 + jy), 
+                     (int)(855 * g_uiScale), (int)(545 * g_uiScale));
+
+    int feedCount = g_feedLogCount;
+    int visibleLines = 22; // Approximate lines visible in 545px height / 22px per line
+    
+    // Calculate start index to show newest at bottom
+    int startIdx = feedCount - visibleLines;
+    if (startIdx < 0) startIdx = 0;
+
+    // Reverse scroll: positive scroll moves up to show older messages
+    int scrollLines = (int)(g_hellroom.chatScrollY / 22.0f);
+    startIdx -= scrollLines;
+    if (startIdx < 0) startIdx = 0;
+    if (startIdx > feedCount) startIdx = feedCount;
+
+    for (int i = startIdx; i < feedCount; i++) {
+        int row = i - startIdx;
+        float y = 228.0f + jy + row * 22.0f;
+        if (y > 720.0f + jy) break;
+
+        const char* txt = g_feedLogs[i];
+        // Truncate to 90 chars (matching Vyne)
+        char truncated[128];
+        strncpy(truncated, txt, 90);
+        truncated[90] = '\0';
+
+        Color col = COLOR_GHOST;
+        
+        if (strstr(txt, "[WHISPER FROM")) {
+            col = COLOR_AMBER;  // Bright Amber/Magenta accent for incoming whispers
+        } else if (strstr(txt, "[WHISPER TO")) {
+            col = COLOR_CYAN;   // Cyan accent for outgoing whispers
+        } else if (strstr(txt, "[CHAT]")) {
+            col = COLOR_TOXIC;
+        } else if (strstr(txt, "[FEED]")) {
+            col = COLOR_CYAN;
+        }
+
+        DrawScaledText(truncated, 50 + jx, y, 10, col);
+    }
+
+    EndScissorMode();
+
+    // Update chat scroll from mouse wheel (handled in game.cpp)
+}
+
+// ============================================================
 // MAIN UI SHELL
 // ============================================================
 
@@ -947,7 +1147,17 @@ void DrawUI(void) {
     DrawScaledRect(contentX + jx, contentY + jy, contentW, contentH, COLOR_PANEL);
     DrawScaledRectLines(contentX + jx, contentY + jy, contentW, contentH, COLOR_BORDER);
 
-    DrawMarkupPage(contentX, contentY, contentW, contentH);
+    // ============================================================
+    // HELLROOM SPECIAL RENDERING
+    // ============================================================
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && 
+                   !g_player.cliOpen && !g_player.isConnecting;
+    
+    if (strcmp(g_player.currentURL, "hellroom.vnet") == 0) {
+        DrawHellroomUI(jx, jy, refMouse, clicked);
+    } else {
+        DrawMarkupPage(contentX, contentY, contentW, contentH);
+    }
 
     if (g_player.isConnecting) {
         DrawConnectionOverlay();

@@ -27,6 +27,7 @@ void DrawTerminal(void);
 void DrawFeedPanel(void);
 void DrawStatusBar(void);
 void DrawVPulse(float x, float y, float size, float time);
+void DrawHellroomUI(float jx, float jy, Vector2 refMouse, bool clicked);
 
 // Scaled drawing helpers
 void DrawScaledRect(float x, float y, float w, float h, Color color);

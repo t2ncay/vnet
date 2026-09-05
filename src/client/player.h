@@ -15,3 +15,15 @@ void PlayerSprint(void);
 
 // Player state
 extern Player g_player;
+
+// Hellroom chat UI state
+struct HellroomUI {
+    char handleInputBuffer[32];
+    char chatInputBuffer[256];
+    bool handleFocused;
+    bool chatFocused;
+    float chatScrollY;
+    float chatFeedY;
+};
+
+extern HellroomUI g_hellroom;

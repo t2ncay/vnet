@@ -150,6 +150,257 @@ void UpdateVNET(float dt) {
         g_player.glitchTrigger -= dt * 2.0f;
         if (g_player.glitchTrigger < 0.0f) g_player.glitchTrigger = 0.0f;
     }
+
+    // ============================================================
+    // PROCESS INCOMING PACKETS FROM SERVER
+    // ============================================================
+    auto packets = VNetReceive();
+    for (const auto& packet : packets) {
+        // Parse packet - format: "CMD:payload" or just "CMD"
+        auto parsed = ParsePacket(packet);
+        std::string cmd = parsed.first;
+        std::string payload = parsed.second;
+
+        // ============================================================
+        // HANDLE SERVER RESPONSES
+        // ============================================================
+
+        // NEW_BLOCKS: Mining blocks update
+        if (cmd == "NEW_BLOCKS") {
+            PushCliLog("[SERVER]: New mining blocks available!");
+            // Parse and store blocks
+            std::string remaining = payload;
+            g_minedCount = 0;
+            size_t pos;
+            while ((pos = remaining.find(';')) != std::string::npos) {
+                std::string block = remaining.substr(0, pos);
+                remaining = remaining.substr(pos + 1);
+                if (g_minedCount < 50) {
+                    strncpy(g_minedBlocks[g_minedCount], block.c_str(), sizeof(g_minedBlocks[0]) - 1);
+                    g_minedCount++;
+                }
+            }
+            // Last block
+            if (!remaining.empty() && g_minedCount < 50) {
+                strncpy(g_minedBlocks[g_minedCount], remaining.c_str(), sizeof(g_minedBlocks[0]) - 1);
+                g_minedCount++;
+            }
+            // Refresh page if on crypto.vnet
+            if (strstr(g_player.currentURL, "crypto.vnet")) {
+                RefreshPage();
+            }
+        }
+
+        // ============================================================
+        // NETSCAN RESPONSE - FIX:
+        // ============================================================
+        else if (cmd == "NETSCAN") {
+            PushCliLog("========== NETSCAN PEER DISCOVERY ==========");
+            PushCliLog(" %s", payload.empty() ? "NO PEERS DETECTED" : payload.c_str());
+            PushCliLog("============================================");
+        }
+
+        // FEED_EVENT: Broadcast message
+        else if (cmd == "FEED_EVENT") {
+            PushFeedLog("%s", payload.c_str());
+        }
+
+        // KEY_SYNC: Server key synchronization
+        else if (cmd == "KEY_SYNC") {
+            PushCliLog("[SERVER]: Received key sync");
+            // Parse keys and locations from payload
+            std::string remaining = payload;
+            std::vector<std::string> tokens;
+            size_t pos;
+            while ((pos = remaining.find(':')) != std::string::npos) {
+                tokens.push_back(remaining.substr(0, pos));
+                remaining = remaining.substr(pos + 1);
+            }
+            if (!remaining.empty()) tokens.push_back(remaining);
+            
+            if (tokens.size() >= 16) {
+                // First 8 are scrambled keys, next 8 are key locations
+                for (int i = 0; i < 8 && i < (int)tokens.size(); i++) {
+                    // Store keys if needed
+                }
+                PushCliLog("[KEY_SYNC]: Received %zu keys", tokens.size());
+            }
+        }
+
+        // WHISPER_IN: Private message
+        else if (cmd == "WHISPER_IN") {
+            size_t sep = payload.find(':');
+            if (sep != std::string::npos) {
+                std::string fromHandle = payload.substr(0, sep);
+                std::string msg = payload.substr(sep + 1);
+                char buffer[256];
+                snprintf(buffer, sizeof(buffer), "[WHISPER FROM <%s>]: %s", fromHandle.c_str(), msg.c_str());
+                PushFeedLog("%s", buffer);
+                PushCliLog("%s", buffer);
+            }
+        }
+
+        // ESCROW_LIST: VektraPay escrow list
+        else if (cmd == "ESCROW_LIST") {
+            PushCliLog("[SERVER]: Received escrow list");
+        }
+
+        // SCAN_RESULT: Discovery scan result
+        else if (cmd == "SCAN_RESULT") {
+            // Check if site is already discovered
+            bool found = false;
+            for (int i = 0; i < g_player.assignedCount; i++) {
+                if (strcmp(g_player.assignedSites[i], payload.c_str()) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found && g_player.assignedCount < 20) {
+                strncpy(g_player.assignedSites[g_player.assignedCount], payload.c_str(), sizeof(g_player.assignedSites[0]) - 1);
+                g_player.assignedCount++;
+                PushCliLog("[SCAN]: DISCOVERED %s", payload.c_str());
+                if (strcmp(g_player.currentURL, "vnet.dir") == 0) {
+                    RefreshPage();
+                }
+            } else {
+                PushCliLog("[SCAN]: %s already discovered", payload.c_str());
+            }
+        }
+
+        // SATSCAN_RES: Satellite scan results
+        else if (cmd == "SATSCAN_RES") {
+            PushCliLog("================ SAT-99 TRAFFIC FEED ================");
+            std::string remaining = payload;
+            size_t pos;
+            while ((pos = remaining.find(';')) != std::string::npos) {
+                std::string entry = remaining.substr(0, pos);
+                remaining = remaining.substr(pos + 1);
+                // Format: site|traffic|status
+                size_t sep1 = entry.find('|');
+                if (sep1 != std::string::npos) {
+                    std::string site = entry.substr(0, sep1);
+                    std::string rest = entry.substr(sep1 + 1);
+                    size_t sep2 = rest.find('|');
+                    if (sep2 != std::string::npos) {
+                        std::string traffic = rest.substr(0, sep2);
+                        std::string status = rest.substr(sep2 + 1);
+                        PushCliLog("  %s | %s KB/s | [%s]", site.c_str(), traffic.c_str(), status.c_str());
+                    }
+                }
+            }
+            PushCliLog("======================================================");
+        }
+
+        // VFS_DATA: File read response
+        else if (cmd == "VFS_DATA") {
+            PushCliLog("[VFS_READ]: %s", payload.c_str());
+        }
+
+        // VFS_LIST: Directory listing
+        else if (cmd == "VFS_LIST") {
+            PushCliLog("[VFS_LIST]: %s", payload.c_str());
+        }
+
+        // PATCH_SUCCESS: Port rebind confirmation
+        else if (cmd == "PATCH_SUCCESS") {
+            int newPort = std::stoi(payload);
+            g_player.port = newPort;
+            PushCliLog("[PATCH]: Port rebound to %d", newPort);
+        }
+
+        // PAY_CLAIM_SUCCESS: Escrow claim
+        else if (cmd == "PAY_CLAIM_SUCCESS") {
+            float amount = std::stof(payload);
+            g_player.vcoin += amount;
+            PushCliLog("[VEKTRAPAY]: Claimed %.2f VCOIN!", amount);
+        }
+
+        // PAY_CLAIM_FAILED: Escrow claim failed
+        else if (cmd == "PAY_CLAIM_FAILED") {
+            PushCliLog("[VEKTRAPAY]: Claim failed - %s", payload.c_str());
+        }
+
+        // EXPLOIT:WINNER - Game over
+        else if (cmd == "EXPLOIT:WINNER") {
+            PushCliLog("[GAME OVER]: %s", payload.c_str());
+            g_player.gameOver = true;
+        }
+
+        // EXPLOIT:BOT_STALK
+        else if (cmd == "EXPLOIT:BOT_STALK") {
+            PushCliLog("[WARNING]: SPECTRE_BOT IS STALKING YOU!");
+            g_player.glitchTrigger = 1.0f;
+        }
+
+        // EXPLOIT:FEDERAL_RAID
+        else if (cmd == "EXPLOIT:FEDERAL_RAID") {
+            PushCliLog("[CRITICAL]: FEDERAL E-RAID INITIATED! TYPE 'purge' TO ESCAPE!");
+            g_player.glitchTrigger = 1.0f;
+        }
+
+        // EXPLOIT:TRACE_SPIKE
+        else if (cmd == "EXPLOIT:TRACE_SPIKE") {
+            if (g_player.iceShields > 0) {
+                g_player.iceShields--;
+                PushCliLog("[ICE]: Absorbed trace spike! (%d/3 remaining)", g_player.iceShields);
+            } else {
+                g_player.traceLevel += 35;
+                if (g_player.traceLevel > 100) g_player.traceLevel = 100;
+                PushCliLog("[WARNING]: TRACE SPIKE DETECTED! TRACE +35%%");
+            }
+        }
+
+        // EXPLOIT:REDIRECT
+        else if (cmd == "EXPLOIT:REDIRECT") {
+            PushCliLog("[WARNING]: BGP HIJACK DETECTED! REDIRECTING TO %s", payload.c_str());
+            TriggerRouteNavigation(payload.c_str());
+        }
+
+        // EXPLOIT:DOS
+        else if (cmd == "EXPLOIT:DOS") {
+            if (g_player.iceShields > 0) {
+                g_player.iceShields--;
+                PushCliLog("[ICE]: DOS attack absorbed! (%d/3 remaining)", g_player.iceShields);
+            } else {
+                g_player.dosTimer = 8.0f;
+                PushCliLog("[CRITICAL]: INCOMING DOS ATTACK! FROZEN FOR 8s!");
+            }
+        }
+
+        // EXPLOIT:SITE_OVERLOADED
+        else if (cmd == "EXPLOIT:SITE_OVERLOADED") {
+            PushCliLog("[ALERT]: SITE %s IS OVERLOADED!", payload.c_str());
+        }
+
+        // SNIFFER_ADD_ACK
+        else if (cmd == "SNIFFER_ADD_ACK") {
+            PushCliLog("[SNIFFER]: Frequency %s Hz registered", payload.c_str());
+        }
+
+        // DECOY_TRIPPED
+        else if (cmd == "DECOY_TRIPPED") {
+            PushCliLog("[DECOY]: %s", payload.c_str());
+        }
+
+        // DOS_DROP_DIR
+        else if (cmd == "DOS_DROP_DIR") {
+            PushCliLog("[REWARD]: Exfiltrated directory: %s", payload.c_str());
+        }
+
+        // DOS_DROP
+        else if (cmd == "DOS_DROP") {
+            PushCliLog("[REWARD]: %s", payload.c_str());
+            g_player.vcoin += 0.20f;
+        }
+
+        // Unknown packet
+        else {
+            // Don't log every packet to avoid spam
+            if (cmd != "PING" && cmd != "GET" && cmd != "CHAT") {
+                PushCliLog("[NET]: %s", packet.c_str());
+            }
+        }
+    }
 }
 
 // ============================================================
@@ -200,6 +451,30 @@ void RefreshPage(void) {
 // COMMAND SYSTEM - ENHANCED
 // ============================================================
 
+void ProcessChatCommand(const char* msg) {
+    if (!msg || strlen(msg) == 0) return;
+    
+    // Format required by server: "handle:message"
+    std::string payload = std::string(g_player.handle) + ":" + msg;
+    if (IsVNetConnected()) {
+        VNetSendRaw(std::string(VNetCmd::CHAT) + ":" + payload);  // <-- FIXED
+    }
+}
+
+void ProcessWhisperCommand(const char* target, const char* msg) {
+    if (!target || !msg || strlen(target) == 0 || strlen(msg) == 0) return;
+    
+    std::string payload = std::string(g_player.handle) + ":" + target + ":" + msg;
+    if (IsVNetConnected()) {
+        VNetSendRaw(std::string(VNetCmd::WHISPER) + ":" + payload);  // ADD ":"
+    }
+    
+    char buffer[256];
+    snprintf(buffer, sizeof(buffer), "[WHISPER TO <%s>]: %s", target, msg);
+    PushCliLog(buffer);
+    PushFeedLog(buffer);
+}
+
 void ProcessCommand(const char* cmd) {
     char copy[256];
     strncpy(copy, cmd, sizeof(copy) - 1);
@@ -240,10 +515,7 @@ void ProcessCommand(const char* cmd) {
         if (!args) {
             PushCliLog("[ERROR]: Usage: chat <message>");
         } else {
-            char msg[256];
-            snprintf(msg, sizeof(msg), "[CHAT] <%s>: %s", g_player.handle, args);
-            PushFeedLog(msg);
-            PushCliLog(msg);
+            ProcessChatCommand(args);
         }
     }
     else if (strcmp(token, "whisper") == 0 || strcmp(token, "pm") == 0) {
@@ -252,15 +524,10 @@ void ProcessCommand(const char* cmd) {
         } else {
             char target[64] = {0};
             char msg[256] = {0};
-            sscanf(args, "%63s %255[^\n]", target, msg);
-            
-            if (strlen(target) == 0 || strlen(msg) == 0) {
-                PushCliLog("[ERROR]: Usage: whisper <handle> <message>");
+            if (sscanf(args, "%63s %255[^\n]", target, msg) == 2) {
+                ProcessWhisperCommand(target, msg);
             } else {
-                char buffer[256];
-                snprintf(buffer, sizeof(buffer), "[WHISPER TO <%s>]: %s", target, msg);
-                PushCliLog(buffer);
-                PushFeedLog(buffer);
+                PushCliLog("[ERROR]: Usage: whisper <handle> <message>");
             }
         }
     }
@@ -871,10 +1138,17 @@ void ProcessCommand(const char* cmd) {
     }
 
     else if (strcmp(token, "netscan") == 0) {
-        PushCliLog("[NETSCAN]: SCANNING ACTIVE PEERS ON %s...", g_player.currentURL);
-        // Implement peer scanning
-    }
+        if (!IsVNetConnected()) {
+            PushCliLog("[ERROR]: NETSCAN REQUIRES ACTIVE SERVER UPLINK");
+        } else {
+            std::string pingMsg = std::string(VNetCmd::PING) + ":" + g_player.handle + ":" + g_player.currentURL;
+            VNetSendRaw(pingMsg);
 
+            std::string packet = std::string(VNetCmd::NETSCAN) + ":" + g_player.currentURL;
+            VNetSendRaw(packet);
+            PushCliLog("[NETSCAN]: DISPATCHED PROMISCUOUS PEER PROBE TO %s...", g_player.currentURL);
+        }
+    }
     else if (strcmp(token, "ion") == 0 || strcmp(token, "ioncannon") == 0) {
         if (!args) {
             PushCliLog("[ERROR]: Usage: ion <target_port_or_url>");
@@ -912,21 +1186,6 @@ void ProcessCommand(const char* cmd) {
         PushCliLog("[ERR]: UNKNOWN COMMAND '%s' (type 'help')", token);
     }
 }
-
-void ProcessChatCommand(const char* msg) {
-    char buffer[256];
-    snprintf(buffer, sizeof(buffer), "[CHAT] <%s>: %s", g_player.handle, msg);
-    PushFeedLog(buffer);
-    PushCliLog(buffer);
-}
-
-void ProcessWhisperCommand(const char* target, const char* msg) {
-    char buffer[256];
-    snprintf(buffer, sizeof(buffer), "[WHISPER TO <%s>]: %s", target, msg);
-    PushCliLog(buffer);
-    PushFeedLog(buffer);
-}
-
 // ============================================================
 // UTILITY FUNCTIONS
 // ============================================================
