@@ -166,6 +166,8 @@ public:
         m_vdec.minigameTarget = target; 
     }
 
+    void SyncVDECKeys();
+
 private:
     Desktop() = default;
     ~Desktop() = default;

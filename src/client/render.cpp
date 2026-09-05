@@ -404,25 +404,25 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
         // EXISTING TAGS (Keep these)
         // ============================================================
         if (StartsWith(raw, "[TITLE]")) {
-            DrawScaledText(raw.c_str() + 8, leftX, y, 20, COLOR_BLOOD);
+            DrawScaledText(raw.c_str() + 8, leftX, y, 16, COLOR_BLOOD);
             y += lineH + 6.0f;
         }
         else if (StartsWith(raw, "[SUBTITLE]")) {
-            DrawScaledText(raw.c_str() + 11, leftX, y, 15, COLOR_AMBER);
+            DrawScaledText(raw.c_str() + 11, leftX, y, 13, COLOR_AMBER);
             y += lineH;
         }
         else if (StartsWith(raw, "[WARN]")) {
-            DrawScaledText(raw.c_str() + 7, leftX, y, 13, COLOR_BLOOD);
+            DrawScaledText(raw.c_str() + 7, leftX, y, 11, COLOR_BLOOD);
             y += lineH;
         }
         else if (StartsWith(raw, "[BLOOD]")) {
-            DrawScaledText(raw.c_str() + 8, leftX, y, 13, COLOR_BLOOD);
+            DrawScaledText(raw.c_str() + 8, leftX, y, 11, COLOR_BLOOD);
             y += lineH;
         }
         else if (StartsWith(raw, "[PULSE]")) {
             float pulse = sinf((float)GetTime() * 5.0f) * 0.5f + 0.5f;
             Color c = (pulse > 0.5f) ? COLOR_AMBER : COLOR_BLOOD;
-            DrawScaledText(raw.c_str() + 8, leftX, y, 13, c);
+            DrawScaledText(raw.c_str() + 8, leftX, y, 11, c);
             y += lineH;
         }
         else if (StartsWith(raw, "[GLITCH]")) {
@@ -430,22 +430,22 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
             float jx = sinf(t * 48.0f) * 1.5f;
             float jy = cosf(t * 32.0f) * 0.8f;
             const char* txt = raw.c_str() + 9;
-            DrawScaledText(txt, leftX + jx + 1.2f, y + jy - 0.5f, 13, Fade(COLOR_BLOOD, 0.75f));
-            DrawScaledText(txt, leftX + jx - 1.2f, y + jy + 0.5f, 13, Fade(COLOR_CYAN, 0.75f));
-            DrawScaledText(txt, leftX + jx, y + jy, 13, COLOR_GHOST);
+            DrawScaledText(txt, leftX + jx + 1.2f, y + jy - 0.5f, 11, Fade(COLOR_BLOOD, 0.75f));
+            DrawScaledText(txt, leftX + jx - 1.2f, y + jy + 0.5f, 11, Fade(COLOR_CYAN, 0.75f));
+            DrawScaledText(txt, leftX + jx, y + jy, 11, COLOR_GHOST);
             y += lineH;
         }
         else if (StartsWith(raw, "[CODE]")) {
-            DrawScaledText(raw.c_str() + 7, leftX, y, 13, COLOR_TOXIC);
+            DrawScaledText(raw.c_str() + 7, leftX, y, 11, COLOR_TOXIC);
             y += lineH;
         }
         else if (StartsWith(raw, "[BOX]")) {
-            DrawScaledText(raw.c_str() + 6, leftX, y, 13, COLOR_CYAN);
+            DrawScaledText(raw.c_str() + 6, leftX, y, 11, COLOR_CYAN);
             y += lineH;
         }
         else if (StartsWith(raw, "[TEXT]")) {
             const char* txt = (raw.size() > 7) ? raw.c_str() + 7 : "";
-            DrawScaledText(txt, leftX, y, 13, COLOR_GHOST);
+            DrawScaledText(txt, leftX, y, 11, COLOR_GHOST);
             y += lineH;
         }
         else if (raw == "[HR]") {
@@ -472,8 +472,69 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
 
             char labelBuf[160];
             snprintf(labelBuf, sizeof(labelBuf), "%s [%d%%]", label.c_str(), (int)pct);
-            DrawScaledText(labelBuf, leftX + gw + 15.0f, y + 2.0f, 12, COLOR_AMBER);
+            DrawScaledText(labelBuf, leftX + gw + 15.0f, y + 2.0f, 10, COLOR_AMBER);
             y += lineH + 4.0f;
+        }
+        // ============================================================
+        // [BLOCK_LIST] - Mining block list
+        // ============================================================
+        else if (StartsWith(raw, "[BLOCK_LIST]")) {
+            float blockY = y;
+            float blockX = leftX + 10;
+            
+            // Header - Using ASCII characters instead of Unicode
+            DrawScaledText("+----+----------+---------+------------+", blockX, blockY, 10, COLOR_BORDER);
+            blockY += 18;
+            DrawScaledText("| ID | BLOCK ID | REWARD  | STATUS     |", blockX, blockY, 10, COLOR_CYAN);
+            blockY += 18;
+            DrawScaledText("|----+----------+---------+------------|", blockX, blockY, 10, COLOR_BORDER);
+            blockY += 18;
+            
+            bool hasBlocks = false;
+            
+            // Check if we have mined blocks
+            for (int i = 0; i < g_minedCount; i++) {
+                // Parse "blockID:reward"
+                std::string blockStr = g_minedBlocks[i];
+                size_t sep = blockStr.find(':');
+                if (sep != std::string::npos) {
+                    std::string blockId = blockStr.substr(0, sep);
+                    std::string reward = blockStr.substr(sep + 1);
+                    
+                    // Check if already mined (claimed)
+                    bool alreadyMined = false;
+                    for (int j = 0; j < g_player.minedBlockCount && j < 50; j++) {
+                        if (strcmp(g_player.minedBlockIds[j], blockId.c_str()) == 0) {
+                            alreadyMined = true;
+                            break;
+                        }
+                    }
+                    
+                    // Format: | 01 | 2142    | 0.35    | AVAILABLE |
+                    char line[128];
+                    if (alreadyMined) {
+                        snprintf(line, sizeof(line), "| %02d | %-8s | %-7s | CLAIMED  |", 
+                                i + 1, blockId.c_str(), reward.c_str());
+                        DrawScaledText(line, blockX, blockY, 10, {80, 90, 110, 150});
+                    } else {
+                        snprintf(line, sizeof(line), "| %02d | %-8s | %-7s | AVAILABLE  |", 
+                                i + 1, blockId.c_str(), reward.c_str());
+                        DrawScaledText(line, blockX, blockY, 10, COLOR_TOXIC);
+                    }
+                    blockY += 18;
+                    hasBlocks = true;
+                }
+            }
+            
+            if (!hasBlocks) {
+                DrawScaledText("|      NO ACTIVE BLOCKS AVAILABLE      |", blockX, blockY, 10, COLOR_AMBER);
+                blockY += 18;
+            }
+            
+            DrawScaledText("+----+----------+---------+------------+", blockX, blockY, 10, COLOR_BORDER);
+            blockY += 18;
+            
+            y = blockY;
         }
         else if (StartsWith(raw, "[BADGE:")) {
             std::string body, rest;
@@ -487,7 +548,7 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
             else if (colorName == "CYAN") bg = COLOR_CYAN;
             
             // Use g_fontScale instead of hardcoded 1.3f
-            float fontSize = 12.0f;
+            float fontSize = 11.0f;
             float effectiveFontSize = fontSize * g_fontScale;
             float textWidth = MeasureScaledTextWidth(text.c_str(), effectiveFontSize);
             
@@ -534,7 +595,7 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
             float labelW = MeasureScaledTextWidth(rest.c_str(), 14);
             bool hover = RefRectHover(leftX, y, labelW + 20.0f, 24.0f, refMouse) && mouseInPanel;
             Color linkCol = hover ? COLOR_TOXIC : COLOR_CYAN;
-            DrawScaledText(rest.c_str(), leftX, y, 14, linkCol);
+            DrawScaledText(rest.c_str(), leftX, y, 12, linkCol);
             if (hover && clicked) {
                 TriggerRouteNavigation(url.c_str());
             }

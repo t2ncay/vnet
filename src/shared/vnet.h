@@ -44,6 +44,10 @@ struct Player {
     char assignedSites[54][64];
     int assignedCount;
 
+    // Mining
+    char minedBlockIds[50][32];  // IDs of blocks already claimed
+    int minedBlockCount;
+
     // Sniffer
     float sniffFreqs[10];
     int sniffCount;
@@ -166,5 +170,5 @@ void TriggerRouteNavigation(const char* url);
 void UpdatePeerSession(uint32_t port, const char* ip, const char* url);
 
 // Mining
-void StartMining(void);
+void StartMining(const char* blockId = nullptr);
 void UpdateMining(float dt);

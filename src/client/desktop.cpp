@@ -3087,7 +3087,7 @@ void Desktop::DrawVDECKeyRing(float x, float y, float w, float h) {
             float glow = sinf(t * 3.0f + i) * 0.3f + 0.7f;
             Color glowCol = {40, 240, 100, (unsigned char)(glow * 100 + 55)};
             DrawScaledRect(kx + 4, ky + 18, keySize - 8, 20, glowCol);
-            DrawScaledText(m_vdec.keys[i], kx + 6, ky + 22, 14, COLOR_BLACK);
+            DrawScaledText(m_vdec.keys[i], kx + 6, ky + 19, 14, COLOR_BLACK);
             DrawScaledText("✓ FOUND", kx + 6, ky + 48, 9, COLOR_TOXIC);
         } else {
             DrawScaledText("🔒", kx + 28, ky + 22, 28, Color{60, 70, 90, 150});
@@ -3766,6 +3766,35 @@ void Desktop::SendHellroomMessage() {
     } else {
         // Offline fallback - show locally
         PushHellroomMessage("%s: %s", m_hellroom.currentNick, msg);
+    }
+}
+
+void Desktop::SyncVDECKeys() {
+    // Clear existing VDEC keys
+    for (int i = 0; i < 8; i++) {
+        m_vdec.keysFound[i] = false;
+        m_vdec.keys[i][0] = '\0';
+    }
+    m_vdec.keyCount = 0;
+    
+    // Sync from g_vnet.masterKeys
+    for (int i = 0; i < 8; i++) {
+        if (strlen(g_vnet.masterKeys[i]) > 0) {
+            strcpy(m_vdec.keys[i], g_vnet.masterKeys[i]);
+            m_vdec.keysFound[i] = true;
+            m_vdec.keyCount++;
+        }
+    }
+    
+    // Also check g_vnet.keyLocations for any keys (if masterKeys is empty)
+    if (m_vdec.keyCount == 0) {
+        for (int i = 0; i < 8; i++) {
+            if (strlen(g_vnet.keyLocations[i]) > 0 && strlen(g_vnet.keyLocations[i]) < 32) {
+                strcpy(m_vdec.keys[i], g_vnet.keyLocations[i]);
+                m_vdec.keysFound[i] = true;
+                m_vdec.keyCount++;
+            }
+        }
     }
 }
 

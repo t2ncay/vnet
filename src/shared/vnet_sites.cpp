@@ -143,18 +143,19 @@ static const char* TERMINAL_CONTENT[] = SITE_CONTENT(
 );
 
 // 4. crypto.vnet
+// 4. crypto.vnet
 static const char* CRYPTO_CONTENT[] = SITE_CONTENT(
     "[TITLE] BLACK TUMBLER WALLET & ILLEGAL MINING RIG // NODE #004",
     "[HR]",
     "[BLOOD] WARNING: HIGH-POWER HASHING OVERHEATS CPU REGISTER BUS // TRACE SPIKES ACTIVE",
     "[BOX] +-----------------------------------------------------------------+",
-    "[BOX] | RIG STATUS: OPERATIONAL | MINING YIELD: DYNAMIC PER BLOCK       |",
+    "[BOX] | RIG STATUS: OPERATIONAL | MINING YIELD: 0.30 - 0.50 VCOIN/BLOCK|",
     "[BOX] | POOL SYNC: 99.8% | DIFFICULTY: AUTO-SCALING                     |",
-    "[BOX] | TUMBLER POOL: 420.5 VCOIN LAUNDERED VIA BLACKBANK.VNET          |",
+    "[BOX] | COOLDOWN: 20s PER MINE | ACTIVE BLOCKS: [BLOCK_COUNT]           |",
     "[BOX] +-----------------------------------------------------------------+",
     "[TEXT] ",
     "[SUBTITLE] ACTIVE POOL MINING BLOCKS:",
-    "[CODE] NO ACTIVE BLOCKS DISCOVERED. AWAITING NETWORK BROADCAST...",
+    "[BLOCK_LIST]",
     "[TEXT] ",
     "[SUBTITLE] RECENT UNLOCKED TRANSACTIONS & EXFILTRATED MEMORY LOGS:",
     "[CODE] TX_ID #9081 | 14.50 VCOIN | CONFIRMED | LAUNDERED VIA VEKTRAPAY.VNET",
@@ -163,10 +164,11 @@ static const char* CRYPTO_CONTENT[] = SITE_CONTENT(
     "[CODE] TX_ID #9084 |  1.50 VCOIN | PENDING   | SILKROAD OPIUM & HUMAN TISSUE LOT",
     "[TEXT] ",
     "[SUBTITLE] COMMAND CENTER INSTRUCTIONS:",
-    "[TEXT] Open overlay terminal [TAB] and type 'mine' to execute proof-of-work.",
+    "[TEXT] Open overlay terminal [TAB] and type 'mine <block_id>' to mine a block.",
+    "[TEXT] Example: 'mine 2142' will attempt to mine block #2142.",
     "[TEXT] Note: Mining generates +2% passive trace threat exposure per block.",
     "[BLOOD] [ALERT]: CPU BUS GLITCHING — COLD FLESH GREASE SEEPING INTO POWER SUPPLY",
-    "[PULSE] MINING RIG READY. TYPE 'mine' FOR +0.05 VCOIN REWARD.",
+    "[PULSE] MINING RIG READY. TYPE 'mine <block_id>' FOR 0.30-0.50 VCOIN REWARD.",
     "[GLITCH] 'THE COINS ARE NOT MINED FROM NUMBERS. THEY ARE MINED FROM FLESH.'",
     "[HR]",
     "[LINK:market.vnet] >> PURCHASE ICE FIREWALL SHIELDS & ARMS",

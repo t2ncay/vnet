@@ -146,16 +146,17 @@ static std::string RefreshMiningBlocks() {
 }
 
 static void SendKeySync(int port, const std::string& ip, const std::string& dirPayload) {
+    // Send actual keys instead of scrambled ones
     std::string sync = std::string(VNetResp::KEY_SYNC) +
-        std::to_string(g_scrambled1) + ":" + std::to_string(g_scrambled2) + ":" +
-        std::to_string(g_scrambled3) + ":" + std::to_string(g_scrambled4) + ":" +
-        std::to_string(g_scrambled5) + ":" + std::to_string(g_scrambled6) + ":" +
-        std::to_string(g_scrambled7) + ":" + std::to_string(g_scrambled8) + ":" +
+        std::to_string(g_k1) + ":" + std::to_string(g_k2) + ":" +
+        std::to_string(g_k3) + ":" + std::to_string(g_k4) + ":" +
+        std::to_string(g_k5) + ":" + std::to_string(g_k6) + ":" +
+        std::to_string(g_k7) + ":" + std::to_string(g_k8) + ":" +
         g_keyLocations[0] + ":" + g_keyLocations[1] + ":" +
         g_keyLocations[2] + ":" + g_keyLocations[3] + ":" +
         g_keyLocations[4] + ":" + g_keyLocations[5] + ":" +
         g_keyLocations[6] + ":" + g_keyLocations[7] + ":" +
-        dirPayload;  // <-- This should be the colon-separated site list
+        dirPayload;
     
     VNetLib::SendTo(g_serverSock, ip, port, sync);
 }

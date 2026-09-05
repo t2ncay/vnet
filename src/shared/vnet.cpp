@@ -50,9 +50,14 @@ void InitVNETSystem(void) {
     g_player.neuralParanoia = 0.0f;
     g_player.cliOpen = false;
 
-    g_player.isInConnectionMenu = true;   // <-- ADD THIS
-    g_player.ipBoxFocused = true;          // <-- ADD THIS
-    strcpy(g_player.ipInputBuffer, "127.0.0.1"); // <-- ADD THIS
+    g_player.isInConnectionMenu = true;
+    g_player.ipBoxFocused = true;
+    strcpy(g_player.ipInputBuffer, "127.0.0.1");
+
+    g_player.minedBlockCount = 0;
+    for (int i = 0; i < 50; i++) {
+        g_player.minedBlockIds[i][0] = '\0';
+    }
     
     // Init VNET
     memset(&g_vnet, 0, sizeof(VNETSystem));
@@ -210,7 +215,8 @@ void UpdateVNET(float dt) {
         // KEY_SYNC: Server key synchronization
         else if (cmd == "KEY_SYNC") {
             PushCliLog("[SERVER]: Received key sync");
-            // Parse keys and locations from payload
+            
+            // Parse tokens
             std::string remaining = payload;
             std::vector<std::string> tokens;
             size_t pos;
@@ -220,37 +226,104 @@ void UpdateVNET(float dt) {
             }
             if (!remaining.empty()) tokens.push_back(remaining);
             
-            // Debug: Print token count
             PushCliLog("[KEY_SYNC]: Received %zu tokens", tokens.size());
             
-            // Need at least 24 tokens: 8 keys + 8 locations + 20 sites = 36 total
             if (tokens.size() >= 24) {
-                // First 8 are scrambled keys
-                // Next 8 are key locations (tokens[8] through tokens[15])
-                // The rest (tokens[16] onwards) are the assigned sites
-                
-                // Store key locations (tokens 8-15)
-                for (int i = 0; i < 8 && i + 8 < (int)tokens.size(); i++) {
-                    strncpy(g_vnet.keyLocations[i], tokens[i + 8].c_str(), sizeof(g_vnet.keyLocations[0]) - 1);
+                // ============================================================
+                // 1. PARSE ACTUAL KEYS (tokens 0-7) - These are the REAL keys
+                // ============================================================
+                int actualKeys[8] = {0};
+                for (int i = 0; i < 8 && i < (int)tokens.size(); i++) {
+                    try {
+                        actualKeys[i] = std::stoi(tokens[i]);
+                    } catch (...) {
+                        actualKeys[i] = 0;
+                    }
+                    PushCliLog("[KEY_SYNC]: KEY %d: %d", i + 1, actualKeys[i]);
                 }
                 
+                // ============================================================
+                // 2. PARSE KEY LOCATIONS (tokens 8-15)
+                // ============================================================
+                for (int i = 0; i < 8 && i + 8 < (int)tokens.size(); i++) {
+                    if (!tokens[i + 8].empty() && tokens[i + 8] != "EMPTY") {
+                        strncpy(g_vnet.keyLocations[i], tokens[i + 8].c_str(), sizeof(g_vnet.keyLocations[0]) - 1);
+                        PushCliLog("[KEY_SYNC]: KEY %d location: %s", i + 1, g_vnet.keyLocations[i]);
+                    } else {
+                        strcpy(g_vnet.keyLocations[i], "UNKNOWN");
+                    }
+                }
+                
+                // ============================================================
+                // 3. STORE ACTUAL KEYS IN g_vnet.masterKeys
+                // ============================================================
+                for (int i = 0; i < 8; i++) {
+                    if (actualKeys[i] > 0) {
+                        snprintf(g_vnet.masterKeys[i], sizeof(g_vnet.masterKeys[i]), "%d", actualKeys[i]);
+                    } else {
+                        // Fallback (should never happen if server sends valid keys)
+                        snprintf(g_vnet.masterKeys[i], sizeof(g_vnet.masterKeys[i]), "%04d", rand() % 9000 + 1000);
+                    }
+                }
+                
+                // Rebuild master keys string for display
+                char temp[256] = {0};
+                for (int i = 0; i < 8; i++) {
+                    strcat(temp, g_vnet.masterKeys[i]);
+                    if (i < 7) strcat(temp, " ");
+                }
+                strcpy(g_masterKeysStr, temp);
+                PushCliLog("[KEY_SYNC]: Master keys: %s", g_masterKeysStr);
+                
+                // ============================================================
+                // 4. UPDATE VDEC KEY RING WITH ACTUAL KEYS
+                // ============================================================
+                Desktop& desktop = GetDesktop();
+                
+                // Clear existing VDEC keys
+                for (int i = 0; i < 8; i++) {
+                    desktop.m_vdec.keysFound[i] = false;
+                    desktop.m_vdec.keys[i][0] = '\0';
+                }
+                desktop.m_vdec.keyCount = 0;
+                
+                // Store ACTUAL keys in VDEC
+                for (int i = 0; i < 8; i++) {
+                    if (actualKeys[i] > 0) {
+                        snprintf(desktop.m_vdec.keys[i], sizeof(desktop.m_vdec.keys[i]), "%d", actualKeys[i]);
+                        desktop.m_vdec.keysFound[i] = true;
+                        desktop.m_vdec.keyCount++;
+                        PushCliLog("[VDEC]: KEY %d stored: %s", i + 1, desktop.m_vdec.keys[i]);
+                    }
+                }
+                
+                // ============================================================
+                // 5. STORE ASSIGNED SITES (tokens 16+)
+                // ============================================================
                 g_player.assignedCount = 0;
                 for (size_t i = 16; i < tokens.size() && g_player.assignedCount < 54; i++) {
-                    strncpy(g_player.assignedSites[g_player.assignedCount], 
-                            tokens[i].c_str(), sizeof(g_player.assignedSites[0]) - 1);
-                    g_player.assignedCount++;
-                    PushCliLog("[KEY_SYNC]: ASSIGNED SITE %d: %s", g_player.assignedCount, tokens[i].c_str());
+                    if (!tokens[i].empty()) {
+                        strncpy(g_player.assignedSites[g_player.assignedCount], 
+                                tokens[i].c_str(), sizeof(g_player.assignedSites[0]) - 1);
+                        g_player.assignedCount++;
+                        PushCliLog("[KEY_SYNC]: ASSIGNED SITE %d: %s", g_player.assignedCount, tokens[i].c_str());
+                    }
                 }
                 
-                PushCliLog("[KEY_SYNC]: Received %zu keys, %d assigned sites", 
-                        tokens.size(), g_player.assignedCount);
+                PushCliLog("[KEY_SYNC]: Synced 8 keys, %d assigned sites", g_player.assignedCount);
                 
-                // CRITICAL: Reload the page to show the assigned sites!
+                // ============================================================
+                // 6. REFRESH UI
+                // ============================================================
                 if (strcmp(g_player.currentURL, "vnet.dir") == 0) {
                     RefreshPage();
                 }
+                
+                // Also refresh current page to update VDEC display
+                RefreshPage();
+                
             } else {
-                PushCliLog("[KEY_SYNC]: WARNING - Not enough tokens! Expected 36+, got %zu", tokens.size());
+                PushCliLog("[KEY_SYNC]: WARNING - Not enough tokens! Expected 24+, got %zu", tokens.size());
             }
         }
 
@@ -699,7 +772,42 @@ void ProcessCommand(const char* cmd) {
     // ECONOMY COMMANDS
     // ============================================================
     else if (strcmp(token, "mine") == 0) {
-        StartMining();
+        if (!args) {
+            // Show available blocks
+            PushCliLog("========== AVAILABLE MINING BLOCKS ==========");
+            bool hasAvailable = false;
+            for (int i = 0; i < g_minedCount && i < 50; i++) {
+                std::string blockStr = g_minedBlocks[i];
+                size_t sep = blockStr.find(':');
+                if (sep != std::string::npos) {
+                    std::string id = blockStr.substr(0, sep);
+                    std::string reward = blockStr.substr(sep + 1);
+                    
+                    bool alreadyMined = false;
+                    for (int j = 0; j < g_player.minedBlockCount && j < 50; j++) {
+                        if (strcmp(g_player.minedBlockIds[j], id.c_str()) == 0) {
+                            alreadyMined = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!alreadyMined) {
+                        PushCliLog("  #%s - %.2f VCOIN", id.c_str(), std::stof(reward));
+                        hasAvailable = true;
+                    }
+                }
+            }
+            if (!hasAvailable) {
+                PushCliLog("  NO AVAILABLE BLOCKS");
+                PushCliLog("  New blocks will appear every 30 seconds.");
+            }
+            PushCliLog("==============================================");
+            PushCliLog("Usage: mine <block_id>");
+            return;
+        }
+        
+        // Parse block ID
+        StartMining(args);
     }
     else if (strcmp(token, "wallet") == 0) {
         PushCliLog("========== WALLET & DEFENSE ==========");
@@ -1332,41 +1440,125 @@ void UpdatePeerSession(uint32_t port, const char* ip, const char* url) {
 // MINING SYSTEM
 // ============================================================
 
-void StartMining(void) {
+// ============================================================
+// MINING SYSTEM - FIXED
+// ============================================================
+
+void StartMining(const char* blockId) {
     // Only at crypto.vnet
-
-    TriggerJitter(0.5f, 0.6f);
-    TriggerGlitch(0.3f);
-
     if (!strstr(g_player.currentURL, "crypto.vnet")) {
         PushCliLog("[ERROR]: MINING ONLY AT crypto.vnet");
         return;
     }
     
-    // Check cooldown
-    if (g_player.cdMine > 0.0f) {
-        PushCliLog("[ERROR]: RIG COOLING DOWN (%.0fs)", g_player.cdMine);
+    if (!blockId || strlen(blockId) == 0) {
+        PushCliLog("[ERROR]: Usage: mine <block_id>");
+        PushCliLog("[INFO]: Type 'mine' to see available blocks");
         return;
     }
     
-    // Generate block
-    int blockID = rand() % 9000 + 1000;
-    float reward = (rand() % 46 + 5) / 100.0f;
+    // Check cooldown
+    if (g_player.cdMine > 0.0f) {
+        PushCliLog("[ERROR]: RIG COOLING DOWN (%.0fs remaining)", g_player.cdMine);
+        return;
+    }
     
-    char block[64];
-    snprintf(block, sizeof(block), "%d:%.2f", blockID, reward);
-    strcpy(g_minedBlocks[g_minedCount], block);
-    g_minedCount++;
+    // Find the block
+    int foundIndex = -1;
+    float reward = 0.0f;
+    char foundBlockId[32] = {0};
     
-    g_player.vcoin += reward;
-    g_player.cdMine = 5.0f;
+    for (int i = 0; i < g_minedCount && i < 50; i++) {
+        std::string blockStr = g_minedBlocks[i];
+        size_t sep = blockStr.find(':');
+        if (sep != std::string::npos) {
+            std::string id = blockStr.substr(0, sep);
+            std::string rewardStr = blockStr.substr(sep + 1);
+            
+            if (strcmp(id.c_str(), blockId) == 0) {
+                // Check if already mined (claimed)
+                bool alreadyMined = false;
+                for (int j = 0; j < g_player.minedBlockCount && j < 50; j++) {
+                    if (strcmp(g_player.minedBlockIds[j], id.c_str()) == 0) {
+                        alreadyMined = true;
+                        break;
+                    }
+                }
+                
+                if (alreadyMined) {
+                    PushCliLog("[ERROR]: Block #%s already claimed!", blockId);
+                    return;
+                }
+                
+                foundIndex = i;
+                strncpy(foundBlockId, id.c_str(), 31);
+                reward = std::stof(rewardStr);
+                break;
+            }
+        }
+    }
+    
+    if (foundIndex == -1) {
+        PushCliLog("[ERROR]: Block #%s not found!", blockId);
+        PushCliLog("[INFO]: Available blocks:");
+        for (int i = 0; i < g_minedCount && i < 50; i++) {
+            std::string blockStr = g_minedBlocks[i];
+            size_t sep = blockStr.find(':');
+            if (sep != std::string::npos) {
+                std::string id = blockStr.substr(0, sep);
+                bool alreadyMined = false;
+                for (int j = 0; j < g_player.minedBlockCount && j < 50; j++) {
+                    if (strcmp(g_player.minedBlockIds[j], id.c_str()) == 0) {
+                        alreadyMined = true;
+                        break;
+                    }
+                }
+                if (!alreadyMined) {
+                    PushCliLog("  - %s", id.c_str());
+                }
+            }
+        }
+        return;
+    }
+    
+    // --- MINE THE BLOCK ---
+    TriggerJitter(0.5f, 0.6f);
+    TriggerGlitch(0.3f);
+    
+    // Calculate actual reward (with slight randomness)
+    float actualReward = reward + (rand() % 20 - 10) / 100.0f;
+    if (actualReward < 0.20f) actualReward = 0.20f;
+    if (actualReward > 0.60f) actualReward = 0.60f;
+    
+    // Add VCOIN
+    g_player.vcoin += actualReward;
+    
+    // Mark block as mined (claimed)
+    strcpy(g_player.minedBlockIds[g_player.minedBlockCount], foundBlockId);
+    g_player.minedBlockCount++;
+    
+    // Set cooldown
+    g_player.cdMine = 20.0f;  // 20 second cooldown
+    
+    // Increase trace
     g_player.traceLevel += 18;
     if (g_player.traceLevel > 100) g_player.traceLevel = 100;
+    
+    // Increase CRT heat
     g_player.crtHeat += 3.5f;
     g_player.glitchTrigger = 0.4f;
     
-    PushCliLog("[MINER]: MINED BLOCK #%d! +%.2f VCOIN", blockID, reward);
-    PushFeedLog("[MINER]: PLAYER MINED BLOCK #%d", blockID);
+    PushCliLog("[MINER]: MINED BLOCK #%s! +%.2f VCOIN", foundBlockId, actualReward);
+    PushFeedLog("[MINER]: PLAYER MINED BLOCK #%s FOR %.2f VCOIN", foundBlockId, actualReward);
+    
+    // Refresh the page to update block list
+    RefreshPage();
+    
+    // Notify server if connected
+    if (IsVNetConnected()) {
+        std::string payload = std::string(VNetCmd::MINE_EVENT) + ":" + foundBlockId + ":" + std::to_string(actualReward);
+        VNetSendRaw(payload);
+    }
 }
 
 void UpdateMining(float dt) {
