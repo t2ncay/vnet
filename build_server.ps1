@@ -123,7 +123,7 @@ foreach ($src in $serverSources) {
 
     Write-ProgressBar -Activity "Compiling Server" -Current $i -Total $totalFiles -Status "$filename"
 
-    $compileArgs = @("-std=c++17", "-O2", "-g") + $includeDirs + $defines + @("-c", $src, "-o", $obj)
+    $compileArgs = @("-std=c++17", "-O3", "-g") + $includeDirs + $defines + @("-c", $src, "-o", $obj)
 
     Write-Host ""
     Write-Host "  Compiling $filename..." -ForegroundColor Gray

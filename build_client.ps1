@@ -183,7 +183,7 @@ foreach ($src in $clientSources) {
 
     Write-ProgressBar -Activity "Compiling Client" -Current $i -Total $totalFiles -Status "$filename"
 
-    $compileArgs = @("-std=c++17", "-O2", "-g") + $includeDirs + $defines + @("-c", $src, "-o", $obj)
+    $compileArgs = @("-std=c++17", "-O3", "-g") + $includeDirs + $defines + @("-c", $src, "-o", $obj)
 
     # FIXED: call g++ directly via the call operator with an argument
     # array, instead of building one giant string and running it
