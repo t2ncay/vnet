@@ -187,7 +187,7 @@ void HandleInput(void) {
     if (IsKeyPressed(KEY_TAB)) {
         g_player.cliOpen = !g_player.cliOpen;
     }
-    
+
     // ============================================================
     // IF DESKTOP IS ACTIVE, WE STILL NEED TO PROCESS GAME INPUT
     // BUT ONLY IF THE BROWSER OR TERMINAL WINDOW IS FOCUSED
@@ -212,13 +212,12 @@ void HandleInput(void) {
             }
         }
         
-        // Process CLI input if mouse is in any window OR terminal is focused
+        // Process CLI input if terminal is focused, or if CLI is open and browser is focused
         bool isTerminalFocused = GetDesktop().IsTerminalFocused();
         bool isBrowserFocused = GetDesktop().IsBrowserFocused();
         
-        // Always process CLI input if terminal is focused, or if CLI is open and browser is focused
-        if (g_player.cliOpen || isTerminalFocused || isBrowserFocused) {
-            // Process CLI input (same as non-desktop mode)
+        // Always process CLI input if terminal is focused
+        if (isTerminalFocused || g_player.cliOpen) {
             int key = GetCharPressed();
             while (key > 0) {
                 if (key >= 32 && key <= 126) {
@@ -242,30 +241,18 @@ void HandleInput(void) {
                     g_player.inputBuffer[0] = '\0';
                 }
             }
-            
-            // If terminal is focused and mouse is in terminal, process mouse clicks for links
-            if (isTerminalFocused && mouseInWindow) {
-                // Clicking in terminal doesn't do much, but we can trigger jitter
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                    float intensity = 0.05f + (rand() % 100) / 250.0f;
-                    if (intensity > 0.4f) intensity = 0.4f;
-                    TriggerJitter(intensity);
-                }
-            }
-            
-            // If browser is focused, process link clicks
-            if (isBrowserFocused && mouseInWindow) {
-                // This is handled in DrawMarkupPage
-            }
         }
         
-        // Process mouse wheel for scrolling (always works)
+        // Process mouse wheel for scrolling - ALWAYS works in desktop mode
         float wheel = GetMouseWheelMove();
         if (wheel != 0.0f) {
+            // If terminal is focused or CLI is open, scroll terminal
             if (g_player.cliOpen || isTerminalFocused) {
                 g_player.cliScroll -= wheel * 20.0f;
                 if (g_player.cliScroll < 0.0f) g_player.cliScroll = 0.0f;
-            } else {
+            } 
+            // Otherwise scroll the page content
+            else {
                 g_player.pageScroll -= wheel * 28.0f;
                 if (g_player.pageScroll < 0.0f) g_player.pageScroll = 0.0f;
             }
@@ -275,6 +262,9 @@ void HandleInput(void) {
         if (IsKeyPressed(KEY_TAB)) {
             g_player.cliOpen = !g_player.cliOpen;
         }
+        
+        // Mouse clicks in browser window - handled by DrawMarkupPage
+        // No need to duplicate here
         
         return; // Don't process further input when desktop is active
     }

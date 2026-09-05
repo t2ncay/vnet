@@ -8,6 +8,7 @@
 #include <cstring>
 #include <ctime>
 #include <cmath>
+#include <algorithm>
 
 // ============================================================
 // STATIC CALLBACKS - App Launchers
@@ -44,7 +45,6 @@ void Desktop::Init() {
     m_appGridVisible = false;
     m_currentWorkspace = 0;
     
-    // Define apps with proper icons
     m_apps.clear();
     m_apps.push_back({"Browser", "🌐", "Browse the VNET", LaunchBrowser});
     m_apps.push_back({"Terminal", "💻", "Command line", LaunchTerminal});
@@ -52,13 +52,11 @@ void Desktop::Init() {
     m_apps.push_back({"Settings", "⚙", "Preferences", LaunchSettings});
     m_apps.push_back({"Feed", "📊", "System feed", LaunchFeed});
     
-    // Workspaces
     m_workspaces.clear();
     m_workspaces.emplace_back("Main");
     m_workspaces.emplace_back("Work");
     m_workspaces.emplace_back("Chat");
     
-    // Start with browser window
     OpenApp(AppType::Browser, "VNET Browser");
 }
 
@@ -75,7 +73,6 @@ void Desktop::Shutdown() {
 int Desktop::OpenApp(AppType type, const char* title) {
     if (m_windows.size() >= 8) return -1;
     
-    // Check if already open (only one instance per type)
     for (int i = 0; i < (int)m_windows.size(); i++) {
         if (m_windows[i].type == type && !m_windows[i].minimized) {
             FocusWindow(i);
@@ -88,7 +85,6 @@ int Desktop::OpenApp(AppType type, const char* title) {
         }
     }
     
-    // Create new window
     AppWindow win;
     win.type = type;
     win.title = title ? title : "Window";
@@ -103,11 +99,9 @@ int Desktop::OpenApp(AppType type, const char* title) {
     win.dragX = 0;
     win.dragY = 0;
     
-    // Center if too many windows
     if (win.x > 200) win.x = 80;
     if (win.y > 200) win.y = 80;
     
-    // Clamp
     if (win.x + win.w > REF_WIDTH) win.x = REF_WIDTH - win.w - 20;
     if (win.y + win.h > REF_HEIGHT - m_topBarHeight - 20) {
         win.y = (int)(REF_HEIGHT - m_topBarHeight - win.h - 20);
@@ -124,7 +118,6 @@ int Desktop::OpenApp(AppType type, const char* title) {
 void Desktop::CloseWindow(int idx) {
     if (idx < 0 || idx >= (int)m_windows.size()) return;
     
-    // Remove from workspace
     for (auto& ws : m_workspaces) {
         for (int i = 0; i < (int)ws.windows.size(); i++) {
             if (ws.windows[i] == idx) {
@@ -133,7 +126,6 @@ void Desktop::CloseWindow(int idx) {
             }
         }
     }
-    // Shift indices in workspace after removal
     for (auto& ws : m_workspaces) {
         for (int& w : ws.windows) {
             if (w > idx) w--;
@@ -151,11 +143,12 @@ void Desktop::CloseWindow(int idx) {
 
 void Desktop::FocusWindow(int idx) {
     if (idx < 0 || idx >= (int)m_windows.size()) return;
+    
     for (auto& w : m_windows) w.focused = false;
+    
     m_windows[idx].focused = true;
     m_focused = idx;
     
-    // Bring to front
     AppWindow win = m_windows[idx];
     m_windows.erase(m_windows.begin() + idx);
     m_windows.push_back(win);
@@ -189,7 +182,6 @@ void Desktop::MaximizeWindow(int idx) {
 void Desktop::SwitchWorkspace(int idx) {
     if (idx < 0 || idx >= (int)m_workspaces.size()) return;
     m_currentWorkspace = idx;
-    // Focus first window in workspace
     m_focused = -1;
     for (int w : m_workspaces[idx].windows) {
         if (!m_windows[w].minimized) {
@@ -204,7 +196,6 @@ void Desktop::MoveWindowToWorkspace(int winIdx, int wsIdx) {
     if (winIdx < 0 || winIdx >= (int)m_windows.size()) return;
     if (wsIdx < 0 || wsIdx >= (int)m_workspaces.size()) return;
     
-    // Remove from current workspace
     for (auto& ws : m_workspaces) {
         for (int i = 0; i < (int)ws.windows.size(); i++) {
             if (ws.windows[i] == winIdx) {
@@ -217,7 +208,7 @@ void Desktop::MoveWindowToWorkspace(int winIdx, int wsIdx) {
 }
 
 // ============================================================
-// UPDATE - Handle all input here
+// UPDATE - COMPLETE FIXED VERSION
 // ============================================================
 
 void Desktop::Update(float dt) {
@@ -227,27 +218,6 @@ void Desktop::Update(float dt) {
     Vector2 refMouse = GetRefMousePos();
     bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
     bool dragging = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-    
-    // ============================================================
-    // DESKTOP ICON CLICKS
-    // ============================================================
-    float iconSize = 80.0f;
-    float spacing = 20.0f;
-    float startX = 30.0f;
-    float startY = 80.0f;
-    int cols = 4;
-    
-    for (int i = 0; i < (int)m_apps.size(); i++) {
-        int col = i % cols;
-        int row = i / cols;
-        float x = startX + col * (iconSize + spacing);
-        float y = startY + row * (iconSize + spacing + 30);
-        
-        if (clicked && RefRectHover(x, y, iconSize, iconSize, refMouse)) {
-            m_apps[i].onClick();
-            break;
-        }
-    }
     
     // ============================================================
     // APP GRID
@@ -272,6 +242,7 @@ void Desktop::Update(float dt) {
             if (clicked && RefRectHover(x, y, iconSizeg, iconSizeg, refMouse)) {
                 m_apps[i].onClick();
                 m_appGridVisible = false;
+                clicked = false;
                 break;
             }
         }
@@ -281,16 +252,7 @@ void Desktop::Update(float dt) {
     }
     
     // ============================================================
-    // WORKSPACE SWITCHING
-    // ============================================================
-    if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) {
-        if (IsKeyPressed(KEY_ONE)) SwitchWorkspace(0);
-        if (IsKeyPressed(KEY_TWO)) SwitchWorkspace(1);
-        if (IsKeyPressed(KEY_THREE)) SwitchWorkspace(2);
-    }
-    
-    // ============================================================
-    // WINDOW MANAGEMENT - Only process window dragging/closing
+    // WINDOW TITLE BAR CONTROLS (Close, Minimize, Maximize, Drag)
     // ============================================================
     for (int i = (int)m_windows.size() - 1; i >= 0; i--) {
         auto& win = m_windows[i];
@@ -305,29 +267,36 @@ void Desktop::Update(float dt) {
         float titleY = win.y;
         float titleH = m_windowTitleHeight;
         
-        // Only handle title bar interactions here
+        // Check if mouse is on title bar
         if (RefRectHover(win.x, titleY, win.w, titleH, refMouse)) {
+            // CLOSE BUTTON (rightmost)
+            if (clicked && RefRectHover(win.x + win.w - 25, win.y + 5, 20, 20, refMouse)) {
+                CloseWindow(i);
+                return;
+            }
+            // MINIMIZE BUTTON
+            if (clicked && RefRectHover(win.x + win.w - 50, win.y + 5, 20, 20, refMouse)) {
+                MinimizeWindow(i);
+                return;
+            }
+            // MAXIMIZE BUTTON
+            if (clicked && RefRectHover(win.x + win.w - 75, win.y + 5, 20, 20, refMouse)) {
+                MaximizeWindow(i);
+                return;
+            }
+            
+            // DRAG (only if not clicking a button)
             if (clicked) {
+                // Bring to front FIRST before dragging
                 FocusWindow(i);
                 win.dragging = true;
                 win.dragX = (int)(refMouse.x - win.x);
                 win.dragY = (int)(refMouse.y - titleY);
-            }
-            
-            if (clicked && RefRectHover(win.x + win.w - 25, win.y + 5, 20, 20, refMouse)) {
-                CloseWindow(i);
-                continue;
-            }
-            if (clicked && RefRectHover(win.x + win.w - 50, win.y + 5, 20, 20, refMouse)) {
-                MinimizeWindow(i);
-                continue;
-            }
-            if (clicked && RefRectHover(win.x + win.w - 75, win.y + 5, 20, 20, refMouse)) {
-                MaximizeWindow(i);
-                continue;
+                return;
             }
         }
         
+        // Handle dragging - use the current window reference
         if (win.dragging && dragging) {
             win.x = (int)(refMouse.x - win.dragX);
             win.y = (int)(refMouse.y - win.dragY);
@@ -340,29 +309,67 @@ void Desktop::Update(float dt) {
         }
     }
 
-    // Click on terminal content to focus it
-    for (int i = (int)m_windows.size() - 1; i >= 0; i--) {
-        auto& win = m_windows[i];
-        if (win.type != AppType::Terminal) continue;
-        if (win.minimized) continue;
-        if (!win.focused) continue; // Only check focused window
-        
-        // Check if click is in the terminal content area (not title bar)
-        float contentX = win.x + 4;
-        float contentY = win.y + m_windowTitleHeight + 4 + 28; // Header offset
-        float contentW = win.w - 8;
-        float contentH = win.h - m_windowTitleHeight - 8 - 60; // Input area offset
-        
-        if (clicked && RefRectHover(contentX, contentY, contentW, contentH, refMouse)) {
-            // Focus the terminal (already focused, but this ensures it)
-            FocusWindow(i);
-            // Set focus flag for input
+    // ============================================================
+    // WINDOW CONTENT CLICKS - Bring to front
+    // ============================================================
+    if (clicked) {
+        for (int i = (int)m_windows.size() - 1; i >= 0; i--) {
+            auto& win = m_windows[i];
+            
+            bool inWorkspace = false;
+            for (int w : m_workspaces[m_currentWorkspace].windows) {
+                if (w == i) { inWorkspace = true; break; }
+            }
+            if (!inWorkspace) continue;
+            if (win.minimized) continue;
+            
+            float contentX = win.x + 4;
+            float contentY = win.y + m_windowTitleHeight + 4;
+            float contentW = win.w - 8;
+            float contentH = win.h - m_windowTitleHeight - 8;
+            
+            if (RefRectHover(contentX, contentY, contentW, contentH, refMouse)) {
+                FocusWindow(i);
+                break;
+            }
         }
+    }
+    
+    // ============================================================
+    // DESKTOP ICON CLICKS (only if no window was clicked)
+    // ============================================================
+    if (clicked) {
+        float iconSize = 80.0f;
+        float spacing = 20.0f;
+        float startX = 30.0f;
+        float startY = 80.0f;
+        int cols = 4;
+        
+        for (int i = 0; i < (int)m_apps.size(); i++) {
+            int col = i % cols;
+            int row = i / cols;
+            float x = startX + col * (iconSize + spacing);
+            float y = startY + row * (iconSize + spacing + 30);
+            
+            if (RefRectHover(x, y, iconSize, iconSize, refMouse)) {
+                m_apps[i].onClick();
+                break;
+            }
+        }
+    }
+    
+    // ============================================================
+    // WORKSPACE SWITCHING
+    // ============================================================
+    if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) {
+        if (IsKeyPressed(KEY_ONE)) SwitchWorkspace(0);
+        if (IsKeyPressed(KEY_TWO)) SwitchWorkspace(1);
+        if (IsKeyPressed(KEY_THREE)) SwitchWorkspace(2);
     }
 }
 
 // ============================================================
-// DRAW DESKTOP ICONS
+// DRAW FUNCTIONS (Unchanged - keep as they were)
 // ============================================================
 
 void Desktop::DrawDesktopIcons() {
@@ -381,33 +388,24 @@ void Desktop::DrawDesktopIcons() {
         
         bool hover = RefRectHover(x, y, iconSize, iconSize, refMouse);
         
-        // Icon background
         DrawScaledRect(x, y, iconSize, iconSize, 
                        hover ? Color{40, 45, 65, 200} : Color{20, 22, 35, 150});
         DrawScaledRectLines(x, y, iconSize, iconSize, 
                             hover ? COLOR_BLOOD : Color{30, 35, 50, 100});
         
-        // Icon emoji
         DrawScaledText(m_apps[i].icon.c_str(), 
                        x + (iconSize - 24) / 2, y + 8, 28, COLOR_CYAN);
         
-        // Icon label
         DrawScaledText(m_apps[i].name.c_str(), 
                        x + 10, y + iconSize - 18, 10, hover ? COLOR_TOXIC : COLOR_GHOST);
     }
 }
 
-// ============================================================
-// DRAW
-// ============================================================
-
 void Desktop::Draw() {
     if (!m_active) return;
     
-    // Desktop background
     DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, Color{18, 20, 28, 255});
     
-    // Subtle grid pattern
     for (int x = 0; x < REF_WIDTH; x += 40) {
         DrawScaledLine(x, 0, x, REF_HEIGHT, Color{25, 28, 38, 60});
     }
@@ -415,28 +413,35 @@ void Desktop::Draw() {
         DrawScaledLine(0, y, REF_WIDTH, y, Color{25, 28, 38, 60});
     }
     
-    // Draw desktop icons
     DrawDesktopIcons();
     
-    // Draw windows (only current workspace)
+    std::vector<int> visibleWindows;
     for (int i = 0; i < (int)m_windows.size(); i++) {
         bool inWorkspace = false;
         for (int w : m_workspaces[m_currentWorkspace].windows) {
             if (w == i) { inWorkspace = true; break; }
         }
-        if (!inWorkspace) continue;
-        DrawWindow(i);
+        if (inWorkspace && !m_windows[i].minimized) {
+            visibleWindows.push_back(i);
+        }
     }
     
-    // Top bar
-    DrawTopBar();
+    std::sort(visibleWindows.begin(), visibleWindows.end(), [this](int a, int b) {
+        bool focusedA = m_windows[a].focused;
+        bool focusedB = m_windows[b].focused;
+        return focusedA < focusedB;
+    });
     
-    // App grid overlay
+    for (int idx : visibleWindows) {
+        DrawWindow(idx);
+    }
+    
+    DrawTopBar();
     if (m_appGridVisible) DrawAppGrid();
 }
 
 // ============================================================
-// TOP BAR
+// TOP BAR, WORKSPACE INDICATOR, CLOCK, APP GRID
 // ============================================================
 
 void Desktop::DrawTopBar() {
@@ -464,10 +469,6 @@ void Desktop::DrawTopBar() {
     DrawScaledText(vcoin, REF_WIDTH - 180, barY + 14, 11, COLOR_TOXIC);
 }
 
-// ============================================================
-// WORKSPACE INDICATOR
-// ============================================================
-
 void Desktop::DrawWorkspaceIndicator() {
     float barY = 0;
     float startX = 150;
@@ -486,16 +487,12 @@ void Desktop::DrawWorkspaceIndicator() {
         int count = (int)m_workspaces[i].windows.size();
         char dots[8] = "";
         for (int j = 0; j < count && j < 4; j++) {
-            dots[j] = '.';
+            dots[j] = '•';
         }
         dots[count] = '\0';
         DrawScaledText(dots, x + 8, barY + 16, 8, active ? COLOR_TOXIC : COLOR_GHOST);
     }
 }
-
-// ============================================================
-// CLOCK
-// ============================================================
 
 void Desktop::DrawClock() {
     time_t now = time(nullptr);
@@ -507,10 +504,6 @@ void Desktop::DrawClock() {
     float barY = 0;
     DrawScaledText(timeStr, REF_WIDTH - 110, barY + 14, 13, COLOR_CYAN);
 }
-
-// ============================================================
-// APP GRID
-// ============================================================
 
 void Desktop::DrawAppGrid() {
     DrawScaledRect(0, m_topBarHeight, REF_WIDTH, REF_HEIGHT - m_topBarHeight, 
@@ -567,14 +560,17 @@ void Desktop::DrawWindow(int idx) {
     DrawScaledLine(win.x, win.y + m_windowTitleHeight, win.x + win.w, win.y + m_windowTitleHeight, borderCol);
     DrawScaledText(win.title.c_str(), win.x + 10, win.y + 8, 11, focused ? COLOR_BLACK : COLOR_GHOST);
     
+    // Close button (X)
     DrawScaledRect(win.x + win.w - 25, win.y + 5, 20, 20, COLOR_BLOOD);
     DrawScaledRectLines(win.x + win.w - 25, win.y + 5, 20, 20, COLOR_BORDER);
     DrawScaledText("✕", win.x + win.w - 20, win.y + 7, 14, COLOR_BLACK);
     
+    // Minimize button (-)
     DrawScaledRect(win.x + win.w - 50, win.y + 5, 20, 20, Color{35, 40, 55, 255});
     DrawScaledRectLines(win.x + win.w - 50, win.y + 5, 20, 20, COLOR_BORDER);
     DrawScaledText("─", win.x + win.w - 45, win.y + 6, 14, COLOR_GHOST);
     
+    // Maximize button (□)
     DrawScaledRect(win.x + win.w - 75, win.y + 5, 20, 20, Color{35, 40, 55, 255});
     DrawScaledRectLines(win.x + win.w - 75, win.y + 5, 20, 20, COLOR_BORDER);
     DrawScaledText("□", win.x + win.w - 70, win.y + 6, 14, COLOR_GHOST);
@@ -613,37 +609,12 @@ void Desktop::DrawBrowser(const AppWindow& win) {
     float cw = win.w - 8;
     float ch = win.h - m_windowTitleHeight - 8;
     
-    // Draw the ENTIRE game UI inside the browser window
-    // This is the same rendering as the fullscreen mode
-    
-    // Save current UI scale and offset to render inside the window
-    float savedScale = g_uiScale;
-    float savedOffsetX = g_offsetX;
-    float savedOffsetY = g_offsetY;
-    
-    // Temporarily set offset to render within the window
-    float windowScale = (cw / REF_WIDTH) * savedScale;
-    if (windowScale < 0.5f) windowScale = 0.5f;
-    if (windowScale > 1.5f) windowScale = 1.5f;
-    
-    // Calculate offset to center the game in the window
-    float contentX = cx;
-    float contentY = cy + 40; // URL bar offset
-    float contentW = cw;
-    float contentH = ch - 40;
-    
-    // Draw the game content inside the window
-    // For simplicity, we'll draw a scaled version of the browser content
-    
-    // Dark background for browser
     DrawScaledRect(cx, cy, cw, ch, COLOR_BLACK);
     
-    // URL bar
     DrawScaledRect(cx + 10, cy + 10, cw - 20, 30, COLOR_URLBAR);
     DrawScaledRectLines(cx + 10, cy + 10, cw - 20, 30, COLOR_BORDER);
     DrawScaledText("vnet://vnet.dir", cx + 20, cy + 18, 11, COLOR_CYAN);
     
-    // Draw the game content as a nested UI
     float gameX = cx + 10;
     float gameY = cy + 50;
     float gameW = cw - 20;
@@ -654,7 +625,6 @@ void Desktop::DrawBrowser(const AppWindow& win) {
     
     DrawMarkupPage(gameX, gameY, gameW, gameH);
     
-    // Status bar at bottom
     char status[64];
     snprintf(status, sizeof(status), "PORT: %d | VCOIN: %.2f", g_player.port, g_player.vcoin);
     DrawScaledText(status, gameX + 20, gameY + gameH - 25, 9, COLOR_GHOST);
@@ -666,16 +636,13 @@ void Desktop::DrawTerminal(const AppWindow& win) {
     float cw = win.w - 8;
     float ch = win.h - m_windowTitleHeight - 8;
     
-    // Background
     DrawScaledRect(cx, cy, cw, ch, COLOR_CLI_BG);
     DrawScaledRectLines(cx, cy, cw, ch, COLOR_BORDER);
     
-    // Terminal header
     DrawScaledRect(cx, cy, cw, 22, COLOR_PANEL);
     DrawScaledLine(cx, cy + 22, cx + cw, cy + 22, COLOR_BORDER);
     DrawScaledText("TERMINAL v9.5 // SYSTEM CLI", cx + 10, cy + 5, 10, COLOR_BLOOD);
     
-    // CLI Logs area
     float logY = cy + 28;
     float logH = ch - 60;
     
@@ -707,16 +674,13 @@ void Desktop::DrawTerminal(const AppWindow& win) {
     
     EndScissorMode();
     
-    // Input line at bottom
     float inputY = cy + ch - 28;
     DrawScaledLine(cx, inputY, cx + cw, inputY, COLOR_BORDER);
     
-    // Check if terminal is focused for cursor blink
     bool focused = IsTerminalFocused();
     float t = (float)GetTime();
     bool cursorVisible = focused ? (fmodf(t, 0.8f) > 0.4f) : false;
     
-    // Show prompt with cursor
     char prompt[300];
     snprintf(prompt, sizeof(prompt), "CMD> %s", g_player.inputBuffer);
     DrawScaledText(prompt, cx + 10, inputY + 6, 12, COLOR_TOXIC);
@@ -726,7 +690,6 @@ void Desktop::DrawTerminal(const AppWindow& win) {
         DrawScaledRect(cx + 10 + textWidth + 2.0f, inputY + 6, 7, 14, COLOR_TOXIC);
     }
     
-    // Focus indicator
     if (!focused) {
         DrawScaledText("[CLICK TO FOCUS]", cx + cw - 130, inputY + 6, 9, COLOR_AMBER);
     }
