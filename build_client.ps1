@@ -1,5 +1,5 @@
 # ============================================================
-# VNET CLIENT - Build Script
+# VNET CLIENT - Build Script v3.0 (Recursive Source Discovery)
 # VEKTRAOS v9.5 CYBERWARFARE ENGINE
 # ============================================================
 
@@ -31,7 +31,7 @@ function Write-ProgressBar {
 # ============================================================
 
 Clear-Host
-Write-Header "VNET CLIENT - BUILD SYSTEM v2.1"
+Write-Header "VNET CLIENT - BUILD SYSTEM v3.0 (RECURSIVE SOURCE DISCOVERY)"
 
 # ============================================================
 # PROJECT SETUP
@@ -87,46 +87,104 @@ if (Test-Path "assets/VCR_OSD_MONO_1.001.ttf") {
 }
 
 # ============================================================
-# SOURCE FILE COLLECTION
+# RECURSIVE SOURCE FILE DISCOVERY - FIXED DUPLICATES
 # ============================================================
 
-Write-Header "COLLECTING SOURCE FILES"
+Write-Header "RECURSIVE SOURCE DISCOVERY"
 
-$clientSources = @(
-    # Client specific
-    "src/client/main.cpp",
-    "src/client/game.cpp",
-    "src/client/render.cpp",
-    "src/client/player.cpp",
-    "src/client/vnet_client.cpp",
-    "src/client/desktop.cpp",
-    "src/client/music_player.cpp",
-    "src/client/wallpaper.cpp",
-    # Shared
-    "src/shared/vnet.cpp",
-    "src/shared/vnet_sites.cpp",
-    "src/shared/utils.cpp",
-    # Lib
-    "src/lib/vnet_lib.cpp"
+# Find ALL .cpp files recursively in src/
+Write-Info "Scanning src/ directory recursively..."
+
+# Get all .cpp files, excluding temporary/build files
+$allCppFiles = Get-ChildItem -Path "src" -Recurse -Filter "*.cpp" | 
+               Where-Object { $_.FullName -notmatch "build" -and $_.FullName -notmatch "temp" } |
+               ForEach-Object { $_.FullName }
+
+# Filter files - keep only those we want to compile
+# Exclude: server files (they're separate)
+$excludePatterns = @(
+    "src\\server\\",
+    "src\\tools\\",
+    "src\\test\\"
 )
 
-# Verify source files exist
-$missingFiles = @()
-foreach ($file in $clientSources) {
-    if (-not (Test-Path $file)) {
-        $missingFiles += $file
+$clientSources = @()
+foreach ($file in $allCppFiles) {
+    $shouldExclude = $false
+    foreach ($pattern in $excludePatterns) {
+        if ($file -match $pattern) {
+            $shouldExclude = $true
+            break
+        }
+    }
+    if (-not $shouldExclude) {
+        $clientSources += $file
     }
 }
 
-if ($missingFiles.Count -gt 0) {
-    Write-Error "Missing source files:"
-    foreach ($f in $missingFiles) {
-        Write-Host "  - $f" -ForegroundColor Red
+# ============================================================
+# CRITICAL FIX: Remove duplicates!
+# ============================================================
+$clientSources = $clientSources | Select-Object -Unique
+
+# Convert to relative paths for cleaner display
+$relativeSources = @()
+foreach ($file in $clientSources) {
+    $relative = $file.Replace("$projectDir\", "")
+    $relativeSources += $relative
+}
+
+# Display discovered files
+Write-Success "Found $($clientSources.Count) source files:"
+Write-Host ""
+Write-Host "  ┌─────────────────────────────────────────────────────────────┐" -ForegroundColor Cyan
+foreach ($src in $relativeSources | Sort-Object) {
+    Write-Host "  │  $src" -ForegroundColor Gray
+}
+Write-Host "  └─────────────────────────────────────────────────────────────┘" -ForegroundColor Cyan
+Write-Host ""
+
+# Show breakdown by directory
+$dirGroups = $relativeSources | ForEach-Object { 
+    $dir = Split-Path $_ -Parent
+    if ($dir -eq "") { "root" } else { $dir }
+} | Group-Object | Sort-Object Count -Descending
+
+Write-Host "  📁 Source file breakdown:"
+foreach ($group in $dirGroups) {
+    Write-Host "    ├─ $($group.Name) : $($group.Count) files" -ForegroundColor Green
+}
+Write-Host ""
+
+# ============================================================
+# VERIFY ESSENTIAL FILES - FIXED PATHS
+# ============================================================
+
+Write-Info "Verifying essential source files..."
+
+$essentialFiles = @(
+    "src\client\main.cpp",
+    "src\client\desktop\desktop.cpp",
+    "src\client\desktop\desktop.h",
+    "src\shared\vnet.cpp",
+    "src\shared\vnet_sites.cpp"
+)
+
+$missingEssential = $false
+foreach ($file in $essentialFiles) {
+    if (-not (Test-Path $file)) {
+        Write-Error "Essential file missing: $file"
+        $missingEssential = $true
+    } else {
+        Write-Success "Found: $file"
     }
+}
+
+if ($missingEssential) {
+    Write-Error "Essential source files missing!"
+    Write-Info "Make sure you've moved desktop.cpp/h to src/client/desktop/"
     exit 1
 }
-
-Write-Success "Found $($clientSources.Count) source files"
 
 # ============================================================
 # BUILD CLIENT
@@ -137,7 +195,7 @@ Write-Header "BUILDING VNET CLIENT"
 # Create build directory
 if (Test-Path "build_client") {
     Write-Info "Cleaning build directory..."
-    Remove-Item -Recurse -Force "build_client"
+    Remove-Item -Recurse -Force "build_client" -ErrorAction SilentlyContinue
 }
 New-Item -ItemType Directory -Path "build_client" -Force | Out-Null
 Write-Success "Build directory created"
@@ -145,11 +203,6 @@ Write-Success "Build directory created"
 # ============================================================
 # INCLUDE PATHS AND DEFINES
 # ============================================================
-# NOTE: These are kept as ARRAYS (not a joined string) so they can be
-# splatted straight into the g++ call below with `@includeDirs`.
-# Passing arrays through the call operator (&) means PowerShell never
-# has to re-parse a giant quoted string, so paths with spaces
-# (like "Game Projects" in $projectDir) just work, no manual escaping.
 
 $projectDirAbs = (Get-Location).Path
 $raylibInclude = "$projectDirAbs/vendor/raylib/include"
@@ -161,15 +214,31 @@ Write-Info "Raylib lib: $raylibLib"
 $includeDirs = @(
     "-I$projectDirAbs",
     "-I$projectDirAbs/src/client",
+    "-I$projectDirAbs/src/client/desktop",
+    "-I$projectDirAbs/src/client/desktop/apps",
+    "-I$projectDirAbs/src/client/desktop/apps/vdec",
+    "-I$projectDirAbs/src/client/desktop/settings",
     "-I$projectDirAbs/src/shared",
     "-I$projectDirAbs/src/lib",
     "-I$raylibInclude"
 )
 
-$defines = @("-D_CRT_SECURE_NO_WARNINGS", "-D_USE_MATH_DEFINES")
+$defines = @(
+    "-D_CRT_SECURE_NO_WARNINGS",
+    "-D_USE_MATH_DEFINES",
+    "-D_WIN32_WINNT=0x0600"
+)
 
-# Compile each source file with progress bar
+# ============================================================
+# COMPILE ALL SOURCE FILES
+# ============================================================
+
 Write-Host "`n"
+Write-Host "  ╔═══════════════════════════════════════════════════════════════╗" -ForegroundColor Yellow
+Write-Host "  ║  🔨 COMPILING $($clientSources.Count) SOURCE FILES  ║" -ForegroundColor Yellow
+Write-Host "  ╚═══════════════════════════════════════════════════════════════╝" -ForegroundColor Yellow
+Write-Host ""
+
 $objectFiles = @()
 $failedFiles = @()
 $totalFiles = $clientSources.Count
@@ -177,27 +246,33 @@ $i = 0
 
 foreach ($src in $clientSources) {
     $i++
-    $objName = ($src -replace '[/\\]', '_') -replace '\.cpp$', '.o'
-    $obj = "build_client\$objName"
-    $filename = Split-Path $src -Leaf
+    $relativePath = $src.Replace("$projectDir\", "")
+    $safeName = $relativePath -replace '[/\\:\. ]', '_'
+    $obj = "build_client\$safeName.o"
+    $filename = Split-Path $relativePath -Leaf
+    $directory = Split-Path $relativePath -Parent
 
-    Write-ProgressBar -Activity "Compiling Client" -Current $i -Total $totalFiles -Status "$filename"
+    Write-ProgressBar -Activity "Compiling Client" -Current $i -Total $totalFiles -Status "$filename ($directory)"
 
-    $compileArgs = @("-std=c++17", "-O3", "-g") + $includeDirs + $defines + @("-c", $src, "-o", $obj)
+    $compileArgs = @(
+        "-std=c++17",
+        "-O3",
+        "-g",
+        "-Wall",
+        "-Wextra"
+    ) + $includeDirs + $defines + @(
+        "-c",
+        $src,
+        "-o",
+        $obj
+    )
 
-    # FIXED: call g++ directly via the call operator with an argument
-    # array, instead of building one giant string and running it
-    # through Invoke-Expression. This is what actually lets 2>&1
-    # merge and capture the compiler's real stderr text reliably.
     $output = & g++ @compileArgs 2>&1
     $exitCode = $LASTEXITCODE
 
     if ($exitCode -ne 0) {
         $failedFiles += $filename
         Write-Host "`n  ❌ $filename - FAILED" -ForegroundColor Red
-        # FIXED: print every diagnostic line g++ produced, not just
-        # the first line that happens to contain the substring "error:"
-        # (that missed linker-style messages and multi-line diagnostics).
         $output | ForEach-Object { Write-Host "     $_" -ForegroundColor Red }
     } else {
         $objectFiles += $obj
@@ -224,21 +299,41 @@ Write-Header "LINKING CLIENT"
 
 Write-Info "Linking $($objectFiles.Count) object files..."
 
-Write-Info "Linking..."
-$linkArgs = @("-o", "vnet_client.exe") + $objectFiles + @(
-    "-L$raylibLib", "-lraylib", "-lopengl32", "-lgdi32",
-    "-lwinmm", "-lshell32", "-lwinpthread", "-lws2_32", "-lm"
+# Try standard linking
+$linkArgs = @(
+    "-o", "vnet_client.exe"
+) + $objectFiles + @(
+    "-L$raylibLib",
+    "-lraylib",
+    "-lopengl32",
+    "-lgdi32",
+    "-lwinmm",
+    "-lshell32",
+    "-lwinpthread",
+    "-lws2_32",
+    "-lm"
 )
+
+Write-Info "Linking..."
 $linkOutput = & g++ @linkArgs 2>&1
 $linkExit = $LASTEXITCODE
 
+# If standard linking fails, try direct library path
 if ($linkExit -ne 0) {
-    Write-Warning "First link attempt failed, trying alternative..."
+    Write-Warning "First link attempt failed, trying alternative library linking..."
     $linkOutput | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
 
-    $linkArgs2 = @("-o", "vnet_client.exe") + $objectFiles + @(
-        "$raylibLib/libraylib.a", "-lopengl32", "-lgdi32",
-        "-lwinmm", "-lshell32", "-lwinpthread", "-lws2_32", "-lm"
+    $linkArgs2 = @(
+        "-o", "vnet_client.exe"
+    ) + $objectFiles + @(
+        "$raylibLib/libraylib.a",
+        "-lopengl32",
+        "-lgdi32",
+        "-lwinmm",
+        "-lshell32",
+        "-lwinpthread",
+        "-lws2_32",
+        "-lm"
     )
     $linkOutput = & g++ @linkArgs2 2>&1
     $linkExit = $LASTEXITCODE
@@ -279,6 +374,7 @@ if (Test-Path "vnet_client.exe") {
     $size = [math]::Round((Get-Item vnet_client.exe).Length / 1KB, 2)
     Write-Success "✅ Client executable: $projectDir\vnet_client.exe"
     Write-Info "📦 Output size: $size KB"
+    Write-Info "📁 Source files compiled: $($clientSources.Count)"
     Write-Info "🕐 Build time: $(Get-Date -Format 'HH:mm:ss')"
     Write-Success "🎉 Client build completed successfully!"
 } else {
