@@ -231,10 +231,6 @@ void Desktop::CloseWindow(int idx) {
     m_windows.erase(m_windows.begin() + idx);
     if (m_focused >= idx) m_focused--;
     if (m_focused >= (int)m_windows.size()) m_focused = (int)m_windows.size() - 1;
-    
-    if (m_windows.empty()) {
-        OpenApp(AppType::Browser, "VNET Browser");
-    }
 }
 
 void Desktop::FocusWindow(int idx) {
