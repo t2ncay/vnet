@@ -17,6 +17,7 @@ extern Color COLOR_GHOST;
 
 // Font
 extern Font g_fontVCR;
+extern float g_fontScale;
 
 // UI Scale and letterbox offsets
 extern float g_uiScale;

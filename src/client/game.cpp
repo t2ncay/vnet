@@ -110,7 +110,6 @@ void ShutdownGame(void) {
 }
 
 void HandleInput(void) {
-
     // ============================================================
     // CONNECTION MENU INPUT
     // ============================================================
@@ -118,23 +117,19 @@ void HandleInput(void) {
         Vector2 refMouse = GetRefMousePos();
         bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
                 
-        // Check if click is on IP input box
         bool ipBoxHover = RefRectHover(200, 290, 400, 40, refMouse);
         if (clicked && ipBoxHover) {
             g_player.ipBoxFocused = true;
         }
         
-        // Check if click is on connect button
         bool btnHover = RefRectHover(270, 370, 260, 40, refMouse);
         if ((clicked && btnHover) || IsKeyPressed(KEY_ENTER)) {
             if (strlen(g_player.ipInputBuffer) > 0) {
-                // Connect to server
                 if (InitVNetClient(g_player.ipInputBuffer, 8000)) {
                     g_player.isInConnectionMenu = false;
                     PushCliLog("[CONNECT]: Connected to %s", g_player.ipInputBuffer);
                     LoadPage("vnet.dir");
                     
-                    // Send initial PING to register with server
                     std::string pingMsg = std::string(VNetCmd::PING) + ":" + g_player.handle + ":" + g_player.currentURL;
                     VNetSendRaw(pingMsg);
                 } else {
@@ -143,7 +138,6 @@ void HandleInput(void) {
             }
         }
         
-        // Handle typing in IP box
         if (g_player.ipBoxFocused) {
             int key = GetCharPressed();
             while (key > 0) {
@@ -168,7 +162,7 @@ void HandleInput(void) {
         return;
     }
 
-        // ============================================================
+    // ============================================================
     // MAIN INPUT HANDLING
     // ============================================================
     
@@ -180,24 +174,18 @@ void HandleInput(void) {
         RecalcScale();
     }
 
-    // F10 no longer toggles desktop - desktop is always on
-    // Remove or repurpose F10
-
     if (IsKeyPressed(KEY_TAB)) {
         g_player.cliOpen = !g_player.cliOpen;
     }
 
     // ============================================================
-    // DESKTOP MODE - Always active, process input through desktop
+    // DESKTOP MODE - Process CLI input
     // ============================================================
-    // Desktop handles its own input in Desktop::Update()
-    // Game input (CLI, etc.) is processed here regardless of desktop state
     
-    // Process CLI input if terminal is focused or CLI is open
     bool isTerminalFocused = GetDesktop().IsTerminalFocused();
     bool isBrowserFocused = GetDesktop().IsBrowserFocused();
     
-    // Always process CLI input if terminal is focused or CLI is open
+    // Process CLI input if terminal is focused or CLI is open
     if (isTerminalFocused || g_player.cliOpen) {
         int key = GetCharPressed();
         while (key > 0) {
@@ -224,19 +212,24 @@ void HandleInput(void) {
         }
     }
     
-    // Process mouse wheel for scrolling - ALWAYS works
+    // ============================================================
+    // MOUSE WHEEL SCROLLING - SINGLE HANDLER
+    // ============================================================
     float wheel = GetMouseWheelMove();
     if (wheel != 0.0f) {
+        // If terminal is focused or CLI is open, scroll the terminal
         if (g_player.cliOpen || isTerminalFocused) {
             g_player.cliScroll -= wheel * 20.0f;
             if (g_player.cliScroll < 0.0f) g_player.cliScroll = 0.0f;
-        } else {
+        } 
+        // Otherwise scroll the browser
+        else {
             g_player.pageScroll -= wheel * 28.0f;
             if (g_player.pageScroll < 0.0f) g_player.pageScroll = 0.0f;
         }
     }
     
-    // Handle TAB to toggle CLI
+    // Handle TAB to toggle CLI (duplicate removed)
     if (IsKeyPressed(KEY_TAB)) {
         g_player.cliOpen = !g_player.cliOpen;
     }
@@ -245,7 +238,6 @@ void HandleInput(void) {
     // HELLROOM INPUT HANDLING
     // ============================================================
     if (strcmp(g_player.currentURL, "hellroom.vnet") == 0) {
-        // Handle input only if not in CLI overlay
         if (!g_player.cliOpen) {
             if (g_hellroom.handleFocused) {
                 int key = GetCharPressed();
@@ -266,7 +258,6 @@ void HandleInput(void) {
                     }
                 }
                 if (IsKeyPressed(KEY_ENTER)) {
-                    // Update player handle
                     if (strlen(g_hellroom.handleInputBuffer) > 0) {
                         strcpy(g_player.handle, g_hellroom.handleInputBuffer);
                         PushCliLog("[HELLROOM]: Handle updated to %s", g_player.handle);
@@ -294,7 +285,6 @@ void HandleInput(void) {
                 }
                 if (IsKeyPressed(KEY_ENTER)) {
                     if (strlen(g_hellroom.chatInputBuffer) > 0) {
-                        // Send message
                         if (strlen(g_hellroom.chatInputBuffer) >= 3 && 
                             (strncmp(g_hellroom.chatInputBuffer, "/w ", 3) == 0 || 
                              strncmp(g_hellroom.chatInputBuffer, "/pm ", 4) == 0)) {
@@ -332,32 +322,6 @@ void HandleInput(void) {
         }
     }
 
-    if (g_player.cliOpen) {
-        int key = GetCharPressed();
-        while (key > 0) {
-            if (key >= 32 && key <= 126) {
-                size_t len = strlen(g_player.inputBuffer);
-                if (len < sizeof(g_player.inputBuffer) - 1) {
-                    g_player.inputBuffer[len] = (char)key;
-                    g_player.inputBuffer[len + 1] = '\0';
-                }
-            }
-            key = GetCharPressed();
-        }
-
-        if (IsKeyPressed(KEY_BACKSPACE)) {
-            int len = (int)strlen(g_player.inputBuffer);
-            if (len > 0) g_player.inputBuffer[len - 1] = '\0';
-        }
-
-        if (IsKeyPressed(KEY_ENTER)) {
-            if (strlen(g_player.inputBuffer) > 0) {
-                ProcessCommand(g_player.inputBuffer);
-                g_player.inputBuffer[0] = '\0';
-            }
-        }
-    }
-
     // ============================================================
     // MOUSE CLICK HANDLING
     // ============================================================
@@ -365,16 +329,5 @@ void HandleInput(void) {
         float intensity = 0.05f + (rand() % 100) / 250.0f;
         if (intensity > 0.4f) intensity = 0.4f;
         TriggerJitter(intensity);
-    }
-
-    // Mouse wheel scroll
-    if (wheel != 0.0f) {
-        if (g_player.cliOpen) {
-            g_player.cliScroll -= wheel * 22.0f;
-            if (g_player.cliScroll < 0.0f) g_player.cliScroll = 0.0f;
-        } else {
-            g_player.pageScroll -= wheel * 28.0f;
-            if (g_player.pageScroll < 0.0f) g_player.pageScroll = 0.0f;
-        }
     }
 }

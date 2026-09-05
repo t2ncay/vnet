@@ -53,7 +53,15 @@ std::vector<std::string> VNetReceive() {
     if (!g_connected || IS_INVALID_SOCKET(g_clientSocket)) {
         return std::vector<std::string>();
     }
-    return VNetLib::RecvFrom(g_clientSocket);
+    
+    auto raw = VNetLib::RecvFrom(g_clientSocket);
+    std::vector<std::string> result;
+    
+    if (raw.size() >= 1) {
+        result.push_back(raw[0]);
+    }
+    
+    return result;
 }
 
 bool VNetSendRaw(const std::string& data) {

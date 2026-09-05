@@ -39,6 +39,8 @@ extern char g_feedLogs[100][256];
 extern int g_feedLogCount;
 extern GameState g_game;
 
+float g_fontScale = 1.3f;
+
 // ============================================================
 // ENHANCED JITTER/SHAKE SYSTEM (Weighted CRT Interference)
 // ============================================================
@@ -282,23 +284,22 @@ void DrawScaledRectLines(float x, float y, float w, float h, Color color) {
 
 void DrawScaledText(const char* text, float x, float y, float fontSize, Color color) {
     if (g_fontVCR.texture.id != 0) {
-        float globalScale = 1.3f;
-                DrawTextEx(g_fontVCR, text, {SX(x), SY(y)}, fontSize * g_uiScale * globalScale, 1.0f, color);
+        DrawTextEx(g_fontVCR, text, {SX(x), SY(y)}, fontSize * g_uiScale * g_fontScale, 1.0f, color);
     } else {
         DrawText(text, (int)SX(x), (int)SY(y), (int)(fontSize * g_uiScale), color);
     }
 }
 
-void DrawScaledLine(float x1, float y1, float x2, float y2, Color color) {
-    DrawLine((int)SX(x1), (int)SY(y1), (int)SX(x2), (int)SY(y2), color);
-}
-
 float MeasureScaledTextWidth(const char* text, float fontSize) {
     if (g_fontVCR.texture.id != 0) {
-        Vector2 sz = MeasureTextEx(g_fontVCR, text, fontSize * g_uiScale, 1.0f);
+        Vector2 sz = MeasureTextEx(g_fontVCR, text, fontSize * g_uiScale * g_fontScale, 1.0f);
         return sz.x / g_uiScale;
     }
-    return (float)MeasureText(text, (int)fontSize) ; // fallback approx, unscaled font
+    return (float)MeasureText(text, (int)fontSize);
+}
+
+void DrawScaledLine(float x1, float y1, float x2, float y2, Color color) {
+    DrawLine((int)SX(x1), (int)SY(y1), (int)SX(x2), (int)SY(y2), color);
 }
 
 Vector2 GetRefMousePos(void) {
@@ -479,15 +480,34 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
             ParseTaggedField(raw, "[BADGE:", body, rest);
             std::string text, colorName;
             SplitOnce(body, ':', text, colorName);
+            
             Color bg = COLOR_AMBER;
             if (colorName == "BLOOD") bg = COLOR_BLOOD;
             else if (colorName == "TOXIC") bg = COLOR_TOXIC;
             else if (colorName == "CYAN") bg = COLOR_CYAN;
-
-            float badgeW = MeasureScaledTextWidth(text.c_str(), 12) + 16.0f;
-            DrawScaledRect(leftX, y, badgeW, 22.0f, bg);
-            DrawScaledText(text.c_str(), leftX + 8.0f, y + 4.0f, 12, COLOR_BLACK);
-            y += lineH + 2.0f;
+            
+            // Use g_fontScale instead of hardcoded 1.3f
+            float fontSize = 12.0f;
+            float effectiveFontSize = fontSize * g_fontScale;
+            float textWidth = MeasureScaledTextWidth(text.c_str(), effectiveFontSize);
+            
+            // Padding around text
+            float paddingX = 16.0f;
+            float paddingY = 8.0f;
+            
+            float badgeW = textWidth + paddingX * 2.0f;
+            float badgeH = fontSize * g_fontScale + paddingY * 2.0f;
+            
+            // Draw badge background
+            DrawScaledRect(leftX, y, badgeW, badgeH, bg);
+            DrawScaledRectLines(leftX, y, badgeW, badgeH, Fade(COLOR_BLACK, 0.3f));
+            
+            // Center text vertically and horizontally
+            float textX = leftX + (badgeW - MeasureScaledTextWidth(text.c_str(), fontSize)) / 2.0f;
+            float textY = y + (badgeH - fontSize * g_fontScale) / 2.0f + 2.0f;
+            
+            DrawScaledText(text.c_str(), textX, textY, fontSize, COLOR_BLACK);
+            y += badgeH + 6.0f;
         }
         else if (StartsWith(raw, "[LINK:")) {
             std::string url, rest;
@@ -745,23 +765,23 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
             SplitOnce(body, ':', actionId, label);
             
             float bx = leftX, by = y;
-            float labelW = MeasureScaledTextWidth(label.c_str(), 11);
-            float bw = labelW + 30.0f, bh = 26.0f;
+            float effectiveFontSize = 11.0f * 1.3f;  // Scale for button text
+            float labelW = MeasureScaledTextWidth(label.c_str(), effectiveFontSize);
+            float bw = labelW + 40.0f;  // More padding
+            float bh = 32.0f * 1.3f;    // Scale height
             
             bool hover = RefRectHover(bx, by, bw, bh, refMouse) && mouseInPanel;
             Color bgCol = hover ? COLOR_BLOOD : COLOR_PANEL;
             
             DrawScaledRect(bx, by, bw, bh, bgCol);
             DrawScaledRectLines(bx, by, bw, bh, COLOR_BLOOD);
-            DrawScaledText(label.c_str(), bx + 15, by + 6, 11, hover ? COLOR_BLACK : COLOR_TOXIC);
+            
+            float textX = bx + (bw - MeasureScaledTextWidth(label.c_str(), 11)) / 2.0f;
+            float textY = by + (bh - 11.0f * 1.3f) / 2.0f + 2.0f;
+            DrawScaledText(label.c_str(), textX, textY, 11, hover ? COLOR_BLACK : COLOR_TOXIC);
             
             if (hover && clicked) {
                 PushCliLog("[BTN]: Clicked '%s' (action: %s)", label.c_str(), actionId.c_str());
-                // Handle special actions
-                if (actionId == "buy_ice") {
-                    // Purchase ICE shield
-                }
-                // Add more action handlers
             }
             
             y += bh + 10.0f;
@@ -1265,56 +1285,6 @@ void DrawUI(void) {
         char fpsText[32];
         snprintf(fpsText, sizeof(fpsText), "FPS: %d", g_game.currentFPS);
         DrawText(fpsText, 10, 10, 18, COLOR_TOXIC);
-    }
-}
-// ============================================================
-// TERMINAL UI
-// ============================================================
-
-void DrawTerminal(void) {
-    DrawScaledRect(20, 80, 890, 520, COLOR_CLI_BG);
-    DrawScaledRectLines(20, 80, 890, 520, COLOR_BLOOD);
-
-    DrawScaledText("SYSTEM TERMINAL OVERLAY | REAL-TIME CLI & CYBERWARFARE HUB",
-                    35, 95, 14, COLOR_BLOOD);
-    DrawScaledLine(35, 118, 895, 118, COLOR_BORDER);
-
-    BeginScissorMode((int)SX(30), (int)SY(125), (int)(870 * g_uiScale), (int)(430 * g_uiScale));
-
-    int total = g_cliLogCount;
-    int visibleLines = 18;
-    int start = (total > visibleLines) ? total - visibleLines : 0;
-    // Basic scroll: shift the start index by scroll amount (in lines).
-    int scrollLines = (int)(g_player.cliScroll / 22.0f);
-    start -= scrollLines;
-    if (start < 0) start = 0;
-    if (start > total) start = total;
-
-    for (int i = start; i < total; i++) {
-        int row = i - start;
-        float y = 128.0f + row * 22.0f;
-        if (y > 545.0f) break;
-
-        Color col = COLOR_CYAN;
-        const char* txt = g_cliLogs[i];
-        if (strncmp(txt, "> ", 2) == 0) col = COLOR_TOXIC;
-        if (strstr(txt, "[ERROR]") || strstr(txt, "[ERR]")) col = COLOR_BLOOD;
-        if (strstr(txt, "[WARNING]")) col = COLOR_AMBER;
-
-        DrawScaledText(txt, 35, y, 13, col);
-    }
-
-    EndScissorMode();
-
-    // Input line
-    DrawScaledLine(20, 560, 910, 560, COLOR_BORDER);
-    char prompt[300];
-    snprintf(prompt, sizeof(prompt), "CMD> %s", g_player.inputBuffer);
-    DrawScaledText(prompt, 35, 572, 14, COLOR_TOXIC);
-
-    if (fmodf((float)GetTime(), 0.8f) > 0.4f) {
-        float textWidth = MeasureScaledTextWidth(prompt, 14);
-        DrawScaledRect(35.0f + textWidth + 2.0f, 572, 8, 16, COLOR_TOXIC);
     }
 }
 

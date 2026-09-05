@@ -694,32 +694,57 @@ void Desktop::DrawBrowserConnectionOverlay(float contentX, float contentY, float
     float centerX = contentX + contentW / 2.0f;
     float centerY = contentY + contentH / 2.0f;
     
-    // Connection box (smaller than fullscreen version)
-    float boxW = contentW * 0.85f;
-    float boxH = contentH * 0.80f;
+    // Connection box - slightly larger
+    float boxW = contentW * 0.80f;
+    float boxH = contentH * 0.75f;
     float boxX = centerX - boxW / 2.0f;
     float boxY = centerY - boxH / 2.0f;
     
-    // Glitch jitter
-    float jx = (pulse > 0.85f) ? sinf(t * 40.0f) * 3.0f : 0.0f;
-    float jy = (pulse > 0.85f) ? cosf(t * 35.0f) * 2.0f : 0.0f;
+    // ---- NO SHAKE - just subtle CRT wobble ----
+    float wobbleX = sinf(t * 0.7f) * 0.5f;
+    float wobbleY = cosf(t * 0.9f + 0.5f) * 0.3f;
     
-    // Background box
-    DrawScaledRect(boxX + jx, boxY + jy, boxW, boxH, COLOR_BLACK);
-    DrawScaledRectLines(boxX + jx, boxY + jy, boxW, boxH, COLOR_AMBER);
+    // ---- BACKGROUND SCANLINES ----
+    for (int i = 0; i < (int)(boxH / 3.0f); i++) {
+        float scanY = boxY + i * 3.0f + fmodf(t * 60.0f, 3.0f);
+        float scanAlpha = (i % 2 == 0) ? 12 : 4;
+        DrawScaledRect(boxX + wobbleX, scanY + wobbleY, boxW, 1, 
+                       {0, 0, 0, (unsigned char)scanAlpha});
+    }
     
-    // Corner reticles
-    float cornerSize = 12.0f;
-    DrawScaledRect(boxX + jx - 3, boxY + jy - 3, cornerSize, 2, COLOR_BLOOD);
-    DrawScaledRect(boxX + jx - 3, boxY + jy - 3, 2, cornerSize, COLOR_BLOOD);
-    DrawScaledRect(boxX + boxW + jx + 1, boxY + jy - 3, cornerSize, 2, COLOR_BLOOD);
-    DrawScaledRect(boxX + boxW + jx - 1, boxY + jy - 3, 2, cornerSize, COLOR_BLOOD);
-    DrawScaledRect(boxX + jx - 3, boxY + boxH + jy + 1, cornerSize, 2, COLOR_BLOOD);
-    DrawScaledRect(boxX + jx - 3, boxY + boxH + jy - 1, 2, cornerSize, COLOR_BLOOD);
-    DrawScaledRect(boxX + boxW + jx + 1, boxY + boxH + jy + 1, cornerSize, 2, COLOR_BLOOD);
-    DrawScaledRect(boxX + boxW + jx - 1, boxY + boxH + jy - 1, 2, cornerSize, COLOR_BLOOD);
+    // ---- CRT VIGNETTE ----
+    for (int i = 0; i < 3; i++) {
+        float size = i * 30.0f;
+        DrawScaledRect(boxX + wobbleX + size, boxY + wobbleY + size, 
+                       boxW - size * 2, boxH - size * 2, 
+                       {0, 0, 0, (unsigned char)(5 - i * 2)});
+    }
     
-    // Remaining time
+    // ---- CORNER RETICLES (GLOWING) ----
+    float cornerSize = 20.0f;
+    float glowPulse = sinf(t * 2.5f) * 0.3f + 0.7f;
+    Color glowCol = {220, 20, 40, (unsigned char)(glowPulse * 200 + 55)};
+    
+    // Top-left
+    DrawScaledRect(boxX + wobbleX - 4, boxY + wobbleY - 4, cornerSize, 3, glowCol);
+    DrawScaledRect(boxX + wobbleX - 4, boxY + wobbleY - 4, 3, cornerSize, glowCol);
+    // Top-right
+    DrawScaledRect(boxX + boxW + wobbleX + 1, boxY + wobbleY - 4, cornerSize, 3, glowCol);
+    DrawScaledRect(boxX + boxW + wobbleX - 1, boxY + wobbleY - 4, 3, cornerSize, glowCol);
+    // Bottom-left
+    DrawScaledRect(boxX + wobbleX - 4, boxY + boxH + wobbleY + 1, cornerSize, 3, glowCol);
+    DrawScaledRect(boxX + wobbleX - 4, boxY + boxH + wobbleY - 1, 3, cornerSize, glowCol);
+    // Bottom-right
+    DrawScaledRect(boxX + boxW + wobbleX + 1, boxY + boxH + wobbleY + 1, cornerSize, 3, glowCol);
+    DrawScaledRect(boxX + boxW + wobbleX - 1, boxY + boxH + wobbleY - 1, 3, cornerSize, glowCol);
+    
+    // ---- CORNER GLOW BLOOM ----
+    DrawScaledRect(boxX + wobbleX - 6, boxY + wobbleY - 6, 3, 3, {220, 20, 40, 80});
+    DrawScaledRect(boxX + boxW + wobbleX + 3, boxY + wobbleY - 6, 3, 3, {220, 20, 40, 80});
+    DrawScaledRect(boxX + wobbleX - 6, boxY + boxH + wobbleY + 3, 3, 3, {220, 20, 40, 80});
+    DrawScaledRect(boxX + boxW + wobbleX + 3, boxY + boxH + wobbleY + 3, 3, 3, {220, 20, 40, 80});
+    
+    // ---- REMAINING TIME ----
     float remaining = g_player.targetConnectTime - g_player.connectTimer;
     if (remaining < 0.0f) remaining = 0.0f;
     float ratio = (g_player.targetConnectTime > 0.0f) ? 
@@ -727,71 +752,184 @@ void Desktop::DrawBrowserConnectionOverlay(float contentX, float contentY, float
     if (ratio < 0.02f) ratio = 0.02f;
     if (ratio > 1.0f) ratio = 1.0f;
     
-    // Header
+    float headerY = boxY + 30.0f + wobbleY;
+    
+    // ---- ANIMATED HEADER WITH PULSE (CENTERED) ----
     Color headerCol = (pulse > 0.5f) ? COLOR_AMBER : COLOR_BLOOD;
-    float headerY = boxY + 30.0f + jy;
-    DrawScaledText("[ TOR PROXY CIRCUIT HANDSHAKE ACTIVE ]", 
-                   centerX - 130.0f + jx, headerY, 14, headerCol);
+    headerCol.a = (unsigned char)(pulse * 150 + 105);
     
-    // Target URL
+    const char* headerText = "[ TOR PROXY CIRCUIT HANDSHAKE ACTIVE ]";
+    float headerW = MeasureScaledTextWidth(headerText, 16);
+    
+    // Header background glow
+    float headerGlow = sinf(t * 3.0f) * 0.3f + 0.7f;
+    DrawScaledRect(centerX - headerW / 2 - 20 + wobbleX, headerY - 6, 
+                   headerW + 40, 34, 
+                   {220, 20, 40, (unsigned char)(headerGlow * 25)});
+    
+    DrawScaledText(headerText, 
+                   centerX - headerW / 2 + wobbleX, 
+                   headerY + 2, 16, headerCol);
+    
+    // ---- TARGET URL (CENTERED, LARGER) ----
     char urlStr[128];
-    snprintf(urlStr, sizeof(urlStr), "RESOLVING DESTINATION: vnet://%s", g_player.pendingURL);
-    float urlW = MeasureScaledTextWidth(urlStr, 12);
-    DrawScaledText(urlStr, centerX - urlW / 2.0f + jx, headerY + 35.0f + jy, 12, COLOR_CYAN);
+    snprintf(urlStr, sizeof(urlStr), "RESOLVING: vnet://%s", g_player.pendingURL);
+    float urlW = MeasureScaledTextWidth(urlStr, 14);
     
-    // Rotating crosshair
-    float rotOff = t * 4.0f;
-    float crosshairY = headerY + 60.0f + jy;
-    for (int i = 0; i < 4; i++) {
-        float angle = rotOff + (float)i * 1.5708f;
-        float rx = centerX + cosf(angle) * 30.0f + jx;
-        float ry = crosshairY + sinf(angle) * 18.0f + jy;
-        DrawScaledRect(rx, ry, 4, 4, COLOR_BLOOD);
+    DrawScaledText(urlStr, 
+                   centerX - urlW / 2 + wobbleX, 
+                   headerY + 42.0f + wobbleY, 
+                   14, COLOR_CYAN);
+    
+    // URL subtle pulse underline
+    float linePulse = sinf(t * 2.0f) * 0.3f + 0.7f;
+    float lineY = headerY + 62.0f + wobbleY;
+    DrawScaledRect(centerX - urlW / 2 - 10 + wobbleX, lineY, 
+                   urlW + 20, 1, 
+                   {0, 220, 240, (unsigned char)(linePulse * 80)});
+    
+    // ---- ROTATING CROSSHAIR (CENTERED, LARGER) ----
+    float crosshairY = headerY + 85.0f + wobbleY;
+    float rotOff = t * 3.5f;
+    float crosshairRadius = 40.0f;
+    float crosshairHeight = 24.0f;
+    
+    // Crosshair trail
+    for (int trail = 0; trail < 4; trail++) {
+        float trailOff = t * 3.5f - trail * 0.12f;
+        float trailAlpha = 50 - trail * 12;
+        for (int i = 0; i < 4; i++) {
+            float angle = trailOff + (float)i * 1.5708f;
+            float rx = centerX + cosf(angle) * (crosshairRadius - trail * 6.0f) + wobbleX;
+            float ry = crosshairY + sinf(angle) * (crosshairHeight - trail * 3.5f) + wobbleY;
+            DrawScaledRect(rx - 1.5f, ry - 1.5f, 3, 3, 
+                          {220, 20, 40, (unsigned char)trailAlpha});
+        }
     }
     
-    // Latency status
+    // Main crosshair (larger)
+    for (int i = 0; i < 4; i++) {
+        float angle = rotOff + (float)i * 1.5708f;
+        float rx = centerX + cosf(angle) * crosshairRadius + wobbleX;
+        float ry = crosshairY + sinf(angle) * crosshairHeight + wobbleY;
+        float size = 5.0f + sinf(t * 5.0f + i) * 1.5f;
+        DrawScaledRect(rx - size/2, ry - size/2, size, size, COLOR_BLOOD);
+    }
+    
+    // Center dot (larger, pulsing)
+    float dotPulse = sinf(t * 4.0f) * 0.3f + 0.7f;
+    float dotSize = 4.0f + dotPulse * 2.0f;
+    DrawScaledRect(centerX - dotSize/2 + wobbleX, 
+                   crosshairY - dotSize/2 + wobbleY, 
+                   dotSize, dotSize, 
+                   {220, 20, 40, (unsigned char)(dotPulse * 200 + 55)});
+    
+    // ---- LATENCY STATUS (CENTERED) ----
     char latencyStr[128];
-    snprintf(latencyStr, sizeof(latencyStr), "LATENCY BUFFER: %.0fs REMAINING [HOPS: 3/3]", remaining);
-    float latW = MeasureScaledTextWidth(latencyStr, 10);
-    DrawScaledText(latencyStr, centerX - latW / 2.0f + jx, crosshairY + 35.0f + jy, 10, COLOR_TOXIC);
+    snprintf(latencyStr, sizeof(latencyStr), "LATENCY BUFFER: %.0fs REMAINING  •  HOPS: 3/3", remaining);
+    float latW = MeasureScaledTextWidth(latencyStr, 12);
+    DrawScaledText(latencyStr, 
+                   centerX - latW / 2 + wobbleX, 
+                   crosshairY + 45.0f + wobbleY, 
+                   12, COLOR_TOXIC);
     
-    // Progress bar
-    float barX = centerX - 200.0f + jx;
-    float barY = crosshairY + 60.0f + jy;
-    float barW = 400.0f;
-    float barH = 18.0f;
+    // ---- PROGRESS BAR (CENTERED, LARGER) ----
+    float barW = 440.0f;
+    float barH = 26.0f;
+    float barX = centerX - barW / 2 + wobbleX;
+    float barY = crosshairY + 75.0f + wobbleY;
     
+    // Bar background
     DrawScaledRect(barX, barY, barW, barH, COLOR_PANEL);
     DrawScaledRectLines(barX, barY, barW, barH, COLOR_BORDER);
     
-    float fillW = barW * ratio;
-    if (fillW < 2.0f) fillW = 2.0f;
-    DrawScaledRect(barX, barY, fillW, barH, COLOR_TOXIC);
-    
-    // Leading edge glow
-    if (fillW > 5.0f) {
-        DrawScaledRect(barX + fillW - 4.0f, barY, 4, barH, COLOR_BLOOD);
+    // Bar scanlines
+    for (int i = 0; i < (int)barH; i += 2) {
+        DrawScaledRect(barX, barY + i, barW, 1, {0, 0, 0, (unsigned char)(8 + i * 2)});
     }
     
-    // Percentage text
+    // Progress fill with gradient
+    float fillW = barW * ratio;
+    if (fillW < 2.0f) fillW = 2.0f;
+    if (fillW > barW) fillW = barW;
+    
+    // Gradient fill (smoother)
+    for (int x = 0; x < (int)fillW; x += 2) {
+        float progress = (float)x / barW;
+        unsigned char r = (unsigned char)(30 + progress * 190);
+        unsigned char g = (unsigned char)(230 - progress * 140);
+        unsigned char b = (unsigned char)(80 - progress * 60);
+        DrawScaledRect(barX + x, barY, 2, barH, {r, g, b, 255});
+    }
+    
+    // Glow effect on fill
+    if (fillW > 10.0f) {
+        DrawScaledRect(barX + fillW - 10.0f, barY - 3, 10, barH + 6, 
+                       {40, 240, 100, 50});
+        DrawScaledRect(barX + fillW - 4.0f, barY, 4, barH, 
+                       {40, 240, 100, 130});
+    }
+    
+    // ---- PERCENTAGE TEXT (CENTERED IN BAR) ----
     char pctStr[16];
     snprintf(pctStr, sizeof(pctStr), "%d%%", (int)(ratio * 100.0f));
-    float pctW = MeasureScaledTextWidth(pctStr, 10);
-    DrawScaledText(pctStr, centerX - pctW / 2.0f + jx, barY + 3.0f, 10, 
-                   (ratio > 0.5f) ? COLOR_BLACK : COLOR_CYAN);
+    float pctW = MeasureScaledTextWidth(pctStr, 13);
+    Color pctCol = (ratio > 0.5f) ? COLOR_BLACK : COLOR_CYAN;
+    DrawScaledText(pctStr, 
+                   centerX - pctW / 2 + wobbleX, 
+                   barY + 5.0f, 13, pctCol);
     
-    // Hex stream telemetry
-    int hexTick = (int)fmodf(t * 20.0f, 99.0f);
+    // ---- DATA PACKET ANIMATION (ABOVE PROGRESS BAR) ----
+    float packetY = barY - 35.0f + wobbleY;
+    for (int p = 0; p < 6; p++) {
+        float offset = fmodf(t * 25.0f + p * 30.0f, barW - 30);
+        float packetX = barX + 15 + offset;
+        float packetSize = 5.0f + sinf(t * 3.5f + p) * 1.5f;
+        Color packetCol = (p % 2 == 0) ? COLOR_TOXIC : COLOR_CYAN;
+        packetCol.a = (unsigned char)(160 + sinf(t * 4.0f + p * 2.0f) * 50 + 50);
+        DrawScaledRect(packetX, packetY + p * 2.5f, packetSize, packetSize, packetCol);
+        
+        // Packet trail
+        for (int trail = 1; trail < 5; trail++) {
+            float trailX = packetX - trail * 4.5f;
+            if (trailX > barX) {
+                DrawScaledRect(trailX, packetY + p * 2.5f, 2, 2, 
+                               {packetCol.r, packetCol.g, packetCol.b, 
+                                (unsigned char)(70 - trail * 14)});
+            }
+        }
+    }
+    
+    // ---- HEX STREAM TELEMETRY (CENTERED) ----
+    int hexTick = (int)fmodf(t * 18.0f, 99.0f);
     char hexStr[128];
-    snprintf(hexStr, sizeof(hexStr), "0x88F9_NODE_HOP_OK // ENCRYPTING PACKET SUBNET SECTOR #%d", hexTick);
-    float hexW = MeasureScaledTextWidth(hexStr, 9);
-    DrawScaledText(hexStr, centerX - hexW / 2.0f + jx, barY + 30.0f + jy, 9, COLOR_AMBER);
+    snprintf(hexStr, sizeof(hexStr), "0x88F9_NODE_HOP_OK  •  ENCRYPTING PACKET SUBNET SECTOR #%d", hexTick);
+    float hexW = MeasureScaledTextWidth(hexStr, 10);
+    DrawScaledText(hexStr, 
+                   centerX - hexW / 2 + wobbleX, 
+                   barY + 38.0f + wobbleY, 
+                   10, COLOR_AMBER);
     
-    // Footer
-    float glitchOffset = sinf(t * 40.0f) * 3.0f;
-    char footerStr[] = "SPOOFING MAC ADDRESS & MIRRORING PACKETS VIA ARCHIVAL.VNET...";
-    float footW = MeasureScaledTextWidth(footerStr, 9);
-    DrawScaledText(footerStr, centerX - footW / 2.0f + glitchOffset + jx, barY + 50.0f + jy, 9, COLOR_GHOST);
+    // ---- FOOTER (CENTERED) ----
+    const char* footerStr = "SPOOFING MAC ADDRESS • MIRRORING VIA ARCHIVAL.VNET";
+    float footW = MeasureScaledTextWidth(footerStr, 10);
+    DrawScaledText(footerStr, 
+                   centerX - footW / 2 + wobbleX, 
+                   barY + 58.0f + wobbleY, 
+                   10, COLOR_GHOST);
+    
+    // ---- VERTICAL SCANLINE OVERLAY ----
+    for (int x = 0; x < (int)boxW; x += 5) {
+        float scanAlpha = 4 + sinf(t * 1.5f + x * 0.08f) * 3 + 3;
+        DrawScaledRect(boxX + wobbleX + x, boxY + wobbleY, 1, boxH, 
+                       {0, 0, 0, (unsigned char)scanAlpha});
+    }
+    
+    // ---- CRT SCREEN FLICKER (SUBTLE) ----
+    if (fmodf(t * 0.5f, 1.0f) > 0.97f) {
+        DrawScaledRect(boxX + wobbleX, boxY + wobbleY, boxW, boxH, 
+                       {0, 0, 0, (unsigned char)(15 + rand() % 25)});
+    }
 }
 
 void Desktop::DrawBrowser(const AppWindow& win) {
@@ -934,18 +1072,47 @@ void Desktop::DrawTerminal(const AppWindow& win) {
     float cw = win.w - 8;
     float ch = win.h - m_windowTitleHeight - 8;
     
-    DrawScaledRect(cx, cy, cw, ch, COLOR_CLI_BG);
-    DrawScaledRectLines(cx, cy, cw, ch, COLOR_BORDER);
+    // ---- TERMINAL BACKGROUND ----
+    DrawScaledRect(cx, cy, cw, ch, Color{8, 10, 14, 255});  // Deeper dark background
     
-    DrawScaledRect(cx, cy, cw, 22, COLOR_PANEL);
-    DrawScaledLine(cx, cy + 22, cx + cw, cy + 22, COLOR_BORDER);
-    DrawScaledText("TERMINAL v9.5 // SYSTEM CLI", cx + 10, cy + 5, 10, COLOR_BLOOD);
+    // ---- TOP BAR WITH TABS ----
+    float topBarH = 30.0f;
+    DrawScaledRect(cx, cy, cw, topBarH, Color{16, 18, 24, 255});
+    DrawScaledLine(cx, cy + topBarH, cx + cw, cy + topBarH, Color{30, 35, 45, 200});
     
-    float logY = cy + 28;
-    float logH = ch - 60;
+    // Tab bar
+    float tabX = cx + 12;
+    float tabW = 120.0f;
+    float tabH = 22.0f;
+    float tabY = cy + 4;
     
-    BeginScissorMode((int)SX(cx), (int)SY(cy + 28), 
-                     (int)(cw * g_uiScale), (int)((ch - 60) * g_uiScale));
+    // Active tab
+    DrawScaledRect(tabX, tabY, tabW, tabH, Color{22, 26, 34, 255});
+    DrawScaledRectLines(tabX, tabY, tabW, tabH, Color{40, 220, 120, 150});
+    DrawScaledText("● TERMINAL", tabX + 8, tabY + 4, 9, COLOR_TOXIC);
+    
+    // Inactive tab (darker)
+    tabX += tabW + 4;
+    DrawScaledRect(tabX, tabY, 100, tabH, Color{12, 14, 20, 255});
+    DrawScaledRectLines(tabX, tabY, 100, tabH, Color{30, 35, 45, 100});
+    DrawScaledText("○ SHELL", tabX + 8, tabY + 4, 9, COLOR_GHOST);
+    
+    // ---- STATUS INDICATORS (right side) ----
+    float indicatorX = cx + cw - 12;
+    DrawScaledText("●", indicatorX - 80, cy + 8, 8, COLOR_TOXIC);  // Green dot
+    DrawScaledText("ONLINE", indicatorX - 65, cy + 6, 8, COLOR_GHOST);
+    
+    // Port indicator
+    char portStr[32];
+    snprintf(portStr, sizeof(portStr), "PORT %d", g_player.port);
+    DrawScaledText(portStr, indicatorX - 20, cy + 6, 8, COLOR_CYAN);
+    
+    // ---- LOG AREA ----
+    float logY = cy + topBarH + 4;
+    float logH = ch - topBarH - 32 - 4;
+    
+    BeginScissorMode((int)SX(cx + 4), (int)SY(logY), 
+                     (int)((cw - 8) * g_uiScale), (int)(logH * g_uiScale));
     
     int total = g_cliLogCount;
     int visibleLines = (int)(logH / 20.0f);
@@ -955,41 +1122,130 @@ void Desktop::DrawTerminal(const AppWindow& win) {
     if (start < 0) start = 0;
     if (start > total) start = total;
     
+    // Draw a subtle line number / timestamp for each log
     for (int i = start; i < total; i++) {
         int row = i - start;
-        float y = logY + row * 20.0f;
+        float y = logY + 4 + row * 20.0f;
         if (y > cy + ch - 30) break;
         
-        Color col = COLOR_CYAN;
         const char* txt = g_cliLogs[i];
-        if (strncmp(txt, "> ", 2) == 0) col = COLOR_TOXIC;
-        if (strstr(txt, "[ERROR]") || strstr(txt, "[ERR]")) col = COLOR_BLOOD;
-        if (strstr(txt, "[WARNING]")) col = COLOR_AMBER;
-        if (strstr(txt, "[PAGE]")) col = COLOR_CYAN;
         
-        DrawScaledText(txt, cx + 10, y, 11, col);
+        // Determine color based on log type
+        Color col = COLOR_GHOST;
+        Color prefixCol = COLOR_GHOST;
+        float prefixAlpha = 0.4f;
+        
+        if (strncmp(txt, "> ", 2) == 0) {
+            col = COLOR_TOXIC;
+            prefixCol = {40, 240, 100, 100};
+        } else if (strstr(txt, "[ERROR]") || strstr(txt, "[ERR]")) {
+            col = COLOR_BLOOD;
+            prefixCol = {220, 20, 40, 150};
+        } else if (strstr(txt, "[WARNING]") || strstr(txt, "[WARN]")) {
+            col = COLOR_AMBER;
+            prefixCol = {255, 150, 0, 150};
+        } else if (strstr(txt, "[PAGE]")) {
+            col = COLOR_CYAN;
+            prefixCol = {0, 220, 240, 150};
+        } else if (strstr(txt, "[SYS_INIT]")) {
+            col = COLOR_TOXIC;
+            prefixCol = {40, 240, 100, 150};
+        } else if (strstr(txt, "[SCAN]")) {
+            col = COLOR_AMBER;
+            prefixCol = {255, 150, 0, 150};
+        } else if (strstr(txt, "[MINER]")) {
+            col = COLOR_TOXIC;
+            prefixCol = {40, 240, 100, 150};
+        } else if (strstr(txt, "[ICE]")) {
+            col = COLOR_CYAN;
+            prefixCol = {0, 220, 240, 150};
+        }
+        
+        // Check for chat/whisper
+        if (strstr(txt, "[CHAT]")) {
+            col = COLOR_TOXIC;
+            prefixCol = {40, 240, 100, 100};
+        } else if (strstr(txt, "[WHISPER")) {
+            col = COLOR_AMBER;
+            prefixCol = {255, 150, 0, 150};
+        } else if (strstr(txt, "[DOS") || strstr(txt, "[TRACE SPIKE]")) {
+            col = COLOR_BLOOD;
+            prefixCol = {220, 20, 40, 150};
+        }
+        
+        // Render with subtle line number
+        char lineNum[8];
+        snprintf(lineNum, sizeof(lineNum), "%03d", i + 1);
+        DrawScaledText(lineNum, cx + 8, y, 7, {80, 90, 110, 120});
+        
+        // Main log text with slight indent
+        DrawScaledText(txt, cx + 40, y, 11, col);
+        
+        // Small accent bar on the left for error/warning
+        if (strstr(txt, "[ERROR]") || strstr(txt, "[ERR]")) {
+            DrawScaledRect(cx + 4, y + 2, 3, 14, COLOR_BLOOD);
+        } else if (strstr(txt, "[WARNING]") || strstr(txt, "[WARN]")) {
+            DrawScaledRect(cx + 4, y + 2, 3, 14, COLOR_AMBER);
+        } else if (strncmp(txt, "> ", 2) == 0) {
+            DrawScaledRect(cx + 4, y + 2, 3, 14, COLOR_TOXIC);
+        }
     }
     
     EndScissorMode();
     
+    // ---- INPUT AREA ----
     float inputY = cy + ch - 28;
-    DrawScaledLine(cx, inputY, cx + cw, inputY, COLOR_BORDER);
     
+    // Input area background
+    DrawScaledRect(cx + 4, inputY, cw - 8, 24, Color{12, 15, 20, 220});
+    DrawScaledLine(cx + 4, inputY, cx + cw - 4, inputY, Color{30, 35, 45, 180});
+    
+    // Input prompt with arrow
     bool focused = IsTerminalFocused();
     float t = (float)GetTime();
     bool cursorVisible = focused ? (fmodf(t, 0.8f) > 0.4f) : false;
+    float fontSize = 12.0f;
     
+    // Animated prompt arrow
+    float arrowPulse = sinf(t * 3.0f) * 0.3f + 0.7f;
+    Color arrowCol = {40, 240, 100, (unsigned char)(arrowPulse * 255)};
+    DrawScaledText("➜", cx + 10, inputY + 5, 12, arrowCol);
+    
+    // Input text
     char prompt[300];
-    snprintf(prompt, sizeof(prompt), "CMD> %s", g_player.inputBuffer);
-    DrawScaledText(prompt, cx + 10, inputY + 6, 12, COLOR_TOXIC);
+    snprintf(prompt, sizeof(prompt), " %s", g_player.inputBuffer);
+    DrawScaledText(prompt, cx + 28, inputY + 5, fontSize, COLOR_GHOST);
     
+    // Input cursor
     if (cursorVisible) {
-        float textWidth = MeasureScaledTextWidth(prompt, 12);
-        DrawScaledRect(cx + 10 + textWidth + 2.0f, inputY + 6, 7, 14, COLOR_TOXIC);
+        float textWidth = MeasureScaledTextWidth(prompt, fontSize);
+        float cursorHeight = fontSize * g_fontScale;
+        float cursorWidth = 6.0f;
+        
+        DrawScaledRect(
+            cx + 28 + textWidth + 1.0f,
+            inputY + 4,
+            cursorWidth,
+            cursorHeight,
+            COLOR_TOXIC
+        );
     }
     
+    // ---- STATUS BAR (Bottom) ----
+    float statusY = cy + ch - 4;
+    DrawScaledLine(cx + 4, statusY, cx + cw - 4, statusY, Color{30, 35, 45, 100});
+    
+    // Status indicators
+    char statusBuf[128];
+    snprintf(statusBuf, sizeof(statusBuf), "VCOIN: %.2f  |  ICE: %d/3  |  TRACE: %d%%", 
+             g_player.vcoin, g_player.iceShields, g_player.traceLevel);
+    
+    float statusW = MeasureScaledTextWidth(statusBuf, 8);
+    DrawScaledText(statusBuf, cx + cw - statusW - 12, cy + ch - 12, 8, {80, 90, 110, 180});
+    
+    // Focus hint
     if (!focused) {
-        DrawScaledText("[CLICK TO FOCUS]", cx + cw - 130, inputY + 6, 9, COLOR_AMBER);
+        DrawScaledText("[CLICK TO FOCUS]", cx + cw - 130, inputY + 5, 9, {255, 150, 0, 180});
     }
 }
 
@@ -999,25 +1255,198 @@ void Desktop::DrawProfile(const AppWindow& win) {
     float cw = win.w - 8;
     float ch = win.h - m_windowTitleHeight - 8;
     
-    DrawScaledRect(cx, cy, cw, ch, COLOR_BLACK);
+    // ---- BACKGROUND ----
+    DrawScaledRect(cx, cy, cw, ch, Color{8, 10, 14, 255});
     DrawScaledRectLines(cx, cy, cw, ch, COLOR_BORDER);
     
-    DrawScaledText("USER PROFILE", cx + 20, cy + 20, 16, COLOR_BLOOD);
-    DrawScaledLine(cx + 20, cy + 45, cx + cw - 20, cy + 45, COLOR_BORDER);
+    // ---- HEADER ----
+    float headerH = 60.0f;
+    DrawScaledRect(cx, cy, cw, headerH, Color{14, 18, 26, 255});
+    DrawScaledLine(cx, cy + headerH, cx + cw, cy + headerH, Color{40, 220, 120, 80});
     
-    char info[256];
-    snprintf(info, sizeof(info), "HANDLE: %s", g_player.handle);
-    DrawScaledText(info, cx + 20, cy + 70, 12, COLOR_CYAN);
-    snprintf(info, sizeof(info), "PORT: %d", g_player.port);
-    DrawScaledText(info, cx + 20, cy + 100, 12, COLOR_CYAN);
-    snprintf(info, sizeof(info), "VCOIN: %.2f", g_player.vcoin);
-    DrawScaledText(info, cx + 20, cy + 130, 12, COLOR_TOXIC);
-    snprintf(info, sizeof(info), "TRACE: %d%%", g_player.traceLevel);
-    DrawScaledText(info, cx + 20, cy + 160, 12, g_player.traceLevel > 70 ? COLOR_BLOOD : COLOR_AMBER);
-    snprintf(info, sizeof(info), "ICE: %d/3", g_player.iceShields);
-    DrawScaledText(info, cx + 20, cy + 190, 12, COLOR_TOXIC);
-    snprintf(info, sizeof(info), "SITES: %d/20", g_player.assignedCount);
-    DrawScaledText(info, cx + 20, cy + 220, 12, COLOR_CYAN);
+    // Avatar circle
+    float avatarSize = 40.0f;
+    float avatarX = cx + 20.0f;
+    float avatarY = cy + 10.0f;
+    DrawScaledRect(avatarX, avatarY, avatarSize, avatarSize, Color{20, 25, 35, 255});
+    DrawScaledRectLines(avatarX, avatarY, avatarSize, avatarSize, Color{40, 220, 120, 150});
+    DrawScaledText("👤", avatarX + 8, avatarY + 8, 22, COLOR_CYAN);
+    
+    // Handle and title
+    DrawScaledText(g_player.handle, avatarX + avatarSize + 15, avatarY + 8, 14, COLOR_TOXIC);
+    DrawScaledText("OPERATOR // VEKTRAOS v9.5", avatarX + avatarSize + 15, avatarY + 32, 10, COLOR_GHOST);
+    
+    // Port badge (right side)
+    char portBadge[32];
+    snprintf(portBadge, sizeof(portBadge), "PORT %d", g_player.port);
+    float portW = MeasureScaledTextWidth(portBadge, 11);
+    DrawScaledRect(cx + cw - portW - 30, cy + 12, portW + 20, 30, Color{20, 25, 35, 255});
+    DrawScaledRectLines(cx + cw - portW - 30, cy + 12, portW + 20, 30, Color{0, 220, 240, 100});
+    DrawScaledText(portBadge, cx + cw - portW - 20, cy + 22, 11, COLOR_CYAN);
+    
+    // ---- CONTENT AREA ----
+    float contentY = cy + headerH + 10.0f;
+    float contentH = ch - headerH - 10.0f;
+    float leftCol = cx + 20.0f;
+    float rightCol = cx + cw / 2.0f + 10.0f;
+    float rowH = 36.0f;
+    float rowY = contentY;
+    
+    // ---- LEFT COLUMN: STATS ----
+    struct StatItem {
+        const char* label;
+        const char* value;
+        Color color;
+        float progress;
+    };
+    
+    // Build stat items
+    std::vector<StatItem> stats;
+    
+    char vcoinStr[32];
+    snprintf(vcoinStr, sizeof(vcoinStr), "%.2f VCOIN", g_player.vcoin);
+    stats.push_back({"VCOIN", vcoinStr, COLOR_TOXIC, g_player.vcoin / 50.0f});
+    
+    char traceStr[32];
+    snprintf(traceStr, sizeof(traceStr), "%d%%", g_player.traceLevel);
+    stats.push_back({"TRACE LEVEL", traceStr, 
+                    g_player.traceLevel > 70 ? COLOR_BLOOD : COLOR_AMBER, 
+                    g_player.traceLevel / 100.0f});
+    
+    char iceStr[32];
+    snprintf(iceStr, sizeof(iceStr), "%d/3", g_player.iceShields);
+    stats.push_back({"ICE SHIELDS", iceStr, COLOR_CYAN, g_player.iceShields / 3.0f});
+    
+    char heatStr[32];
+    snprintf(heatStr, sizeof(heatStr), "%.0f°C", g_player.crtHeat);
+    stats.push_back({"CRT HEAT", heatStr, 
+                    g_player.crtHeat > 75.0f ? COLOR_BLOOD : COLOR_AMBER, 
+                    (g_player.crtHeat - 35.0f) / 65.0f});
+    
+    char paranoiaStr[32];
+    snprintf(paranoiaStr, sizeof(paranoiaStr), "%.0f%%", g_player.neuralParanoia);
+    stats.push_back({"NEURAL PARANOIA", paranoiaStr, 
+                    g_player.neuralParanoia > 60.0f ? COLOR_BLOOD : COLOR_AMBER, 
+                    g_player.neuralParanoia / 100.0f});
+    
+    // Draw stats with progress bars
+    for (int i = 0; i < (int)stats.size(); i++) {
+        float y = rowY + i * (rowH + 6.0f);
+        if (y > contentY + contentH - 30) break;
+        
+        const auto& stat = stats[i];
+        
+        // Stat label
+        DrawScaledText(stat.label, leftCol, y + 2, 10, COLOR_GHOST);
+        
+        // Progress bar background
+        float barX = leftCol + 95.0f;
+        float barY = y + 4;
+        float barW = 140.0f;
+        float barH = 14.0f;
+        
+        DrawScaledRect(barX, barY, barW, barH, Color{12, 15, 20, 255});
+        DrawScaledRectLines(barX, barY, barW, barH, Color{30, 35, 45, 150});
+        
+        // Progress fill
+        float fillW = barW * stat.progress;
+        if (fillW < 2.0f) fillW = 2.0f;
+        if (fillW > barW) fillW = barW;
+        DrawScaledRect(barX, barY, fillW, barH, stat.color);
+        
+        // Value text
+        float valW = MeasureScaledTextWidth(stat.value, 10);
+        DrawScaledText(stat.value, barX + barW - valW - 6.0f, barY + 2, 10, stat.color);
+    }
+    
+    // ---- RIGHT COLUMN: SITES DISCOVERED ----
+    float rightY = rowY;
+    
+    // Section header
+    DrawScaledText("DISCOVERED SITES", rightCol, rightY, 11, COLOR_AMBER);
+    DrawScaledLine(rightCol, rightY + 18, rightCol + 220, rightY + 18, Color{30, 35, 45, 150});
+    rightY += 28.0f;
+    
+    // Site count
+    char siteCountStr[64];
+    snprintf(siteCountStr, sizeof(siteCountStr), "%d / 20 SITES", g_player.assignedCount);
+    DrawScaledText(siteCountStr, rightCol, rightY, 10, COLOR_CYAN);
+    rightY += 22.0f;
+    
+    // Site progress bar
+    float siteBarW = 210.0f;
+    float siteBarH = 10.0f;
+    DrawScaledRect(rightCol, rightY, siteBarW, siteBarH, Color{12, 15, 20, 255});
+    DrawScaledRectLines(rightCol, rightY, siteBarW, siteBarH, Color{30, 35, 45, 150});
+    float siteFill = (g_player.assignedCount / 20.0f) * siteBarW;
+    if (siteFill < 2.0f) siteFill = 2.0f;
+    DrawScaledRect(rightCol, rightY, siteFill, siteBarH, COLOR_TOXIC);
+    rightY += 20.0f;
+    
+    // List discovered sites (limit to 8 visible)
+    int maxSites = (int)((contentH - (rightY - rowY)) / 20.0f);
+    if (maxSites > 8) maxSites = 8;
+    if (maxSites < 1) maxSites = 1;
+    
+    // Create a scroll offset if there are more sites than fit
+    static int siteScrollOffset = 0;
+    
+    // Handle mouse wheel for site list scrolling (using pageScroll as a hack)
+    // We'll use a separate static or member variable later
+    
+    int startIdx = 0;
+    int endIdx = g_player.assignedCount;
+    if (endIdx > maxSites) {
+        // Show only maxSites sites, starting from the most recent (end)
+        startIdx = endIdx - maxSites;
+    }
+    
+    for (int i = startIdx; i < endIdx && i < g_player.assignedCount; i++) {
+        float y = rightY + (i - startIdx) * 20.0f;
+        if (y > contentY + contentH - 10) break;
+        
+        const char* site = g_player.assignedSites[i];
+        
+        // Check if it's a core node
+        bool isCore = false;
+        const char* coreNodes[] = {"market.vnet", "vault.vnet", "terminal.vnet", "crypto.vnet", "hellroom.vnet"};
+        for (int c = 0; c < 5; c++) {
+            if (strcmp(site, coreNodes[c]) == 0) {
+                isCore = true;
+                break;
+            }
+        }
+        
+        // Dot indicator
+        Color dotColor = isCore ? COLOR_BLOOD : COLOR_CYAN;
+        DrawScaledRect(rightCol, y + 6, 5, 5, dotColor);
+        
+        // Site name
+        Color siteColor = isCore ? COLOR_AMBER : COLOR_GHOST;
+        DrawScaledText(site, rightCol + 14, y + 2, 10, siteColor);
+    }
+    
+    // ---- DIVIDER ----
+    float dividerX = cx + cw / 2.0f;
+    DrawScaledLine(dividerX, contentY, dividerX, cy + ch - 10, Color{30, 35, 45, 80});
+    
+    // ---- STATUS BADGES ----
+    float badgeY = cy + ch - 36;
+    
+    // Status indicator
+    DrawScaledRect(cx + 20, badgeY, 12, 12, COLOR_TOXIC);
+    DrawScaledText("ONLINE", cx + 38, badgeY, 10, COLOR_TOXIC);
+    
+    // Runtime
+    char runtimeStr[64];
+    int hours = (int)(g_player.runTime / 3600.0f);
+    int minutes = (int)((g_player.runTime - hours * 3600) / 60.0f);
+    int seconds = (int)(g_player.runTime - hours * 3600 - minutes * 60);
+    snprintf(runtimeStr, sizeof(runtimeStr), "UPTIME: %02d:%02d:%02d", hours, minutes, seconds);
+    DrawScaledText(runtimeStr, cx + 110, badgeY, 10, COLOR_GHOST);
+    
+    // Version
+    DrawScaledText("VEKTRAOS v9.5", cx + cw - 110, badgeY, 10, Color{80, 90, 110, 180});
 }
 
 void Desktop::DrawSettings(const AppWindow& win) {
