@@ -842,10 +842,12 @@ void RunVNTServer(int port) {
             // ============================================================
             // SCAN
             // ============================================================
-            else if (cmd == VNetCmd::SCAN_REQ) {
-                int idx = rand() % g_allSites.size();
-                VNetLib::SendTo(g_serverSock, senderIP, senderPort,
-                              std::string(VNetResp::SCAN_RESULT) + g_allSites[idx]);
+            else if (cmd == VNetCmd::SCAN) {               // compare against "SCAN"
+                if (!g_allSites.empty()) {
+                    int idx = rand() % g_allSites.size();
+                    VNetLib::SendTo(g_serverSock, senderIP, senderPort,
+                                std::string(VNetResp::SCAN_RESULT) + g_allSites[idx]);
+                }
             }
             
             // ============================================================

@@ -232,9 +232,8 @@ void UpdateVNET(float dt) {
                     strncpy(g_vnet.keyLocations[i], tokens[i + 8].c_str(), sizeof(g_vnet.keyLocations[0]) - 1);
                 }
                 
-                // Store assigned sites (tokens 16 onwards)
                 g_player.assignedCount = 0;
-                for (size_t i = 16; i < tokens.size() && g_player.assignedCount < 20; i++) {
+                for (size_t i = 16; i < tokens.size() && g_player.assignedCount < 54; i++) {
                     strncpy(g_player.assignedSites[g_player.assignedCount], 
                             tokens[i].c_str(), sizeof(g_player.assignedSites[0]) - 1);
                     g_player.assignedCount++;
@@ -273,7 +272,8 @@ void UpdateVNET(float dt) {
 
         // SCAN_RESULT: Discovery scan result
         else if (cmd == "SCAN_RESULT") {
-            // Check if site is already discovered
+            PushCliLog("[DEBUG]: Received SCAN_RESULT: %s", payload.c_str());
+
             bool found = false;
             for (int i = 0; i < g_player.assignedCount; i++) {
                 if (strcmp(g_player.assignedSites[i], payload.c_str()) == 0) {
@@ -281,7 +281,7 @@ void UpdateVNET(float dt) {
                     break;
                 }
             }
-            if (!found && g_player.assignedCount < 20) {
+            if (!found && g_player.assignedCount < 54) {
                 strncpy(g_player.assignedSites[g_player.assignedCount], payload.c_str(), sizeof(g_player.assignedSites[0]) - 1);
                 g_player.assignedCount++;
                 PushCliLog("[SCAN]: DISCOVERED %s", payload.c_str());
@@ -289,7 +289,8 @@ void UpdateVNET(float dt) {
                     RefreshPage();
                 }
             } else {
-                PushCliLog("[SCAN]: %s already discovered", payload.c_str());
+                PushCliLog("[SCAN]: %s already discovered - cooldown waived", payload.c_str());
+                g_player.cdScan = 0.0f;   // <-- bypass cooldown on a dupe
             }
         }
 
@@ -846,37 +847,42 @@ void ProcessCommand(const char* cmd) {
             TriggerJitter(0.2f);
             PushCliLog("[SCAN]: INITIATING DEEP SUBNET FREQUENCY SWEEP...");
             
-            int newSites = rand() % 3 + 1;
-            for (int i = 0; i < newSites && g_player.assignedCount < 20; i++) {
-                const char* names[] = {
-                    "market", "vault", "terminal", "crypto", "hellroom",
-                    "forum", "redroom", "morgue", "cult", "void",
-                    "ghost", "silence", "watchtower", "orbital", "eye",
-                    "blackbank", "silkroad", "weaponry", "passports", "darkdrop"
-                };
-                int idx = rand() % 20;
-                char site[64];
-                snprintf(site, sizeof(site), "%s.vnet", names[idx]);
-                
-                bool found = false;
-                for (int j = 0; j < g_player.assignedCount; j++) {
-                    if (strcmp(g_player.assignedSites[j], site) == 0) {
-                        found = true;
-                        break;
+            if (IsVNetConnected()) {
+                PushCliLog("[SCAN]: SENDING REQUEST TO SERVER...");
+                std::string packet = std::string(VNetCmd::SCAN);
+                VNetSendRaw(packet);
+            } else {
+                // Offline fallback - generate random sites locally
+                PushCliLog("[SCAN]: OFFLINE MODE - GENERATING LOCAL SITES");
+                int newSites = rand() % 3 + 1;
+                for (int i = 0; i < newSites && g_player.assignedCount < 54; i++) {
+                    const char* names[] = {
+                        "market", "vault", "terminal", "crypto", "hellroom",
+                        "forum", "redroom", "morgue", "cult", "void",
+                        "ghost", "silence", "watchtower", "orbital", "eye",
+                        "blackbank", "silkroad", "weaponry", "passports", "darkdrop"
+                    };
+                    int idx = rand() % 20;
+                    char site[64];
+                    snprintf(site, sizeof(site), "%s.vnet", names[idx]);
+                    
+                    bool found = false;
+                    for (int j = 0; j < g_player.assignedCount; j++) {
+                        if (strcmp(g_player.assignedSites[j], site) == 0) {
+                            found = true;
+                            break;
+                        }
                     }
-                }
-                if (!found) {
-                    strcpy(g_player.assignedSites[g_player.assignedCount], site);
-                    g_player.assignedCount++;
-                    PushCliLog("[SCAN]: DISCOVERED %s", site);
-                    // Refresh vnet.dir if we're on it
-                    if (strcmp(g_player.currentURL, "vnet.dir") == 0) {
+                    if (!found) {
+                        strcpy(g_player.assignedSites[g_player.assignedCount], site);
+                        g_player.assignedCount++;
+                        PushCliLog("[SCAN]: DISCOVERED %s", site);
                         RefreshPage();
                     }
                 }
-            }
-            if (newSites == 0) {
-                PushCliLog("[SCAN]: NO NEW SITES FOUND");
+                if (newSites == 0) {
+                    PushCliLog("[SCAN]: NO NEW SITES FOUND");
+                }
             }
         }
     }

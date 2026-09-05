@@ -41,7 +41,7 @@ struct Player {
     int keysCount;
 
     // Assigned sites
-    char assignedSites[20][64];
+    char assignedSites[54][64];
     int assignedCount;
 
     // Sniffer

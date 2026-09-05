@@ -1245,96 +1245,27 @@ void DrawUI(void) {
     // Update jitter
     UpdateJitter(GetFrameTime());
 
-    DrawAnimatedBackground();
-
-    if (GetDesktop().IsActive()) {
-        GetDesktop().Draw();
-        return;
-    }
-
+    // ============================================================
+    // CONNECTION MENU - ALWAYS FIRST (overrides everything)
+    // ============================================================
     if (g_player.isInConnectionMenu) {
         DrawConnectionScreen();
         return;
     }
 
-    // Get jitter offsets
-    float jx = GetJitterX();
-    float jy = GetJitterY();
-
-    // ---------------- Top bar ---------------- ADD jx/jy to EVERYTHING
-    DrawScaledRect(0 + jx, 0 + jy, REF_WIDTH, 60, COLOR_PANEL);
-    DrawScaledLine(0 + jx, 60 + jy, REF_WIDTH + jx, 60 + jy, COLOR_BORDER);
-    DrawScaledText("VNET", 20 + jx, 18 + jy, 22, COLOR_BLOOD);
-
-    // URL bar
-    DrawScaledRect(120 + jx, 12 + jy, 745, 36, COLOR_URLBAR);
-    DrawScaledRectLines(120 + jx, 12 + jy, 745, 36, g_player.urlFocused ? COLOR_BLOOD : COLOR_BORDER);
-
-    char urlDisplay[192];
-    if (g_player.isConnecting) {
-        snprintf(urlDisplay, sizeof(urlDisplay), "vnet://%s", g_player.pendingURL);
-    } else {
-        snprintf(urlDisplay, sizeof(urlDisplay), "vnet://%s", g_player.currentURL);
-    }
-    DrawScaledText(urlDisplay, 135 + jx, 22 + jy, 14, COLOR_CYAN);
-
-    // Home button
-    Vector2 refMouse = GetRefMousePos();
-    bool homeHover = RefRectHover(870 + jx, 12 + jy, 50, 36, refMouse);
-    DrawScaledRect(870 + jx, 12 + jy, 50, 36, homeHover ? COLOR_BLOOD : COLOR_PANEL);
-    DrawScaledRectLines(870 + jx, 12 + jy, 50, 36, COLOR_BORDER);
-    DrawScaledText("DIR", 882 + jx, 22 + jy, 13, homeHover ? COLOR_BLACK : COLOR_TOXIC);
-    if (homeHover && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !g_player.cliOpen) {
-        TriggerJitter(0.3f);
-        TriggerRouteNavigation("vnet.dir");
-    }
-
-    // Wallet
-    char vcoinStr[64];
-    snprintf(vcoinStr, sizeof(vcoinStr), "VCOIN: %.2f", g_player.vcoin);
-    DrawScaledText(vcoinStr, 940 + jx, 22 + jy, 14, COLOR_TOXIC);
-
-    // ---------------- Main content panel ----------------
-    const float contentX = 20, contentY = 80, contentW = 890, contentH = 670;
-    DrawScaledRect(contentX + jx, contentY + jy, contentW, contentH, COLOR_PANEL);
-    DrawScaledRectLines(contentX + jx, contentY + jy, contentW, contentH, COLOR_BORDER);
-
     // ============================================================
-    // HELLROOM SPECIAL RENDERING
+    // DESKTOP - Always active after connection
     // ============================================================
-    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && 
-                   !g_player.cliOpen && !g_player.isConnecting;
+    // Desktop draws the entire UI including browser, terminal, etc.
+    GetDesktop().Draw();
     
-    if (strcmp(g_player.currentURL, "hellroom.vnet") == 0) {
-        DrawHellroomUI(jx, jy, refMouse, clicked);
-    } else {
-        DrawMarkupPage(contentX, contentY, contentW, contentH);
-    }
-
-    if (g_player.isConnecting) {
-        DrawConnectionOverlay();
-    }
-
-    // ---------------- Right panel: threat radar ----------------
-    DrawScaledRect(930 + jx, 80 + jy, 330, 670, COLOR_PANEL);
-    DrawScaledRectLines(930 + jx, 80 + jy, 330, 670, COLOR_BORDER);
-    DrawFeedPanel();
-
-    // ---------------- Bottom status bar ----------------
-    DrawScaledRect(0 + jx, 765 + jy, REF_WIDTH, 35, COLOR_PANEL);
-    DrawScaledLine(0 + jx, 765 + jy, REF_WIDTH + jx, 765 + jy, COLOR_BORDER);
-    char status[256];
-    snprintf(status, sizeof(status),
-             "TOR ROUTER ACTIVE | NODE PORT: %d | [TAB] TERMINAL | [F11] FULLSCREEN",
-             g_player.port);
-    DrawScaledText(status, 20 + jx, 774 + jy, 12, COLOR_CYAN);
-
-    // ---------------- Terminal overlay ----------------
-    if (g_player.cliOpen) {
-        DrawTerminal();
+    // Draw FPS overlay if enabled (on top of desktop)
+    if (g_game.showFPS) {
+        char fpsText[32];
+        snprintf(fpsText, sizeof(fpsText), "FPS: %d", g_game.currentFPS);
+        DrawText(fpsText, 10, 10, 18, COLOR_TOXIC);
     }
 }
-
 // ============================================================
 // TERMINAL UI
 // ============================================================

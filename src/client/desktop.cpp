@@ -3,6 +3,7 @@
 #include "vnet.h"
 #include "game.h"
 #include "vnet_client.h"
+#include "vnet_sites.h"
 
 #include <cstdio>
 #include <cstring>
@@ -603,31 +604,246 @@ void Desktop::DrawWindowContent(const AppWindow& win) {
 // APP CONTENT RENDERERS
 // ============================================================
 
+void Desktop::DrawBrowserConnectionOverlay(float contentX, float contentY, float contentW, float contentH) {
+    float t = (float)GetTime();
+    float pulse = sinf(t * 8.0f) * 0.5f + 0.5f;
+    
+    // Center of the browser content area
+    float centerX = contentX + contentW / 2.0f;
+    float centerY = contentY + contentH / 2.0f;
+    
+    // Connection box (smaller than fullscreen version)
+    float boxW = contentW * 0.85f;
+    float boxH = contentH * 0.80f;
+    float boxX = centerX - boxW / 2.0f;
+    float boxY = centerY - boxH / 2.0f;
+    
+    // Glitch jitter
+    float jx = (pulse > 0.85f) ? sinf(t * 40.0f) * 3.0f : 0.0f;
+    float jy = (pulse > 0.85f) ? cosf(t * 35.0f) * 2.0f : 0.0f;
+    
+    // Background box
+    DrawScaledRect(boxX + jx, boxY + jy, boxW, boxH, COLOR_BLACK);
+    DrawScaledRectLines(boxX + jx, boxY + jy, boxW, boxH, COLOR_AMBER);
+    
+    // Corner reticles
+    float cornerSize = 12.0f;
+    DrawScaledRect(boxX + jx - 3, boxY + jy - 3, cornerSize, 2, COLOR_BLOOD);
+    DrawScaledRect(boxX + jx - 3, boxY + jy - 3, 2, cornerSize, COLOR_BLOOD);
+    DrawScaledRect(boxX + boxW + jx + 1, boxY + jy - 3, cornerSize, 2, COLOR_BLOOD);
+    DrawScaledRect(boxX + boxW + jx - 1, boxY + jy - 3, 2, cornerSize, COLOR_BLOOD);
+    DrawScaledRect(boxX + jx - 3, boxY + boxH + jy + 1, cornerSize, 2, COLOR_BLOOD);
+    DrawScaledRect(boxX + jx - 3, boxY + boxH + jy - 1, 2, cornerSize, COLOR_BLOOD);
+    DrawScaledRect(boxX + boxW + jx + 1, boxY + boxH + jy + 1, cornerSize, 2, COLOR_BLOOD);
+    DrawScaledRect(boxX + boxW + jx - 1, boxY + boxH + jy - 1, 2, cornerSize, COLOR_BLOOD);
+    
+    // Remaining time
+    float remaining = g_player.targetConnectTime - g_player.connectTimer;
+    if (remaining < 0.0f) remaining = 0.0f;
+    float ratio = (g_player.targetConnectTime > 0.0f) ? 
+                  g_player.connectTimer / g_player.targetConnectTime : 0.0f;
+    if (ratio < 0.02f) ratio = 0.02f;
+    if (ratio > 1.0f) ratio = 1.0f;
+    
+    // Header
+    Color headerCol = (pulse > 0.5f) ? COLOR_AMBER : COLOR_BLOOD;
+    float headerY = boxY + 30.0f + jy;
+    DrawScaledText("[ TOR PROXY CIRCUIT HANDSHAKE ACTIVE ]", 
+                   centerX - 130.0f + jx, headerY, 14, headerCol);
+    
+    // Target URL
+    char urlStr[128];
+    snprintf(urlStr, sizeof(urlStr), "RESOLVING DESTINATION: vnet://%s", g_player.pendingURL);
+    float urlW = MeasureScaledTextWidth(urlStr, 12);
+    DrawScaledText(urlStr, centerX - urlW / 2.0f + jx, headerY + 35.0f + jy, 12, COLOR_CYAN);
+    
+    // Rotating crosshair
+    float rotOff = t * 4.0f;
+    float crosshairY = headerY + 60.0f + jy;
+    for (int i = 0; i < 4; i++) {
+        float angle = rotOff + (float)i * 1.5708f;
+        float rx = centerX + cosf(angle) * 30.0f + jx;
+        float ry = crosshairY + sinf(angle) * 18.0f + jy;
+        DrawScaledRect(rx, ry, 4, 4, COLOR_BLOOD);
+    }
+    
+    // Latency status
+    char latencyStr[128];
+    snprintf(latencyStr, sizeof(latencyStr), "LATENCY BUFFER: %.0fs REMAINING [HOPS: 3/3]", remaining);
+    float latW = MeasureScaledTextWidth(latencyStr, 10);
+    DrawScaledText(latencyStr, centerX - latW / 2.0f + jx, crosshairY + 35.0f + jy, 10, COLOR_TOXIC);
+    
+    // Progress bar
+    float barX = centerX - 200.0f + jx;
+    float barY = crosshairY + 60.0f + jy;
+    float barW = 400.0f;
+    float barH = 18.0f;
+    
+    DrawScaledRect(barX, barY, barW, barH, COLOR_PANEL);
+    DrawScaledRectLines(barX, barY, barW, barH, COLOR_BORDER);
+    
+    float fillW = barW * ratio;
+    if (fillW < 2.0f) fillW = 2.0f;
+    DrawScaledRect(barX, barY, fillW, barH, COLOR_TOXIC);
+    
+    // Leading edge glow
+    if (fillW > 5.0f) {
+        DrawScaledRect(barX + fillW - 4.0f, barY, 4, barH, COLOR_BLOOD);
+    }
+    
+    // Percentage text
+    char pctStr[16];
+    snprintf(pctStr, sizeof(pctStr), "%d%%", (int)(ratio * 100.0f));
+    float pctW = MeasureScaledTextWidth(pctStr, 10);
+    DrawScaledText(pctStr, centerX - pctW / 2.0f + jx, barY + 3.0f, 10, 
+                   (ratio > 0.5f) ? COLOR_BLACK : COLOR_CYAN);
+    
+    // Hex stream telemetry
+    int hexTick = (int)fmodf(t * 20.0f, 99.0f);
+    char hexStr[128];
+    snprintf(hexStr, sizeof(hexStr), "0x88F9_NODE_HOP_OK // ENCRYPTING PACKET SUBNET SECTOR #%d", hexTick);
+    float hexW = MeasureScaledTextWidth(hexStr, 9);
+    DrawScaledText(hexStr, centerX - hexW / 2.0f + jx, barY + 30.0f + jy, 9, COLOR_AMBER);
+    
+    // Footer
+    float glitchOffset = sinf(t * 40.0f) * 3.0f;
+    char footerStr[] = "SPOOFING MAC ADDRESS & MIRRORING PACKETS VIA ARCHIVAL.VNET...";
+    float footW = MeasureScaledTextWidth(footerStr, 9);
+    DrawScaledText(footerStr, centerX - footW / 2.0f + glitchOffset + jx, barY + 50.0f + jy, 9, COLOR_GHOST);
+}
+
 void Desktop::DrawBrowser(const AppWindow& win) {
     float cx = win.x + 4;
     float cy = win.y + m_windowTitleHeight + 4;
     float cw = win.w - 8;
     float ch = win.h - m_windowTitleHeight - 8;
     
+    // Browser background
     DrawScaledRect(cx, cy, cw, ch, COLOR_BLACK);
     
-    DrawScaledRect(cx + 10, cy + 10, cw - 20, 30, COLOR_URLBAR);
-    DrawScaledRectLines(cx + 10, cy + 10, cw - 20, 30, COLOR_BORDER);
-    DrawScaledText("vnet://vnet.dir", cx + 20, cy + 18, 11, COLOR_CYAN);
+    // ---- TOOLBAR ----
+    float toolbarY = cy;
+    float toolbarH = 48.0f;
+    float navX = cx + 8;
+    float navY = toolbarY + 8;
+    float navSize = 30.0f;
+    float spacing = 6.0f;
     
-    float gameX = cx + 10;
-    float gameY = cy + 50;
-    float gameW = cw - 20;
-    float gameH = ch - 60;
+    // Toolbar background
+    DrawScaledRect(cx, toolbarY, cw, toolbarH, Color{18, 20, 28, 230});
+    DrawScaledLine(cx, toolbarY + toolbarH, cx + cw, toolbarY + toolbarH, COLOR_BORDER);
     
+    // ---- NAVIGATION BUTTONS ----
+    Vector2 refMouse = GetRefMousePos();
+    
+    // Back button
+    bool backHover = RefRectHover(navX, navY, navSize, navSize, refMouse);
+    DrawScaledRect(navX, navY, navSize, navSize, backHover ? Color{40, 45, 65, 255} : Color{0,0,0,0});
+    DrawScaledText("◄", navX + 8, navY + 6, 14, backHover ? COLOR_TOXIC : COLOR_GHOST);
+    navX += navSize + spacing;
+    
+    // Forward button
+    bool fwdHover = RefRectHover(navX, navY, navSize, navSize, refMouse);
+    DrawScaledRect(navX, navY, navSize, navSize, fwdHover ? Color{40, 45, 65, 255} : Color{0,0,0,0});
+    DrawScaledText("►", navX + 8, navY + 6, 14, fwdHover ? COLOR_TOXIC : COLOR_GHOST);
+    navX += navSize + spacing;
+    
+    // Reload button
+    bool reloadHover = RefRectHover(navX, navY, navSize, navSize, refMouse);
+    DrawScaledRect(navX, navY, navSize, navSize, reloadHover ? Color{40, 45, 65, 255} : Color{0,0,0,0});
+    DrawScaledText("⟳", navX + 6, navY + 6, 16, reloadHover ? COLOR_TOXIC : COLOR_GHOST);
+    navX += navSize + spacing;
+    
+    // Home button
+    bool homeHover = RefRectHover(navX, navY, navSize, navSize, refMouse);
+    DrawScaledRect(navX, navY, navSize, navSize, homeHover ? Color{40, 45, 65, 255} : Color{0,0,0,0});
+    DrawScaledText("⌂", navX + 6, navY + 4, 16, homeHover ? COLOR_TOXIC : COLOR_GHOST);
+    navX += navSize + spacing + 10;
+    
+    // ---- URL BAR ----
+    float urlX = navX;
+    float urlY = navY;
+    float urlW = cw - (urlX - cx) - 20;
+    float urlH = navSize;
+    
+    DrawScaledRect(urlX, urlY, urlW, urlH, COLOR_URLBAR);
+    DrawScaledRectLines(urlX, urlY, urlW, urlH, COLOR_BORDER);
+    
+    // Show current or pending URL
+    char urlDisplay[192];
+    if (g_player.isConnecting) {
+        snprintf(urlDisplay, sizeof(urlDisplay), "vnet://%s", g_player.pendingURL);
+    } else {
+        snprintf(urlDisplay, sizeof(urlDisplay), "vnet://%s", g_player.currentURL);
+    }
+    DrawScaledText(urlDisplay, urlX + 8, urlY + 8, 11, g_player.isConnecting ? COLOR_AMBER : COLOR_CYAN);
+    
+    // ---- PAGE CONTENT ----
+    float gameX = cx + 8;
+    float gameY = toolbarY + toolbarH + 4;
+    float gameW = cw - 16;
+    float gameH = ch - toolbarH - 8;
+    
+    // Page background
     DrawScaledRect(gameX, gameY, gameW, gameH, COLOR_PANEL);
     DrawScaledRectLines(gameX, gameY, gameW, gameH, COLOR_BORDER);
     
-    DrawMarkupPage(gameX, gameY, gameW, gameH);
+    // ============================================================
+    // CONNECTION OVERLAY - Show inside browser when connecting
+    // ============================================================
+    if (g_player.isConnecting) {
+        DrawBrowserConnectionOverlay(gameX, gameY, gameW, gameH);
+    } else {
+        // ---- PAGE TITLE ----
+        const VNETPageData* site = GetSiteData(g_player.currentURL);
+        char titleStr[128];
+        if (site) {
+            snprintf(titleStr, sizeof(titleStr), "// %s", site->title);
+        } else {
+            snprintf(titleStr, sizeof(titleStr), "// %s", g_player.currentURL);
+        }
+        DrawScaledText(titleStr, gameX + 12, gameY + 8, 13, COLOR_BLOOD);
+        DrawScaledLine(gameX + 12, gameY + 28, gameX + gameW - 12, gameY + 28, COLOR_BORDER);
+        
+        // ---- PAGE CONTENT ----
+        float contentX = gameX + 4;
+        float contentY = gameY + 34;
+        float contentW = gameW - 8;
+        float contentH = gameH - 38;
+        
+        if (contentH > 20) {
+            DrawMarkupPage(contentX, contentY, contentW, contentH);
+        }
+    }
     
-    char status[64];
-    snprintf(status, sizeof(status), "PORT: %d | VCOIN: %.2f", g_player.port, g_player.vcoin);
-    DrawScaledText(status, gameX + 20, gameY + gameH - 25, 9, COLOR_GHOST);
+    // ---- STATUS BAR ----
+    float statusY = cy + ch - 22;
+    DrawScaledRect(cx, statusY, cw, 22, Color{18, 20, 28, 220});
+    DrawScaledLine(cx, statusY, cx + cw, statusY, COLOR_BORDER);
+    
+    char status[128];
+    snprintf(status, sizeof(status), "PORT: %d | VCOIN: %.2f | TRACE: %d%% | ICE: %d/3", 
+             g_player.port, g_player.vcoin, g_player.traceLevel, g_player.iceShields);
+    DrawScaledText(status, cx + 12, statusY + 5, 9, COLOR_GHOST);
+    
+    // ---- BUTTON INTERACTIONS ----
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    
+    if (clicked && !g_player.isConnecting) {
+        if (homeHover) {
+            TriggerRouteNavigation("vnet.dir");
+        }
+        else if (reloadHover) {
+            RefreshPage();
+            TriggerJitter(0.15f);
+        }
+        else if (backHover && strlen(g_player.prevURL) > 0) {
+            TriggerRouteNavigation(g_player.prevURL);
+        }
+        else if (fwdHover) {
+            PushCliLog("[BROWSER]: Forward navigation not implemented yet");
+        }
+    }
 }
 
 void Desktop::DrawTerminal(const AppWindow& win) {

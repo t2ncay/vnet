@@ -168,7 +168,7 @@ void HandleInput(void) {
         return;
     }
 
-    // ============================================================
+        // ============================================================
     // MAIN INPUT HANDLING
     // ============================================================
     
@@ -180,93 +180,65 @@ void HandleInput(void) {
         RecalcScale();
     }
 
-    if (IsKeyPressed(KEY_F10)) {
-        GetDesktop().Toggle();   // <-- ADD THIS
-    }
+    // F10 no longer toggles desktop - desktop is always on
+    // Remove or repurpose F10
 
     if (IsKeyPressed(KEY_TAB)) {
         g_player.cliOpen = !g_player.cliOpen;
     }
 
     // ============================================================
-    // IF DESKTOP IS ACTIVE, WE STILL NEED TO PROCESS GAME INPUT
-    // BUT ONLY IF THE BROWSER OR TERMINAL WINDOW IS FOCUSED
+    // DESKTOP MODE - Always active, process input through desktop
     // ============================================================
-    if (GetDesktop().IsActive()) {
-        Vector2 refMouse = GetRefMousePos();
-        bool mouseInWindow = false;
-        
-        // Check if browser window is focused
-        int bx, by, bw, bh;
-        if (GetDesktop().GetBrowserRect(bx, by, bw, bh)) {
-            if (RefRectHover(bx, by, bw, bh, refMouse)) {
-                mouseInWindow = true;
-            }
-        }
-        
-        // Check if terminal window is focused
-        int tx, ty, tw, th;
-        if (GetDesktop().GetTerminalRect(tx, ty, tw, th)) {
-            if (RefRectHover(tx, ty, tw, th, refMouse)) {
-                mouseInWindow = true;
-            }
-        }
-        
-        // Process CLI input if terminal is focused, or if CLI is open and browser is focused
-        bool isTerminalFocused = GetDesktop().IsTerminalFocused();
-        bool isBrowserFocused = GetDesktop().IsBrowserFocused();
-        
-        // Always process CLI input if terminal is focused
-        if (isTerminalFocused || g_player.cliOpen) {
-            int key = GetCharPressed();
-            while (key > 0) {
-                if (key >= 32 && key <= 126) {
-                    size_t len = strlen(g_player.inputBuffer);
-                    if (len < sizeof(g_player.inputBuffer) - 1) {
-                        g_player.inputBuffer[len] = (char)key;
-                        g_player.inputBuffer[len + 1] = '\0';
-                    }
-                }
-                key = GetCharPressed();
-            }
-
-            if (IsKeyPressed(KEY_BACKSPACE)) {
-                int len = (int)strlen(g_player.inputBuffer);
-                if (len > 0) g_player.inputBuffer[len - 1] = '\0';
-            }
-
-            if (IsKeyPressed(KEY_ENTER)) {
-                if (strlen(g_player.inputBuffer) > 0) {
-                    ProcessCommand(g_player.inputBuffer);
-                    g_player.inputBuffer[0] = '\0';
+    // Desktop handles its own input in Desktop::Update()
+    // Game input (CLI, etc.) is processed here regardless of desktop state
+    
+    // Process CLI input if terminal is focused or CLI is open
+    bool isTerminalFocused = GetDesktop().IsTerminalFocused();
+    bool isBrowserFocused = GetDesktop().IsBrowserFocused();
+    
+    // Always process CLI input if terminal is focused or CLI is open
+    if (isTerminalFocused || g_player.cliOpen) {
+        int key = GetCharPressed();
+        while (key > 0) {
+            if (key >= 32 && key <= 126) {
+                size_t len = strlen(g_player.inputBuffer);
+                if (len < sizeof(g_player.inputBuffer) - 1) {
+                    g_player.inputBuffer[len] = (char)key;
+                    g_player.inputBuffer[len + 1] = '\0';
                 }
             }
+            key = GetCharPressed();
         }
-        
-        // Process mouse wheel for scrolling - ALWAYS works in desktop mode
-        float wheel = GetMouseWheelMove();
-        if (wheel != 0.0f) {
-            // If terminal is focused or CLI is open, scroll terminal
-            if (g_player.cliOpen || isTerminalFocused) {
-                g_player.cliScroll -= wheel * 20.0f;
-                if (g_player.cliScroll < 0.0f) g_player.cliScroll = 0.0f;
-            } 
-            // Otherwise scroll the page content
-            else {
-                g_player.pageScroll -= wheel * 28.0f;
-                if (g_player.pageScroll < 0.0f) g_player.pageScroll = 0.0f;
+
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            int len = (int)strlen(g_player.inputBuffer);
+            if (len > 0) g_player.inputBuffer[len - 1] = '\0';
+        }
+
+        if (IsKeyPressed(KEY_ENTER)) {
+            if (strlen(g_player.inputBuffer) > 0) {
+                ProcessCommand(g_player.inputBuffer);
+                g_player.inputBuffer[0] = '\0';
             }
         }
-        
-        // Handle TAB to toggle CLI in desktop mode
-        if (IsKeyPressed(KEY_TAB)) {
-            g_player.cliOpen = !g_player.cliOpen;
+    }
+    
+    // Process mouse wheel for scrolling - ALWAYS works
+    float wheel = GetMouseWheelMove();
+    if (wheel != 0.0f) {
+        if (g_player.cliOpen || isTerminalFocused) {
+            g_player.cliScroll -= wheel * 20.0f;
+            if (g_player.cliScroll < 0.0f) g_player.cliScroll = 0.0f;
+        } else {
+            g_player.pageScroll -= wheel * 28.0f;
+            if (g_player.pageScroll < 0.0f) g_player.pageScroll = 0.0f;
         }
-        
-        // Mouse clicks in browser window - handled by DrawMarkupPage
-        // No need to duplicate here
-        
-        return; // Don't process further input when desktop is active
+    }
+    
+    // Handle TAB to toggle CLI
+    if (IsKeyPressed(KEY_TAB)) {
+        g_player.cliOpen = !g_player.cliOpen;
     }
 
     // ============================================================
@@ -396,7 +368,6 @@ void HandleInput(void) {
     }
 
     // Mouse wheel scroll
-    float wheel = GetMouseWheelMove();
     if (wheel != 0.0f) {
         if (g_player.cliOpen) {
             g_player.cliScroll -= wheel * 22.0f;

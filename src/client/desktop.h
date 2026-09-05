@@ -58,7 +58,7 @@ public:
     void Draw();
     
     bool IsActive() const { return m_active; }
-    void Toggle() { m_active = !m_active; }
+    void Toggle() {  }
     
     // Window management
     int OpenApp(AppType type, const char* title = nullptr);
@@ -120,6 +120,10 @@ public:
         return false;
     }
 
+    void NavigateTo(const char* url);
+    void NavigateBack();
+    void NavigateForward();
+
 private:
     Desktop() = default;
     ~Desktop() = default;
@@ -136,6 +140,8 @@ private:
     
     // App content renderers
     void DrawBrowser(const AppWindow& win);
+    void DrawBrowserConnectionOverlay(float contentX, float contentY, float contentW, float contentH);
+    
     void DrawTerminal(const AppWindow& win);
     void DrawProfile(const AppWindow& win);
     void DrawSettings(const AppWindow& win);
@@ -144,6 +150,8 @@ private:
     std::vector<AppWindow> m_windows;
     std::vector<AppIcon> m_apps;
     std::vector<Workspace> m_workspaces;
+    std::vector<std::string> m_navHistory;
+    int m_navHistoryIndex = -1;
     int m_currentWorkspace = 0;
     bool m_active = false;
     int m_focused = -1;
