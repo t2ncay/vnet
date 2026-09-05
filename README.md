@@ -201,24 +201,44 @@ VNET uses a custom **tag-based markup language** for page rendering:
 ```text
 src/
 ├── client/
-│   ├── desktop.cpp/h      # Desktop environment
-│   ├── game.cpp/h         # Game loop & state
-│   ├── main.cpp           # Entry point
-│   ├── music_player.cpp/h # Audio player widget
-│   ├── player.cpp/h       # Player state
-│   ├── render.cpp/h       # Rendering engine
-│   ├── vnet_client.cpp/h  # Client networking
-│   └── wallpaper.cpp/h    # Wallpaper renderer
-├── lib/
-│   ├── vnet_lib.cpp/h     # Low-level UDP socket library
-├── server/
-│   ├── main.cpp           # Server entry
-│   └── server_core.cpp    # Server logic & protocol
-└── shared/
-    ├── utils.cpp/h        # Common utilities
-    ├── vnet.cpp/h         # Core game logic
-    ├── vnet_protocol.h    # Command definitions
-    └── vnet_sites.cpp/h   # 50+ site data & content
+│   ├── main.cpp
+│   ├── game.cpp/h
+│   ├── render.cpp/h
+│   ├── player.cpp/h
+│   ├── vnet_client.cpp/h
+│   ├── music_player.cpp/h
+│   ├── wallpaper.cpp/h
+│   └── desktop/
+│       ├── desktop.cpp
+│       ├── desktop.h
+│       ├── desktop_icons.cpp
+│       ├── apps/
+│       │   ├── browser.cpp
+│       │   ├── terminal.cpp
+│       │   ├── profile.cpp
+│       │   ├── settings.cpp
+│       │   ├── feed.cpp
+│       │   ├── hellroom.cpp
+│       │   └── vdec/
+│       │       ├── vdec.cpp
+│       │       ├── keyring.cpp
+│       │       ├── decrypt.cpp
+│       │       ├── encrypt.cpp
+│       │       ├── hash.cpp
+│       │       └── minigame.cpp
+│       └── settings/
+│           ├── theme.cpp
+│           ├── audio.cpp
+│           ├── display.cpp
+│           ├── security.cpp
+│           └── system.cpp
+├── shared/
+│   ├── vnet.cpp/h
+│   ├── vnet_sites.cpp/h
+│   ├── vnet_protocol.h
+│   └── utils.cpp/h
+└── lib/
+    └── vnet_lib.cpp/h
 ```
 
 ---
