@@ -7,6 +7,7 @@
 #include <vector>
 #include <functional>
 #include <unordered_map>
+#include <cmath> 
 
 // ============================================================
 // GNOME-STYLE DESKTOP
