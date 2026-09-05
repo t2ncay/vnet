@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <atomic>
 #include <csignal>
+#include <random>
+#include <chrono> 
 
 // ============================================================
 // GLOBAL SERVER STATE
@@ -153,7 +155,7 @@ static void SendKeySync(int port, const std::string& ip, const std::string& dirP
         g_keyLocations[2] + ":" + g_keyLocations[3] + ":" +
         g_keyLocations[4] + ":" + g_keyLocations[5] + ":" +
         g_keyLocations[6] + ":" + g_keyLocations[7] + ":" +
-        dirPayload;
+        dirPayload;  // <-- This should be the colon-separated site list
     
     VNetLib::SendTo(g_serverSock, ip, port, sync);
 }
@@ -482,31 +484,74 @@ void RunVNTServer(int port) {
                             g_activeURLs[i] = url;
                             g_activeIPs[i] = senderIP;
                             g_activeLastSeen[i] = g_serverUptime;
-                            g_activeHandles[i] = handle; // Fixed: update handle on ping
+                            g_activeHandles[i] = handle;
                             found = true;
                             break;
                         }
                     }
                     
                     if (!found) {
-                        std::vector<std::string> assigned = {
+                        // ============================================================
+                        // ASSIGN 20 SITES (9 MUTUAL + 11 RANDOM)
+                        // ============================================================
+                        
+                        // MUTUAL SITES (guaranteed to every player)
+                        const char* mutualSites[] = {
                             "market.vnet", "vault.vnet", "terminal.vnet",
                             "forum.vnet", "crypto.vnet", "bounty.vnet",
                             "vektrapay.vnet", "hellroom.vnet", "hashbeat.vnet"
                         };
+                        int mutualCount = sizeof(mutualSites) / sizeof(mutualSites[0]);
+                        
+                        std::vector<std::string> assigned;
+                        
+                        // Add all mutual sites first
+                        for (int i = 0; i < mutualCount; i++) {
+                            assigned.push_back(mutualSites[i]);
+                        }
+                        
+                        // Then add 11 random sites (avoiding duplicates)
+                        std::random_device rd;
+                        std::mt19937 gen(rd());
+                        std::uniform_int_distribution<> dis(0, g_allSites.size() - 1);
+                        
                         while (assigned.size() < 20) {
-                            int idx = rand() % g_allSites.size();
+                            int idx = dis(gen) % g_allSites.size();
                             std::string site = g_allSites[idx];
-                            if (std::find(assigned.begin(), assigned.end(), site) == assigned.end()) {
+                            
+                            // Check if already assigned
+                            bool alreadyAssigned = false;
+                            for (const auto& s : assigned) {
+                                if (s == site) {
+                                    alreadyAssigned = true;
+                                    break;
+                                }
+                            }
+                            
+                            // Also ensure it's not a mutual site (they're already included)
+                            bool isMutual = false;
+                            for (int i = 0; i < mutualCount; i++) {
+                                if (site == mutualSites[i]) {
+                                    isMutual = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (!alreadyAssigned && !isMutual) {
                                 assigned.push_back(site);
                             }
                         }
                         
+                        // Build directory payload: "site1:site2:site3:..."
                         std::string dirPayload;
                         for (size_t i = 0; i < assigned.size(); i++) {
-                            dirPayload += assigned[i] + (i < assigned.size() - 1 ? ":" : "");
+                            dirPayload += assigned[i];
+                            if (i < assigned.size() - 1) {
+                                dirPayload += ":";
+                            }
                         }
                         
+                        // Register the new peer
                         g_activePorts.push_back(senderPort);
                         g_activeIPs.push_back(senderIP);
                         g_activeURLs.push_back(url);
@@ -515,7 +560,12 @@ void RunVNTServer(int port) {
                         g_activeDirs.push_back(dirPayload);
                         g_activeHandles.push_back(handle);
                         
+                        // Send KEY_SYNC with the assigned directory
                         SendKeySync(senderPort, senderIP, dirPayload);
+                        
+                        printf("[REGISTRY] New peer: %s:%d (handle: %s)\n", 
+                            senderIP.c_str(), senderPort, handle.c_str());
+                        printf("[REGISTRY] Assigned %zu sites\n", assigned.size());
                     }
                 }
             }

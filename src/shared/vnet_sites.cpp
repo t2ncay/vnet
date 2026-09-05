@@ -1699,7 +1699,7 @@ void LoadPageContent(const char* url, std::vector<std::string>& pageLines, Playe
         return;
     }
 
-        // ============================================================
+    // ============================================================
     // SPECIAL HANDLING FOR vnet.dir (HOME PAGE)
     // ============================================================
     if (strcmp(url, "vnet.dir") == 0 || strcmp(url, "vnet://vnet.dir") == 0) {
@@ -1713,103 +1713,109 @@ void LoadPageContent(const char* url, std::vector<std::string>& pageLines, Playe
         pageLines.push_back("[BOX] +-----------------------------------------------------------+");
         pageLines.push_back("[BOX] | STATUS: DISCOVERING HIDDEN GATEWAYS VIA UDP TRAFFIC       |");
         pageLines.push_back("[BOX] | MISSION: SNOOP & NETSCAN TRAFFIC TO CARVE ROUTES INTO RAM |");
-        pageLines.push_back("[BOX] | ACTIVE PEERS: " + std::to_string(player.assignedCount) + " DISCOVERED NODES          |");
+        
+        // Show assigned count
+        char assignedStr[128];
+        snprintf(assignedStr, sizeof(assignedStr), "BOX] | ASSIGNED NODES : %d/20 DISCOVERED SITES               |", player.assignedCount);
+        pageLines.push_back(assignedStr);
         pageLines.push_back("[BOX] +-----------------------------------------------------------+");
         pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[SUBTITLE] AVAILABLE GATEWAY PROXIES & SUBNET ROUTES");
-        pageLines.push_back("[TEXT] ");
         
-        // Core Nodes Section
-        pageLines.push_back("[SUBTITLE] █ CORE BACKBONE NODES (OVERLOAD TARGETS)");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[LINK:market.vnet] >> [CORE] THE RED MARKET - BLACK MARKET & ICE VENDOR");
-        pageLines.push_back("[LINK:vault.vnet]   >> [CORE] CORRUPTED DATA VAULT - VFS MEMORY STACK");
-        pageLines.push_back("[LINK:terminal.vnet]>> [CORE] MASTER DECRYPTION GATEWAY - ROOT ACCESS");
-        pageLines.push_back("[LINK:crypto.vnet]  >> [CORE] BLACK TUMBLER - ILLEGAL MINING RIG");
-        pageLines.push_back("[LINK:hellroom.vnet]>> [CORE] DEMONIC P2P CHAT HUB - UNENCRYPTED SWARM");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[HR]");
+        // ============================================================
+        // DISPLAY ONLY ASSIGNED SITES (9 MUTUAL + 11 RANDOM)
+        // ============================================================
         
-        // Horror/Lore Section
-        pageLines.push_back("[SUBTITLE] █ HORROR / LORE NODES (ENTER AT YOUR OWN RISK)");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[LINK:redroom.vnet]     >> [HORROR] LIVE UNENCRYPTED STREAM NODE ALPHA");
-        pageLines.push_back("[LINK:dollhouse.vnet]   >> [HORROR] ROOM 402 SURVEILLANCE FEED");
-        pageLines.push_back("[LINK:morgue.vnet]      >> [HORROR] DIGITAL AUTOPSY DATABASE");
-        pageLines.push_back("[LINK:snuff.vnet]       >> [HORROR] CORRUPTED FRAME BUFFER ARCHIVE");
-        pageLines.push_back("[LINK:asylum.vnet]      >> [HORROR] SUB-LEVEL 4 EXPERIMENTAL FACILITY");
-        pageLines.push_back("[LINK:cult.vnet]        >> [HORROR] CHURCH OF THE SILICON SOUL");
-        pageLines.push_back("[LINK:skinwalker.vnet]  >> [HORROR] SCP-6969 BIOMETRIC TRAP");
-        pageLines.push_back("[LINK:corridor204863.vnet]>> [HORROR] THE SILENT CORRIDOR");
-        pageLines.push_back("[LINK:ghost.vnet]       >> [HORROR] SPECTRAL SIGNAL MONITOR");
-        pageLines.push_back("[LINK:schizo.vnet]      >> [HORROR] TEMPLE OF NETMAN");
-        pageLines.push_back("[LINK:necro.vnet]       >> [HORROR] DIGITAL GRAVEYARD");
-        pageLines.push_back("[LINK:void.vnet]        >> [HORROR] DEEP WEB ABYSS");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[HR]");
+        if (player.assignedCount > 0) {
+            // Categorize sites
+            std::vector<std::string> mutualSites;
+            std::vector<std::string> randomSites;
+            
+            // Mutual site list (hardcoded to match server)
+            const char* mutualList[] = {
+                "market.vnet", "vault.vnet", "terminal.vnet",
+                "forum.vnet", "crypto.vnet", "bounty.vnet",
+                "vektrapay.vnet", "hellroom.vnet", "hashbeat.vnet"
+            };
+            int mutualCount = sizeof(mutualList) / sizeof(mutualList[0]);
+            
+            // Categorize each assigned site
+            for (int i = 0; i < player.assignedCount; i++) {
+                bool isMutual = false;
+                for (int j = 0; j < mutualCount; j++) {
+                    if (strcmp(player.assignedSites[i], mutualList[j]) == 0) {
+                        isMutual = true;
+                        break;
+                    }
+                }
+                if (isMutual) {
+                    mutualSites.push_back(player.assignedSites[i]);
+                } else {
+                    randomSites.push_back(player.assignedSites[i]);
+                }
+            }
+            
+            // --- MUTUAL CORE NODES SECTION ---
+            pageLines.push_back("[SUBTITLE] █ MUTUAL CORE NODES [" + std::to_string(mutualSites.size()) + "/9]");
+            pageLines.push_back("[TEXT] ");
+            pageLines.push_back("[TEXT] These are guaranteed to every player. Overload all 5 core nodes to win.");
+            pageLines.push_back("[TEXT] ");
+            
+            // Define which mutual sites are core nodes (overload targets)
+            const char* coreNodes[] = {"market.vnet", "vault.vnet", "terminal.vnet", "crypto.vnet", "hellroom.vnet"};
+            int coreCount = sizeof(coreNodes) / sizeof(coreNodes[0]);
+            
+            for (const auto& site : mutualSites) {
+                bool isCore = false;
+                for (int i = 0; i < coreCount; i++) {
+                    if (site == coreNodes[i]) { isCore = true; break; }
+                }
+                
+                std::string label = "[LINK:" + site + "] >> ";
+                if (isCore) {
+                    label += "[CORE] " + site;
+                } else {
+                    label += "[MUTUAL] " + site;
+                }
+                pageLines.push_back(label);
+            }
+            pageLines.push_back("[TEXT] ");
+            pageLines.push_back("[HR]");
+            
+            // --- RANDOM DISCOVERED NODES SECTION ---
+            if (!randomSites.empty()) {
+                pageLines.push_back("[SUBTITLE] █ RANDOM DISCOVERED NODES [" + std::to_string(randomSites.size()) + "/11]");
+                pageLines.push_back("[TEXT] ");
+                for (const auto& site : randomSites) {
+                    pageLines.push_back("[LINK:" + site + "] >> [DISCOVERED] " + site);
+                }
+                pageLines.push_back("[TEXT] ");
+                pageLines.push_back("[HR]");
+            } else {
+                pageLines.push_back("[TEXT] No random sites discovered yet. Use 'scan' to find more.");
+                pageLines.push_back("[TEXT] ");
+                pageLines.push_back("[HR]");
+            }
+            
+            // --- SCAN BUTTON ---
+            pageLines.push_back("[SUBTITLE] █ SUBNET DISCOVERY SCANNER");
+            pageLines.push_back("[TEXT] ");
+            pageLines.push_back("[BTN:scan_btn]>>> SCAN FOR NEW SUBNET NODES (240s COOLDOWN) <<<");
+            pageLines.push_back("[TEXT] ");
+            pageLines.push_back("[HR]");
+            
+        } else {
+            // No sites assigned yet - show connection status
+            pageLines.push_back("[BLOOD] [WARNING]: NO SITES ASSIGNED YET!");
+            pageLines.push_back("[TEXT] ");
+            pageLines.push_back("[TEXT] You are connected to the server but haven't received your site directory.");
+            pageLines.push_back("[TEXT] The server should send KEY_SYNC with your 20 assigned sites.");
+            pageLines.push_back("[TEXT] ");
+            pageLines.push_back("[TEXT] Press [TAB] and type 'scan' to discover sites manually.");
+            pageLines.push_back("[TEXT] ");
+            pageLines.push_back("[HR]");
+        }
         
-        // Black Market Section
-        pageLines.push_back("[SUBTITLE] █ BLACK MARKET & CONTRABAND EXCHANGE");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[LINK:silkroad.vnet]    >> [BLACK] SILK ROAD 3.0 - GLOBAL CONTRABAND");
-        pageLines.push_back("[LINK:zeroauction.vnet] >> [BLACK] ZERO-DAY EXPLOIT AUCTION HOUSE");
-        pageLines.push_back("[LINK:blackbank.vnet]   >> [BLACK] OFFSHORE COLD VAULT & LAUNDERING");
-        pageLines.push_back("[LINK:weaponry.vnet]    >> [BLACK] PMC WEAPONRY EXPORT & ARSENAL");
-        pageLines.push_back("[LINK:passports.vnet]   >> [BLACK] FORGED PASSPORT & IDENTITY VAULT");
-        pageLines.push_back("[LINK:darkdrop.vnet]    >> [BLACK] DEAD-DROP GPS REGISTRY");
-        pageLines.push_back("[LINK:vektrapay.vnet]   >> [BLACK] CRYPTO MIXER & TUMBLER");
-        pageLines.push_back("[LINK:bounty.vnet]      >> [BLACK] KAGUYA TRIAL BOUNTY INDEX");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[HR]");
-        
-        // Infrastructure Section
-        pageLines.push_back("[SUBTITLE] █ INFRASTRUCTURE & SURVEILLANCE");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[LINK:watchtower.vnet]  >> [INFRA] PANOPTICON SATELLITE FEED");
-        pageLines.push_back("[LINK:orbital.vnet]     >> [INFRA] ION CANNON KINETIC STRIKE");
-        pageLines.push_back("[LINK:cctv-core.vnet]   >> [INFRA] CITY WIDE CCTV BACKDOOR MESH");
-        pageLines.push_back("[LINK:eye.vnet]         >> [INFRA] PROJECT HORUS SURVEILLANCE");
-        pageLines.push_back("[LINK:substation04.vnet]>> [INFRA] COLD SIGNAL GROUND ZERO");
-        pageLines.push_back("[LINK:stasi.vnet]       >> [INFRA] D7 COMMUNICATIONS INTERCEPT");
-        pageLines.push_back("[LINK:deadchannel.vnet] >> [INFRA] PMC WIRETAP INTERCEPT");
-        pageLines.push_back("[LINK:signal0.vnet]     >> [INFRA] PRIMORDIAL CARRIER WAVE");
-        pageLines.push_back("[LINK:deepocean.vnet]   >> [INFRA] UNDERSEA FIBER STATION");
-        pageLines.push_back("[LINK:norilsk-relay.vnet]>> [INFRA] ARCTIC OPTICAL TRANSIT");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[HR]");
-        
-        // Network Hubs Section
-        pageLines.push_back("[SUBTITLE] █ NETWORK HUBS & DIRECTORIES");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[LINK:forum.vnet]       >> [HUB] /b/ ANONYMOUS TERMINAL BOARD");
-        pageLines.push_back("[LINK:deepwiki.vnet]    >> [HUB] DEEP WIKI - OCCULT & ARCHIVAL DATABASE");
-        pageLines.push_back("[LINK:pastebin.vnet]    >> [HUB] ANONYMOUS DUMP NETWORK");
-        pageLines.push_back("[LINK:whisper.vnet]     >> [HUB] WHISPER PROTOCOL MESSAGE BOARD");
-        pageLines.push_back("[LINK:dump.vnet]        >> [HUB] RAW HEX MEMORY DUMPS");
-        pageLines.push_back("[LINK:index.vnet]       >> [HUB] MASTER ROUTING INDEX");
-        pageLines.push_back("[LINK:project9.vnet]    >> [HUB] SUBTERRANEAN BLACK SITE DATABASE");
-        pageLines.push_back("[LINK:echolab.vnet]     >> [HUB] FREQUENCY RESEARCH LAB");
-        pageLines.push_back("[LINK:phantom.vnet]     >> [HUB] PHANTOM NODE PROTOCOL");
-        pageLines.push_back("[LINK:glitch.vnet]      >> [HUB] GLITCH REALITY OVERRIDE");
-        pageLines.push_back("[LINK:stasis.vnet]      >> [HUB] CRYOGENIC STASIS PODS");
-        pageLines.push_back("[LINK:entropy.vnet]     >> [HUB] ENTROPY ENGINE MONITOR");
-        pageLines.push_back("[LINK:hive.vnet]        >> [HUB] HIVE MIND COLLECTIVE");
-        pageLines.push_back("[LINK:nexus.vnet]       >> [HUB] CENTRAL NEXUS ROUTER");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[HR]");
-        
-        // Special Nodes Section
-        pageLines.push_back("[SUBTITLE] █ SPECIAL / UNCLASSIFIED NODES");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[LINK:hashbeat.vnet]    >> [SPECIAL] UNDERGROUND AUDIO BEAT VAULT");
-        pageLines.push_back("[LINK:lifeleaks.vnet]   >> [SPECIAL] UNFILTERED INTELLIGENCE DUMP");
-        pageLines.push_back("[LINK:luna.vnet]        >> [SPECIAL] SILENT ASPHYXIA - EXECUTIONER");
-        pageLines.push_back("[LINK:subcell.vnet]     >> [SPECIAL] CELLULAR TELEMETRY OVERRIDE");
-        pageLines.push_back("[LINK:feed99.vnet]      >> [SPECIAL] NEURAL BROADCAST FEED");
-        pageLines.push_back("[TEXT] ");
-        pageLines.push_back("[HR]");
-        
-        // Player Stats
+        // --- PLAYER STATS ---
         pageLines.push_back("[SUBTITLE] █ OPERATOR STATUS & SYSTEM TELEMETRY");
         pageLines.push_back("[TEXT] ");
         char stats[256];
@@ -1824,24 +1830,9 @@ void LoadPageContent(const char* url, std::vector<std::string>& pageLines, Playe
         snprintf(stats, sizeof(stats), "CRT HEAT  : %.0f°C", player.crtHeat);
         pageLines.push_back("[CODE] " + std::string(stats));
         pageLines.push_back("[TEXT] ");
-        
-        // Discovered Sites
-        pageLines.push_back("[SUBTITLE] █ DISCOVERED SUBNET NODES [" + std::to_string(player.assignedCount) + "/20]");
-        pageLines.push_back("[TEXT] ");
-        if (player.assignedCount > 0) {
-            for (int i = 0; i < player.assignedCount; i++) {
-                char siteLine[128];
-                snprintf(siteLine, sizeof(siteLine), "[LINK:%s] >> vnet://%s", 
-                         player.assignedSites[i], player.assignedSites[i]);
-                pageLines.push_back(std::string(siteLine));
-            }
-        } else {
-            pageLines.push_back("[TEXT] No sites discovered yet. Use 'scan' in terminal to find nodes.");
-        }
-        pageLines.push_back("[TEXT] ");
         pageLines.push_back("[HR]");
         
-        // Footer
+        // --- FOOTER ---
         pageLines.push_back("[PULSE] 'THEY CAN SEE THROUGH THE CRT SCREEN... DON'T LOOK BACK.'");
         pageLines.push_back("[TEXT] ");
         pageLines.push_back("[TEXT] Tip: Press [TAB] to toggle terminal overlay. Mine VCOIN at crypto.vnet.");

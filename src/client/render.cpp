@@ -38,40 +38,185 @@ extern int g_feedLogCount;
 extern GameState g_game;
 
 // ============================================================
-// SIMPLE JITTER/SHAKE SYSTEM (Port from Vyne Source)
+// ENHANCED JITTER/SHAKE SYSTEM (Weighted CRT Interference)
 // ============================================================
 
-static float g_jitterIntensity = 0.0f;
-static float g_jitterTimer = 0.0f;
+// Jitter state structure
+struct JitterState {
+    // Primary shake
+    float intensity;           // 0.0 - 1.0
+    float timer;
+    float decayRate;
+    
+    // Multi-dimensional noise
+    float noiseX[4];
+    float noiseY[4];
+    float noisePhase[4];
+    
+    // Glitch components
+    float glitchIntensity;     // 0.0 - 1.0 (spikes)
+    float glitchTimer;
+    float glitchHold;
+    
+    // Horizontal/vertical bias
+    float horizontalBias;
+    float verticalBias;
+    
+    // CRT wobble
+    float crtWobble;
+    float crtWobbleTimer;
+};
 
-void TriggerJitter(float intensity) {
+static JitterState g_jitter = {0};
+
+void InitJitter(void) {
+    memset(&g_jitter, 0, sizeof(JitterState));
+    g_jitter.decayRate = 1.5f;
+    
+    // Initialize noise phases
+    for (int i = 0; i < 4; i++) {
+        g_jitter.noisePhase[i] = (float)(rand() % 1000) / 1000.0f * 6.28318f;
+    }
+}
+
+void TriggerJitter(float intensity, float duration) {
     if (intensity < 0.0f) intensity = 0.0f;
     if (intensity > 1.0f) intensity = 1.0f;
-    g_jitterIntensity = intensity;
-    g_jitterTimer = 0.0f;
+    
+    // If existing jitter is stronger, keep it
+    if (intensity <= g_jitter.intensity) return;
+    
+    g_jitter.intensity = intensity;
+    g_jitter.timer = 0.0f;
+    
+    // Random bias for this jitter event
+    g_jitter.horizontalBias = (rand() % 100 - 50) / 100.0f;
+    g_jitter.verticalBias = (rand() % 100 - 50) / 100.0f;
+    
+    // Sometimes trigger glitch spikes
+    if (intensity > 0.4f && (rand() % 100) < 40) {
+        g_jitter.glitchIntensity = intensity * (0.5f + (rand() % 100) / 200.0f);
+        g_jitter.glitchTimer = 0.0f;
+        g_jitter.glitchHold = 0.05f + (rand() % 100) / 1000.0f;
+    }
+    
+    if (duration > 0.0f) {
+        g_jitter.decayRate = 1.0f / duration;
+    } else {
+        g_jitter.decayRate = 1.5f + intensity * 2.0f;
+    }
 }
 
-float GetJitterX(void) {
-    if (g_jitterIntensity <= 0.01f) return 0.0f;
-    float t = GetTime();
-    return sinf(t * 50.0f) * (g_jitterIntensity * 12.0f);
-}
-
-float GetJitterY(void) {
-    if (g_jitterIntensity <= 0.01f) return 0.0f;
-    float t = GetTime();
-    return cosf(t * 30.0f) * (g_jitterIntensity * 10.0f);
-}
-
-bool IsJittering(void) {
-    return g_jitterIntensity > 0.01f;
+void TriggerGlitch(float intensity) {
+    g_jitter.glitchIntensity = intensity;
+    g_jitter.glitchTimer = 0.0f;
+    g_jitter.glitchHold = 0.03f + (rand() % 100) / 500.0f;
 }
 
 void UpdateJitter(float dt) {
-    if (g_jitterIntensity > 0.0f) {
-        g_jitterIntensity -= dt * 2.0f;  // Decay rate
-        if (g_jitterIntensity < 0.0f) g_jitterIntensity = 0.0f;
+    // Decay primary intensity
+    if (g_jitter.intensity > 0.0f) {
+        g_jitter.intensity -= dt * g_jitter.decayRate;
+        if (g_jitter.intensity < 0.0f) g_jitter.intensity = 0.0f;
+        g_jitter.timer += dt;
     }
+    
+    // Update noise phases
+    for (int i = 0; i < 4; i++) {
+        g_jitter.noisePhase[i] += dt * (0.5f + g_jitter.intensity * 3.0f);
+    }
+    
+    // Update noise values using multiple frequencies
+    float t = GetTime();
+    for (int i = 0; i < 4; i++) {
+        float freq = 2.0f + i * 3.0f + g_jitter.intensity * 10.0f;
+        g_jitter.noiseX[i] = sinf(t * freq + g_jitter.noisePhase[i]);
+        g_jitter.noiseY[i] = cosf(t * (freq * 0.7f + 1.3f) + g_jitter.noisePhase[i] * 0.6f);
+    }
+    
+    // Update glitch
+    if (g_jitter.glitchIntensity > 0.0f) {
+        g_jitter.glitchTimer += dt;
+        if (g_jitter.glitchTimer > g_jitter.glitchHold) {
+            g_jitter.glitchIntensity -= dt * 8.0f;
+            if (g_jitter.glitchIntensity < 0.0f) g_jitter.glitchIntensity = 0.0f;
+        }
+    }
+    
+    // CRT wobble (always present at low intensity)
+    g_jitter.crtWobbleTimer += dt * 0.3f;
+    g_jitter.crtWobble = sinf(g_jitter.crtWobbleTimer * 0.7f) * 0.15f + 
+                         sinf(g_jitter.crtWobbleTimer * 1.3f + 2.0f) * 0.1f;
+}
+
+float GetJitterX(void) {
+    float result = 0.0f;
+    
+    // 1. Primary shake (multi-frequency)
+    if (g_jitter.intensity > 0.01f) {
+        float primary = g_jitter.noiseX[0] * 0.6f + 
+                        g_jitter.noiseX[1] * 0.3f + 
+                        g_jitter.noiseX[2] * 0.1f;
+        
+        // Biased based on horizontal bias
+        float bias = 0.5f + g_jitter.horizontalBias * 0.5f;
+        result += primary * g_jitter.intensity * 14.0f * bias;
+    }
+    
+    // 2. Glitch spikes (jagged, sudden movements)
+    if (g_jitter.glitchIntensity > 0.01f) {
+        float glitch = sinf(g_jitter.glitchTimer * 120.0f) * 
+                       (1.0f - g_jitter.glitchTimer / (g_jitter.glitchHold + 0.01f));
+        result += glitch * g_jitter.glitchIntensity * 25.0f;
+    }
+    
+    // 3. CRT wobble (subtle, always present)
+    result += g_jitter.crtWobble * 0.3f;
+    
+    // Clamp
+    if (result > 30.0f) result = 30.0f;
+    if (result < -30.0f) result = -30.0f;
+    
+    return result;
+}
+
+float GetJitterY(void) {
+    float result = 0.0f;
+    
+    // 1. Primary shake (multi-frequency)
+    if (g_jitter.intensity > 0.01f) {
+        float primary = g_jitter.noiseY[0] * 0.5f + 
+                        g_jitter.noiseY[1] * 0.3f + 
+                        g_jitter.noiseY[2] * 0.2f;
+        
+        // Biased based on vertical bias
+        float bias = 0.5f + g_jitter.verticalBias * 0.5f;
+        result += primary * g_jitter.intensity * 12.0f * bias;
+    }
+    
+    // 2. Glitch spikes (sometimes vertical only)
+    if (g_jitter.glitchIntensity > 0.01f) {
+        float glitch = cosf(g_jitter.glitchTimer * 90.0f) * 
+                       (1.0f - g_jitter.glitchTimer / (g_jitter.glitchHold + 0.01f));
+        result += glitch * g_jitter.glitchIntensity * 18.0f;
+    }
+    
+    // 3. CRT wobble
+    result += g_jitter.crtWobble * 0.25f;
+    
+    // Clamp
+    if (result > 25.0f) result = 25.0f;
+    if (result < -25.0f) result = -25.0f;
+    
+    return result;
+}
+
+bool IsJittering(void) {
+    return g_jitter.intensity > 0.01f || g_jitter.glitchIntensity > 0.01f;
+}
+
+float GetJitterIntensity(void) {
+    return g_jitter.intensity + g_jitter.glitchIntensity * 0.5f;
 }
 
 // ============================================================

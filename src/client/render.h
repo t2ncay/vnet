@@ -47,7 +47,10 @@ bool RefRectHover(float x, float y, float w, float h, Vector2 refMouse);
 
 void DrawConnectionOverlay(void);
 
-void TriggerJitter(float intensity);
+void TriggerJitter(float intensity, float duration = 0.0f);
 float GetJitterX(void);
 float GetJitterY(void);
 bool IsJittering(void);
+void InitJitter(void);
+float GetJitterIntensity(void);
+void TriggerGlitch(float intensity);

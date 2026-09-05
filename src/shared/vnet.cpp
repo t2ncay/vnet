@@ -218,12 +218,38 @@ void UpdateVNET(float dt) {
             }
             if (!remaining.empty()) tokens.push_back(remaining);
             
-            if (tokens.size() >= 16) {
-                // First 8 are scrambled keys, next 8 are key locations
-                for (int i = 0; i < 8 && i < (int)tokens.size(); i++) {
-                    // Store keys if needed
+            // Debug: Print token count
+            PushCliLog("[KEY_SYNC]: Received %zu tokens", tokens.size());
+            
+            // Need at least 24 tokens: 8 keys + 8 locations + 20 sites = 36 total
+            if (tokens.size() >= 24) {
+                // First 8 are scrambled keys
+                // Next 8 are key locations (tokens[8] through tokens[15])
+                // The rest (tokens[16] onwards) are the assigned sites
+                
+                // Store key locations (tokens 8-15)
+                for (int i = 0; i < 8 && i + 8 < (int)tokens.size(); i++) {
+                    strncpy(g_vnet.keyLocations[i], tokens[i + 8].c_str(), sizeof(g_vnet.keyLocations[0]) - 1);
                 }
-                PushCliLog("[KEY_SYNC]: Received %zu keys", tokens.size());
+                
+                // Store assigned sites (tokens 16 onwards)
+                g_player.assignedCount = 0;
+                for (size_t i = 16; i < tokens.size() && g_player.assignedCount < 20; i++) {
+                    strncpy(g_player.assignedSites[g_player.assignedCount], 
+                            tokens[i].c_str(), sizeof(g_player.assignedSites[0]) - 1);
+                    g_player.assignedCount++;
+                    PushCliLog("[KEY_SYNC]: ASSIGNED SITE %d: %s", g_player.assignedCount, tokens[i].c_str());
+                }
+                
+                PushCliLog("[KEY_SYNC]: Received %zu keys, %d assigned sites", 
+                        tokens.size(), g_player.assignedCount);
+                
+                // CRITICAL: Reload the page to show the assigned sites!
+                if (strcmp(g_player.currentURL, "vnet.dir") == 0) {
+                    RefreshPage();
+                }
+            } else {
+                PushCliLog("[KEY_SYNC]: WARNING - Not enough tokens! Expected 36+, got %zu", tokens.size());
             }
         }
 
@@ -422,7 +448,7 @@ void LoadPage(const char* url) {
     strncpy(cleanURL, url, sizeof(cleanURL) - 1);
     cleanURL[sizeof(cleanURL) - 1] = '\0';
 
-    TriggerJitter(0.2f + (rand() % 100) / 500.0f);
+    TriggerJitter(0.3f + (rand() % 100) / 300.0f, 0.8f);
     
     // Remove vnet:// prefix if present
     if (strncmp(cleanURL, "vnet://", 7) == 0) {
@@ -671,7 +697,8 @@ void ProcessCommand(const char* cmd) {
         } else {
             g_player.vcoin -= 0.25f;
             g_player.cdDOS = 15.0f;
-            TriggerJitter(0.6f);
+            TriggerJitter(0.7f, 0.8f);
+            TriggerGlitch(0.4f);
             PushCliLog("[DOS]: DOS ATTACK SENT TO PORT %s", args);
             PushFeedLog("[DOS ATTACK]: Player froze port %s", args);
             g_player.glitchTrigger = 0.6f;
@@ -1235,7 +1262,7 @@ void TriggerRouteNavigation(const char* url) {
     // Store current URL as previous before navigating
     strcpy(g_player.prevURL, g_player.currentURL);
     
-    TriggerJitter(0.3f + (rand() % 100) / 500.0f);
+    TriggerJitter(0.4f + (rand() % 100) / 250.0f, 1.2f);
     
     g_player.isConnecting = true;
     g_player.connectTimer = 0.0f;
@@ -1258,6 +1285,10 @@ void UpdatePeerSession(uint32_t port, const char* ip, const char* url) {
 
 void StartMining(void) {
     // Only at crypto.vnet
+
+    TriggerJitter(0.5f, 0.6f);
+    TriggerGlitch(0.3f);
+
     if (!strstr(g_player.currentURL, "crypto.vnet")) {
         PushCliLog("[ERROR]: MINING ONLY AT crypto.vnet");
         return;
