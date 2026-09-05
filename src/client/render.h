@@ -1,6 +1,8 @@
 #pragma once
 #include "raylib.h"
 
+#include <string> 
+
 // Color palette
 extern Color COLOR_BLACK;
 extern Color COLOR_PANEL;
@@ -29,6 +31,8 @@ void DrawStatusBar(void);
 void DrawVPulse(float x, float y, float size, float time);
 void DrawHellroomUI(float jx, float jy, Vector2 refMouse, bool clicked);
 
+void DrawMarkupPage(float contentX, float contentY, float contentW, float contentH);
+
 // Scaled drawing helpers
 void DrawScaledRect(float x, float y, float w, float h, Color color);
 void DrawScaledRectLines(float x, float y, float w, float h, Color color);
@@ -54,3 +58,8 @@ bool IsJittering(void);
 void InitJitter(void);
 float GetJitterIntensity(void);
 void TriggerGlitch(float intensity);
+
+float SX(float x);
+float SY(float y);
+bool StartsWith(const std::string& str, const char* prefix);
+float MeasureScaledTextWidth(const char* text, float fontSize);

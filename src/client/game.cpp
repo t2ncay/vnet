@@ -4,6 +4,8 @@
 #include "render.h"
 #include "vnet_client.h"
 #include "vnet_protocol.h" 
+#include "desktop.h"
+
 #include <cstdio>
 #include <cmath>
 
@@ -48,6 +50,8 @@ bool InitGame(void) {
     InitPlayer();
     LoadAssets();
 
+    GetDesktop().Init();
+
     // Placeholder starting page
     LoadPage("vnet.dir");
 
@@ -71,6 +75,8 @@ void UpdateGame(float dt) {
 
     UpdateVNET(dt);
     UpdatePlayer(dt);
+
+    GetDesktop().Update(dt); 
 
     g_game.fpsTimer += dt;
     if (g_game.fpsTimer >= 0.5f) {
@@ -100,6 +106,7 @@ void ShutdownGame(void) {
     ShutdownPlayer();
     UnloadAssets();
     ShutdownVNetClient();
+    GetDesktop().Shutdown();
 }
 
 void HandleInput(void) {
@@ -173,11 +180,106 @@ void HandleInput(void) {
         RecalcScale();
     }
 
+    if (IsKeyPressed(KEY_F10)) {
+        GetDesktop().Toggle();   // <-- ADD THIS
+    }
+
     if (IsKeyPressed(KEY_TAB)) {
         g_player.cliOpen = !g_player.cliOpen;
     }
+    
+    // ============================================================
+    // IF DESKTOP IS ACTIVE, WE STILL NEED TO PROCESS GAME INPUT
+    // BUT ONLY IF THE BROWSER OR TERMINAL WINDOW IS FOCUSED
+    // ============================================================
+    if (GetDesktop().IsActive()) {
+        Vector2 refMouse = GetRefMousePos();
+        bool mouseInWindow = false;
+        
+        // Check if browser window is focused
+        int bx, by, bw, bh;
+        if (GetDesktop().GetBrowserRect(bx, by, bw, bh)) {
+            if (RefRectHover(bx, by, bw, bh, refMouse)) {
+                mouseInWindow = true;
+            }
+        }
+        
+        // Check if terminal window is focused
+        int tx, ty, tw, th;
+        if (GetDesktop().GetTerminalRect(tx, ty, tw, th)) {
+            if (RefRectHover(tx, ty, tw, th, refMouse)) {
+                mouseInWindow = true;
+            }
+        }
+        
+        // Process CLI input if mouse is in any window OR terminal is focused
+        bool isTerminalFocused = GetDesktop().IsTerminalFocused();
+        bool isBrowserFocused = GetDesktop().IsBrowserFocused();
+        
+        // Always process CLI input if terminal is focused, or if CLI is open and browser is focused
+        if (g_player.cliOpen || isTerminalFocused || isBrowserFocused) {
+            // Process CLI input (same as non-desktop mode)
+            int key = GetCharPressed();
+            while (key > 0) {
+                if (key >= 32 && key <= 126) {
+                    size_t len = strlen(g_player.inputBuffer);
+                    if (len < sizeof(g_player.inputBuffer) - 1) {
+                        g_player.inputBuffer[len] = (char)key;
+                        g_player.inputBuffer[len + 1] = '\0';
+                    }
+                }
+                key = GetCharPressed();
+            }
 
-        // ============================================================
+            if (IsKeyPressed(KEY_BACKSPACE)) {
+                int len = (int)strlen(g_player.inputBuffer);
+                if (len > 0) g_player.inputBuffer[len - 1] = '\0';
+            }
+
+            if (IsKeyPressed(KEY_ENTER)) {
+                if (strlen(g_player.inputBuffer) > 0) {
+                    ProcessCommand(g_player.inputBuffer);
+                    g_player.inputBuffer[0] = '\0';
+                }
+            }
+            
+            // If terminal is focused and mouse is in terminal, process mouse clicks for links
+            if (isTerminalFocused && mouseInWindow) {
+                // Clicking in terminal doesn't do much, but we can trigger jitter
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                    float intensity = 0.05f + (rand() % 100) / 250.0f;
+                    if (intensity > 0.4f) intensity = 0.4f;
+                    TriggerJitter(intensity);
+                }
+            }
+            
+            // If browser is focused, process link clicks
+            if (isBrowserFocused && mouseInWindow) {
+                // This is handled in DrawMarkupPage
+            }
+        }
+        
+        // Process mouse wheel for scrolling (always works)
+        float wheel = GetMouseWheelMove();
+        if (wheel != 0.0f) {
+            if (g_player.cliOpen || isTerminalFocused) {
+                g_player.cliScroll -= wheel * 20.0f;
+                if (g_player.cliScroll < 0.0f) g_player.cliScroll = 0.0f;
+            } else {
+                g_player.pageScroll -= wheel * 28.0f;
+                if (g_player.pageScroll < 0.0f) g_player.pageScroll = 0.0f;
+            }
+        }
+        
+        // Handle TAB to toggle CLI in desktop mode
+        if (IsKeyPressed(KEY_TAB)) {
+            g_player.cliOpen = !g_player.cliOpen;
+        }
+        
+        return; // Don't process further input when desktop is active
+    }
+
+    // ============================================================
     // HELLROOM INPUT HANDLING
     // ============================================================
     if (strcmp(g_player.currentURL, "hellroom.vnet") == 0) {

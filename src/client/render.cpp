@@ -3,6 +3,8 @@
 #include "game.h"
 #include "vnet_client.h"
 #include "vnet_protocol.h"
+#include "desktop.h"
+
 #include <cstdio>
 #include <cmath>
 #include <cstdarg>
@@ -267,8 +269,8 @@ void SetActiveTheme(const char* name) {
 // SCALED PRIMITIVES (reference-space -> real screen space)
 // ============================================================
 
-static inline float SX(float x) { return g_offsetX + x * g_uiScale; }
-static inline float SY(float y) { return g_offsetY + y * g_uiScale; }
+float SX(float x) { return g_offsetX + x * g_uiScale; }
+float SY(float y) { return g_offsetY + y * g_uiScale; }
 
 void DrawScaledRect(float x, float y, float w, float h, Color color) {
     DrawRectangle((int)SX(x), (int)SY(y), (int)(w * g_uiScale), (int)(h * g_uiScale), color);
@@ -290,7 +292,7 @@ void DrawScaledLine(float x1, float y1, float x2, float y2, Color color) {
     DrawLine((int)SX(x1), (int)SY(y1), (int)SX(x2), (int)SY(y2), color);
 }
 
-static float MeasureScaledTextWidth(const char* text, float fontSize) {
+float MeasureScaledTextWidth(const char* text, float fontSize) {
     if (g_fontVCR.texture.id != 0) {
         Vector2 sz = MeasureTextEx(g_fontVCR, text, fontSize * g_uiScale, 1.0f);
         return sz.x / g_uiScale;
@@ -359,7 +361,7 @@ static bool ParseTaggedField(const std::string& line, const char* prefix,
     return true;
 }
 
-static bool StartsWith(const std::string& s, const char* prefix) {
+bool StartsWith(const std::string& s, const char* prefix) {
     size_t plen = strlen(prefix);
     return s.size() >= plen && s.compare(0, plen, prefix) == 0;
 }
@@ -1244,6 +1246,11 @@ void DrawUI(void) {
     UpdateJitter(GetFrameTime());
 
     DrawAnimatedBackground();
+
+    if (GetDesktop().IsActive()) {
+        GetDesktop().Draw();
+        return;
+    }
 
     if (g_player.isInConnectionMenu) {
         DrawConnectionScreen();

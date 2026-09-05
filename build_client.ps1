@@ -99,6 +99,7 @@ $clientSources = @(
     "src/client/render.cpp",
     "src/client/player.cpp",
     "src/client/vnet_client.cpp",
+    "src/client/desktop.cpp",
     # Shared
     "src/shared/vnet.cpp",
     "src/shared/vnet_sites.cpp",
