@@ -204,8 +204,11 @@ static bool ParseTaggedField(const std::string& line, const char* prefix,
     if (close == std::string::npos) return false;
     body = line.substr(plen, close - plen);
     rest = (close + 1 < line.size()) ? line.substr(close + 1) : "";
-    // Trim a single leading space from rest, if present.
-    if (!rest.empty() && rest[0] == ' ') rest.erase(0, 1);
+
+    // trimming white spaces
+    while (!rest.empty() && (rest[0] == ' ' || rest[0] == '\t')) {
+        rest.erase(0, 1);
+    }
     return true;
 }
 
@@ -339,6 +342,25 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
         else if (StartsWith(raw, "[LINK:")) {
             std::string url, rest;
             ParseTaggedField(raw, "[LINK:", url, rest);
+            
+            // Trim leading spaces from rest
+            while (!rest.empty() && rest[0] == ' ') {
+                rest.erase(0, 1);
+            }
+            
+            // Also trim the >> if present (or any other prefix)
+            if (rest.size() >= 2 && rest[0] == '>' && rest[1] == '>') {
+                rest.erase(0, 2);
+                while (!rest.empty() && rest[0] == ' ') {
+                    rest.erase(0, 1);
+                }
+            }
+            
+            // If rest is empty, use the URL as the label
+            if (rest.empty()) {
+                rest = url;
+            }
+            
             float labelW = MeasureScaledTextWidth(rest.c_str(), 14);
             bool hover = RefRectHover(leftX, y, labelW + 20.0f, 24.0f, refMouse) && mouseInPanel;
             Color linkCol = hover ? COLOR_TOXIC : COLOR_CYAN;
