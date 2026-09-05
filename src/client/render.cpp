@@ -39,7 +39,7 @@ extern char g_feedLogs[100][256];
 extern int g_feedLogCount;
 extern GameState g_game;
 
-float g_fontScale = 1.3f;
+float g_fontScale = 1.5f;
 
 // ============================================================
 // ENHANCED JITTER/SHAKE SYSTEM (Weighted CRT Interference)

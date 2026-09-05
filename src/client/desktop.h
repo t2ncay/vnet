@@ -1,5 +1,6 @@
 #pragma once
 #include "raylib.h"
+#include "music_player.h"
 #include <string>
 #include <vector>
 #include <functional>
@@ -156,6 +157,12 @@ private:
     bool m_active = false;
     int m_focused = -1;
     bool m_appGridVisible = false;
+
+    float m_musicWidgetX = 0.0f;
+    float m_musicWidgetY = 0.0f;
+    float m_musicWidgetW = 280.0f;
+    float m_musicWidgetH = 380.0f;
+    bool m_musicWidgetVisible = true;
     
     // Icon textures
     std::unordered_map<std::string, Texture2D> m_iconTextures;

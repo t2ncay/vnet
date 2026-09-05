@@ -8,8 +8,8 @@
 // ============================================================
 // REFERENCE CANVAS
 // ============================================================
-constexpr int REF_WIDTH  = 1280;
-constexpr int REF_HEIGHT = 800;
+constexpr int REF_WIDTH  = 1920;
+constexpr int REF_HEIGHT = 1080;
 
 bool InitGame(void);
 void UpdateGame(float dt);

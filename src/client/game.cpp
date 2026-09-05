@@ -2,6 +2,7 @@
 #include "vnet.h"
 #include "player.h"
 #include "render.h"
+#include "music_player.h"
 #include "vnet_client.h"
 #include "vnet_protocol.h" 
 #include "desktop.h"
@@ -51,6 +52,7 @@ bool InitGame(void) {
     LoadAssets();
 
     GetDesktop().Init();
+    GetMusicPlayer().Init(); 
 
     // Placeholder starting page
     LoadPage("vnet.dir");
@@ -77,6 +79,7 @@ void UpdateGame(float dt) {
     UpdatePlayer(dt);
 
     GetDesktop().Update(dt); 
+    GetMusicPlayer().Update(dt); 
 
     g_game.fpsTimer += dt;
     if (g_game.fpsTimer >= 0.5f) {
@@ -107,6 +110,7 @@ void ShutdownGame(void) {
     UnloadAssets();
     ShutdownVNetClient();
     GetDesktop().Shutdown();
+    GetMusicPlayer().Shutdown(); 
 }
 
 void HandleInput(void) {
