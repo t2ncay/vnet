@@ -5,6 +5,7 @@
 #include "vnet_client.h"
 #include "vnet_sites.h"
 #include "wallpaper.h"
+#include "vnet_protocol.h" 
 
 #include <cstdio>
 #include <cstring>
@@ -45,6 +46,14 @@ static void LaunchFeed() {
     GetDesktop().OpenApp(AppType::Feed, "System Feed");
 }
 
+static void LaunchHellroom() {
+    GetDesktop().OpenApp(AppType::Hellroom, "Hellroom IRC");
+}
+
+static void LaunchVDEC() {
+    GetDesktop().OpenApp(AppType::VDEC, "VDEC - VNET Decryption Toolkit");
+}
+
 // icon functions
 
 void Desktop::LoadIcons() {
@@ -65,6 +74,8 @@ void Desktop::LoadIcons() {
     loadIcon("feed", "assets/icons/feed.png");
     loadIcon("folder", "assets/icons/folder.png");
     loadIcon("about", "assets/icons/about.png");
+    loadIcon("hellroom", "assets/icons/hellroom.png");
+    loadIcon("vdec", "assets/icons/vdec.png");
     
     // Add music player icons
     loadIcon("play", "assets/icons/play.png");
@@ -111,13 +122,37 @@ void Desktop::Init() {
     m_apps.push_back({"Profile", "profile", "User info", LaunchProfile});
     m_apps.push_back({"Settings", "settings", "Preferences", LaunchSettings});
     m_apps.push_back({"Feed", "feed", "System feed", LaunchFeed});
+    m_apps.push_back({"Hellroom", "hellroom", "IRC Chatroom", LaunchHellroom});
+    m_apps.push_back({"VDEC", "vdec", "Decryption Toolkit", LaunchVDEC});
     
     m_workspaces.clear();
     m_workspaces.emplace_back("Main");
     m_workspaces.emplace_back("Work");
     m_workspaces.emplace_back("Chat");
+
+    memset(&m_hellroom, 0, sizeof(m_hellroom));
+    strcpy(m_hellroom.currentNick, g_player.handle);
+    strcpy(m_hellroom.nickBuffer, g_player.handle);
+    m_hellroom.inputFocused = true;
     
-    OpenApp(AppType::Browser, "VNET Browser");
+    PushHellroomMessage("[SERVER] Welcome to Hellroom IRC!");
+    PushHellroomMessage("[SERVER] Type /nick <new_nick> to change your name.");
+    PushHellroomMessage("[SERVER] Type /help for available commands.");
+    PushHellroomMessage("[SERVER] Connected to vnet://hellroom.vnet");
+
+    // Init VDEC state
+    memset(&m_vdec, 0, sizeof(m_vdec));
+    m_vdec.selectedTab = 0;
+    m_vdec.bitShiftOffset = 0;
+    m_vdec.minigameActive = false;
+    
+    for (int i = 0; i < 8; i++) {
+        if (strlen(g_vnet.masterKeys[i]) > 0) {
+            strcpy(m_vdec.keys[i], g_vnet.masterKeys[i]);
+            m_vdec.keysFound[i] = true;
+            m_vdec.keyCount++;
+        }
+    }
 }
 
 void Desktop::Shutdown() {
@@ -619,7 +654,7 @@ void Desktop::DrawWorkspaceIndicator() {
         int count = (int)m_workspaces[i].windows.size();
         char dots[8] = "";
         for (int j = 0; j < count && j < 4; j++) {
-            dots[j] = '•';
+            dots[j] = '*';
         }
         dots[count] = '\0';
         DrawScaledText(dots, x + 8, barY + 16, 8, active ? COLOR_TOXIC : COLOR_GHOST);
@@ -742,6 +777,8 @@ void Desktop::DrawWindowContent(const AppWindow& win) {
         case AppType::Profile:  DrawProfile(win); break;
         case AppType::Settings: DrawSettings(win); break;
         case AppType::Feed:     DrawFeed(win); break;
+        case AppType::Hellroom: DrawHellroom(win); break;
+        case AppType::VDEC:     DrawVDEC(win); break;
         default: break;
     }
     
@@ -1676,7 +1713,7 @@ void Desktop::DrawFeed(const AppWindow& win) {
     
     // Reverse scroll: positive scroll moves up
     int scrollLines = (int)(g_player.feedScroll / 20.0f);
-    startIdx -= scrollLines;
+    startIdx += scrollLines;
     if (startIdx < 0) startIdx = 0;
     if (startIdx > total) startIdx = total;
     
@@ -1963,9 +2000,1109 @@ void Desktop::DrawFeed(const AppWindow& win) {
     DrawScaledText(statusText, cx + 12, statusY + 5, 8, COLOR_GHOST);
 }
 
-// Also add mouse wheel scrolling for the feed
-// In Desktop::Update(), add feed scrolling support:
+void Desktop::DrawHellroom(const AppWindow& win) {
+    float cx = win.x + 4;
+    float cy = win.y + m_windowTitleHeight + 4;
+    float cw = win.w - 8;
+    float ch = win.h - m_windowTitleHeight - 8;
+    
+    float t = (float)GetTime();
+    float pulse = sinf(t * 3.0f) * 0.3f + 0.7f;
+    
+    // ---- BACKGROUND ----
+    DrawScaledRect(cx, cy, cw, ch, Color{6, 8, 14, 255});
+    DrawScaledRectLines(cx, cy, cw, ch, COLOR_BORDER);
+    
+    // ---- HEADER ----
+    float headerH = 44.0f;
+    DrawScaledRect(cx, cy, cw, headerH, Color{14, 18, 28, 255});
+    DrawScaledLine(cx, cy + headerH, cx + cw, cy + headerH, Color{30, 35, 50, 150});
+    
+    // Title with pulsing live indicator
+    DrawScaledText("◈ HELLROOM IRC", cx + 16, cy + 12, 14, COLOR_BLOOD);
+    
+    float livePulse = sinf(t * 4.0f) * 0.3f + 0.7f;
+    Color liveCol = {40, 240, 100, (unsigned char)(livePulse * 200 + 55)};
+    DrawScaledRect(cx + cw - 70, cy + 12, 8, 8, liveCol);
+    DrawScaledText("LIVE", cx + cw - 56, cy + 11, 10, COLOR_TOXIC);
+    
+    // User count
+    char userCountStr[32];
+    snprintf(userCountStr, sizeof(userCountStr), "USERS: 1");
+    DrawScaledText(userCountStr, cx + cw - 140, cy + 11, 10, COLOR_GHOST);
+    
+    // ---- LAYOUT: 3 columns (Chat | Users) ----
+    float chatX = cx + 6;
+    float chatY = cy + headerH + 6;
+    float chatW = cw - 180 - 12;  // Leave space for user list
+    float chatH = ch - headerH - 80;  // Leave space for input area
+    
+    float userX = cx + cw - 170;
+    float userY = cy + headerH + 6;
+    float userW = 164;
+    float userH = ch - headerH - 80;
+    
+    // ---- CHAT LOG AREA ----
+    DrawScaledRect(chatX, chatY, chatW, chatH, Color{8, 10, 18, 220});
+    DrawScaledRectLines(chatX, chatY, chatW, chatH, Color{30, 35, 50, 100});
+    
+    // Subtle scanlines
+    for (int i = 0; i < (int)chatH; i += 4) {
+        float scanY = chatY + i + fmodf(t * 30.0f, 4.0f);
+        DrawScaledRect(chatX, scanY, chatW, 1, {0, 0, 0, 4});
+    }
+    
+    // ---- CHAT MESSAGES WITH SCROLL ----
+    BeginScissorMode((int)SX(chatX + 4), (int)SY(chatY + 4), 
+                 (int)((chatW - 8) * g_uiScale), (int)((chatH - 8) * g_uiScale));
 
+    int total = g_feedLogCount;  // Use global feed logs
+    int visibleLines = (int)((chatH - 16) / 20.0f);
+    int startIdx = total - visibleLines;
+    if (startIdx < 0) startIdx = 0;
+
+    // Apply scroll
+    int scrollLines = (int)(m_hellroom.scrollOffset / 20.0f);
+    startIdx -= scrollLines;
+    if (startIdx < 0) startIdx = 0;
+    if (startIdx > total) startIdx = total;
+
+    for (int i = startIdx; i < total; i++) {
+        int row = i - startIdx;
+        float y = chatY + 8 + row * 20.0f;
+        if (y > chatY + chatH - 12) break;
+        
+        const char* msg = g_feedLogs[i];  // Use global feed logs
+        
+        // Parse message type for coloring
+        Color col = COLOR_GHOST;
+        Color prefixCol = COLOR_GHOST;
+        bool isSystem = false;
+        bool isWhisper = false;
+        bool isAction = false;
+        
+        if (strncmp(msg, "[SERVER]", 8) == 0) {
+            col = COLOR_CYAN;
+            prefixCol = {0, 220, 240, 150};
+            isSystem = true;
+        } else if (strncmp(msg, "[WHISPER", 8) == 0) {
+            col = COLOR_AMBER;
+            prefixCol = {255, 150, 0, 150};
+            isWhisper = true;
+        } else if (strncmp(msg, "[ACTION]", 8) == 0) {
+            col = COLOR_TOXIC;
+            prefixCol = {40, 240, 100, 100};
+            isAction = true;
+        } else if (strncmp(msg, "[JOIN]", 6) == 0 || strncmp(msg, "[PART]", 6) == 0) {
+            col = COLOR_AMBER;
+            prefixCol = {255, 150, 0, 100};
+            isSystem = true;
+        } else if (strncmp(msg, "[CHAT]", 5) == 0) {
+            // Remove [CHAT] prefix for display
+            const char* chatMsg = msg + 7;  // Skip "[CHAT] "
+            col = COLOR_TOXIC;
+            prefixCol = {40, 240, 100, 100};
+            // Draw with custom formatting
+            DrawScaledRect(chatX + 4, y - 2, 3, 16, prefixCol);
+            DrawScaledText(chatMsg, chatX + 12, y, 10, col);
+            
+            // Timestamp
+            char timeStamp[12];
+            int hours = (i * 7 + 13) % 24;
+            int mins = (i * 13 + 42) % 60;
+            snprintf(timeStamp, sizeof(timeStamp), "%02d:%02d", hours, mins);
+            float timeW = MeasureScaledTextWidth(timeStamp, 7);
+            DrawScaledText(timeStamp, chatX + chatW - timeW - 8, y, 7, {60, 70, 85, 120});
+            continue;
+        } else if (strncmp(msg, "[FEED", 5) == 0) {
+            col = COLOR_CYAN;
+            prefixCol = {0, 220, 240, 80};
+            isSystem = true;
+        } else {
+            // Regular chat - find the first colon
+            const char* colon = strchr(msg, ':');
+            if (colon) {
+                int nickLen = colon - msg;
+                char nick[64];
+                strncpy(nick, msg, nickLen);
+                nick[nickLen] = '\0';
+                
+                bool isMe = (strcmp(nick, m_hellroom.currentNick) == 0);
+                col = isMe ? COLOR_TOXIC : COLOR_GHOST;
+                prefixCol = isMe ? COLOR_TOXIC : Color{160, 170, 185, 150};
+            }
+        }
+        
+        // Draw accent bar for system messages
+        if (isSystem || isWhisper || isAction) {
+            DrawScaledRect(chatX + 4, y - 2, 3, 16, prefixCol);
+        }
+        
+        // Truncate long messages
+        char truncated[256];
+        strncpy(truncated, msg, 220);
+        truncated[220] = '\0';
+        
+        float textX = (isSystem || isWhisper || isAction) ? chatX + 12 : chatX + 8;
+        DrawScaledText(truncated, textX, y, 10, col);
+        
+        // Timestamp
+        char timeStamp[12];
+        int hours = (i * 7 + 13) % 24;
+        int mins = (i * 13 + 42) % 60;
+        snprintf(timeStamp, sizeof(timeStamp), "%02d:%02d", hours, mins);
+        float timeW = MeasureScaledTextWidth(timeStamp, 7);
+        DrawScaledText(timeStamp, chatX + chatW - timeW - 8, y, 7, {60, 70, 85, 120});
+    }
+
+    EndScissorMode();
+    
+    // ---- SCROLL INDICATOR ----
+    if (total > visibleLines) {
+        float scrollRatio = (float)startIdx / (float)(total - visibleLines);
+        float indicatorY = chatY + 8 + scrollRatio * (chatH - 24);
+        DrawScaledRect(chatX + chatW - 6, indicatorY, 3, 16, {80, 90, 110, 150});
+    }
+    
+    // ---- USER LIST (Right Panel) ----
+    DrawScaledRect(userX, userY, userW, userH, Color{8, 10, 18, 220});
+    DrawScaledRectLines(userX, userY, userW, userH, Color{30, 35, 50, 100});
+    
+    // User list header
+    DrawScaledText("║ USERS ONLINE", userX + 8, userY + 6, 9, COLOR_AMBER);
+    DrawScaledLine(userX + 4, userY + 22, userX + userW - 4, userY + 22, Color{30, 35, 50, 100});
+    
+    // Show users (including current user and some fake ones for immersion)
+    const char* fakeUsers[] = {
+        "sh4d0w_net",
+        "ghost_0x99",
+        "void_walker",
+        "neon_byte",
+        "cipher_404"
+    };
+    int fakeUserCount = sizeof(fakeUsers) / sizeof(fakeUsers[0]);
+    
+    float userListY = userY + 26;
+    int visibleUsers = (int)((userH - 30) / 20.0f);
+    
+    // Show current user first
+    bool isCurrent = true;
+    char userDisplay[64];
+    snprintf(userDisplay, sizeof(userDisplay), "▶ %s", m_hellroom.currentNick);
+    DrawScaledText(userDisplay, userX + 8, userListY, 9, COLOR_TOXIC);
+    DrawScaledRect(userX + userW - 16, userListY + 4, 8, 8, COLOR_TOXIC);
+    userListY += 20;
+    
+    // Show fake users
+    for (int i = 0; i < fakeUserCount && i < visibleUsers - 1; i++) {
+        float y = userX + 8;
+        DrawScaledText(fakeUsers[i], userX + 8, userListY, 9, COLOR_GHOST);
+        // Random online status dot
+        bool online = (rand() % 10) > 2;  // 80% online
+        if (online) {
+            DrawScaledRect(userX + userW - 16, userListY + 4, 6, 6, {40, 240, 100, 150});
+        }
+        userListY += 20;
+    }
+    
+    // ---- INPUT AREA ----
+    float inputY = cy + ch - 42;
+    float inputH = 36;
+    
+    // Input area background
+    DrawScaledRect(cx + 6, inputY, cw - 12, inputH, Color{10, 12, 20, 220});
+    DrawScaledLine(cx + 6, inputY, cx + cw - 6, inputY, Color{30, 35, 50, 100});
+    
+    // ---- NICKNAME INPUT ----
+    float nickX = cx + 12;
+    float nickY = inputY + 4;
+    float nickW = 140;
+    float nickH = 28;
+    
+    bool nickHover = RefRectHover(nickX, nickY, nickW, nickH, GetRefMousePos());
+    
+    DrawScaledRect(nickX, nickY, nickW, nickH, m_hellroom.nickFocused ? Color{16, 20, 30, 255} : Color{8, 10, 18, 255});
+    DrawScaledRectLines(nickX, nickY, nickW, nickH, 
+                        m_hellroom.nickFocused ? COLOR_BLOOD : Color{30, 35, 50, 100});
+    
+    char nickDisplay[64];
+    if (m_hellroom.nickFocused) {
+        const char* cursor = (fmodf(t * 2.0f, 1.0f) > 0.5f) ? "_" : "";
+        snprintf(nickDisplay, sizeof(nickDisplay), "NICK: %s%s", m_hellroom.nickBuffer, cursor);
+    } else {
+        snprintf(nickDisplay, sizeof(nickDisplay), "NICK: %s", m_hellroom.nickBuffer);
+    }
+    DrawScaledText(nickDisplay, nickX + 6, nickY + 7, 10, 
+                   m_hellroom.nickFocused ? COLOR_TOXIC : COLOR_GHOST);
+    
+    // ---- MESSAGE INPUT ----
+    float msgX = nickX + nickW + 8;
+    float msgY = inputY + 4;
+    float msgW = cw - 12 - nickW - 8 - 90 - 8;  // Leave room for send button
+    float msgH = 28;
+    
+    bool msgHover = RefRectHover(msgX, msgY, msgW, msgH, GetRefMousePos());
+    
+    DrawScaledRect(msgX, msgY, msgW, msgH, m_hellroom.inputFocused ? Color{16, 20, 30, 255} : Color{8, 10, 18, 255});
+    DrawScaledRectLines(msgX, msgY, msgW, msgH, 
+                        m_hellroom.inputFocused ? COLOR_BLOOD : Color{30, 35, 50, 100});
+    
+    char msgDisplay[256];
+    if (m_hellroom.inputFocused) {
+        const char* cursor = (fmodf(t * 2.0f, 1.0f) > 0.5f) ? "_" : "";
+        snprintf(msgDisplay, sizeof(msgDisplay), "%s%s", m_hellroom.inputBuffer, cursor);
+    } else {
+        snprintf(msgDisplay, sizeof(msgDisplay), "%s", m_hellroom.inputBuffer);
+    }
+    if (strlen(msgDisplay) == 0 && !m_hellroom.inputFocused) {
+        strcpy(msgDisplay, "Type a message...");
+        DrawScaledText(msgDisplay, msgX + 6, msgY + 7, 10, {60, 70, 85, 150});
+    } else {
+        DrawScaledText(msgDisplay, msgX + 6, msgY + 7, 10, COLOR_CYAN);
+    }
+    
+    // ---- SEND BUTTON ----
+    float btnX = msgX + msgW + 6;
+    float btnY = inputY + 4;
+    float btnW = 80;
+    float btnH = 28;
+    
+    bool btnHover = RefRectHover(btnX, btnY, btnW, btnH, GetRefMousePos());
+    
+    DrawScaledRect(btnX, btnY, btnW, btnH, btnHover ? COLOR_BLOOD : Color{30, 35, 55, 200});
+    DrawScaledRectLines(btnX, btnY, btnW, btnH, btnHover ? COLOR_BLOOD : Color{30, 35, 50, 100});
+    
+    float btnTextW = MeasureScaledTextWidth("SEND", 10);
+    DrawScaledText("SEND", btnX + (btnW - btnTextW) / 2.0f, btnY + 7, 10, 
+                   btnHover ? COLOR_BLACK : COLOR_TOXIC);
+    
+    // ---- MOUSE INTERACTIONS ----
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    
+    if (clicked) {
+        if (RefRectHover(nickX, nickY, nickW, nickH, refMouse)) {
+            m_hellroom.nickFocused = true;
+            m_hellroom.inputFocused = false;
+        } else if (RefRectHover(msgX, msgY, msgW, msgH, refMouse)) {
+            m_hellroom.inputFocused = true;
+            m_hellroom.nickFocused = false;
+        } else if (RefRectHover(btnX, btnY, btnW, btnH, refMouse)) {
+            SendHellroomMessage();
+        }
+    }
+    
+    // ---- KEYBOARD INPUT ----
+    if (m_hellroom.inputFocused) {
+        int key = GetCharPressed();
+        while (key > 0) {
+            if (key >= 32 && key <= 126) {
+                size_t len = strlen(m_hellroom.inputBuffer);
+                if (len < sizeof(m_hellroom.inputBuffer) - 1) {
+                    m_hellroom.inputBuffer[len] = (char)key;
+                    m_hellroom.inputBuffer[len + 1] = '\0';
+                }
+            }
+            key = GetCharPressed();
+        }
+        
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            int len = (int)strlen(m_hellroom.inputBuffer);
+            if (len > 0) m_hellroom.inputBuffer[len - 1] = '\0';
+        }
+        
+        if (IsKeyPressed(KEY_ENTER)) {
+            SendHellroomMessage();
+        }
+    }
+    
+    if (m_hellroom.nickFocused) {
+        int key = GetCharPressed();
+        while (key > 0) {
+            if ((key >= 32 && key <= 126) && strlen(m_hellroom.nickBuffer) < 31) {
+                size_t len = strlen(m_hellroom.nickBuffer);
+                m_hellroom.nickBuffer[len] = (char)key;
+                m_hellroom.nickBuffer[len + 1] = '\0';
+            }
+            key = GetCharPressed();
+        }
+        
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            int len = (int)strlen(m_hellroom.nickBuffer);
+            if (len > 0) m_hellroom.nickBuffer[len - 1] = '\0';
+        }
+        
+        if (IsKeyPressed(KEY_ENTER)) {
+            if (strlen(m_hellroom.nickBuffer) > 0) {
+                strcpy(m_hellroom.currentNick, m_hellroom.nickBuffer);
+                strcpy(g_player.handle, m_hellroom.nickBuffer);
+                PushHellroomMessage("[SERVER] You are now known as %s", m_hellroom.currentNick);
+                PushCliLog("[HELLROOM] Nick changed to %s", m_hellroom.currentNick);
+            }
+            m_hellroom.nickFocused = false;
+            m_hellroom.inputFocused = true;
+        }
+    }
+    
+    // ---- MOUSE WHEEL SCROLLING ----
+    float wheel = GetMouseWheelMove();
+    if (wheel != 0.0f) {
+        // Check if mouse is over chat area
+        if (RefRectHover(chatX, chatY, chatW, chatH, refMouse)) {
+            m_hellroom.scrollOffset += wheel * 20.0f;
+            if (m_hellroom.scrollOffset < 0.0f) m_hellroom.scrollOffset = 0.0f;
+            
+            int maxScroll = (total - visibleLines) * 20;
+            if (maxScroll < 0) maxScroll = 0;
+            if (m_hellroom.scrollOffset > maxScroll) m_hellroom.scrollOffset = maxScroll;
+        }
+    }
+}
+
+void Desktop::DrawVDEC(const AppWindow& win) {
+    float cx = win.x + 4;
+    float cy = win.y + m_windowTitleHeight + 4;
+    float cw = win.w - 8;
+    float ch = win.h - m_windowTitleHeight - 8;
+    
+    float t = (float)GetTime();
+    float pulse = sinf(t * 3.0f) * 0.3f + 0.7f;
+    
+    // ---- BACKGROUND ----
+    DrawScaledRect(cx, cy, cw, ch, Color{4, 6, 14, 255});
+    DrawScaledRectLines(cx, cy, cw, ch, COLOR_BORDER);
+    
+    // ---- HEADER ----
+    float headerH = 50.0f;
+    DrawScaledRect(cx, cy, cw, headerH, Color{10, 14, 24, 255});
+    DrawScaledLine(cx, cy + headerH, cx + cw, cy + headerH, Color{30, 35, 50, 150});
+    
+    // Animated VDEC logo
+    float glowPulse = sinf(t * 2.0f) * 0.3f + 0.7f;
+    DrawScaledText("🔐 VDEC v2.0 // VEKTRA DECRYPTION ENGINE", cx + 16, cy + 14, 14, 
+                   Color{0, 220, 240, (unsigned char)(glowPulse * 200 + 55)});
+    
+    // Status indicator
+    Color statusCol = {40, 240, 100, (unsigned char)(pulse * 200 + 55)};
+    DrawScaledRect(cx + cw - 120, cy + 14, 8, 8, statusCol);
+    DrawScaledText("ACTIVE", cx + cw - 105, cy + 13, 10, COLOR_TOXIC);
+    
+    // ---- TAB BAR ----
+    float tabY = cy + headerH;
+    float tabH = 36.0f;
+    const char* tabs[] = {"🔑 Key Ring", "🔓 Decrypt", "🔒 Encrypt", "🔢 Hash", "🎯 Minigame"};
+    int tabCount = 5;
+    float tabW = cw / tabCount;
+    
+    DrawScaledRect(cx, tabY, cw, tabH, Color{6, 8, 16, 255});
+    DrawScaledLine(cx, tabY + tabH, cx + cw, tabY + tabH, Color{30, 35, 50, 100});
+    
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    
+    for (int i = 0; i < tabCount; i++) {
+        float tx = cx + i * tabW;
+        bool hover = RefRectHover(tx, tabY, tabW, tabH, refMouse);
+        bool active = (i == m_vdec.selectedTab);
+        
+        Color bg = active ? Color{20, 25, 45, 200} : (hover ? Color{15, 18, 35, 150} : Color{0,0,0,0});
+        DrawScaledRect(tx, tabY, tabW, tabH, bg);
+        
+        if (active) {
+            DrawScaledRect(tx, tabY + tabH - 3, tabW, 3, COLOR_CYAN);
+        }
+        
+        DrawScaledText(tabs[i], tx + 8, tabY + 10, 11, 
+                      active ? COLOR_CYAN : (hover ? COLOR_TOXIC : COLOR_GHOST));
+        
+        if (clicked && hover) {
+            m_vdec.selectedTab = i;
+            m_vdec.minigameActive = false;
+        }
+    }
+    
+    // ---- CONTENT AREA ----
+    float contentX = cx + 12;
+    float contentY = tabY + tabH + 8;
+    float contentW = cw - 24;
+    float contentH = ch - headerH - tabH - 16;
+    
+    // Content background with subtle scanlines
+    DrawScaledRect(contentX, contentY, contentW, contentH, Color{6, 8, 16, 200});
+    DrawScaledRectLines(contentX, contentY, contentW, contentH, Color{30, 35, 50, 80});
+    
+    // Scanline overlay
+    for (int i = 0; i < (int)contentH; i += 4) {
+        float scanY = contentY + i + fmodf(t * 30.0f, 4.0f);
+        DrawScaledRect(contentX, scanY, contentW, 1, {0, 0, 0, 4});
+    }
+    
+    // ---- DRAW TAB CONTENT ----
+    switch (m_vdec.selectedTab) {
+        case 0: DrawVDECKeyRing(contentX, contentY, contentW, contentH); break;
+        case 1: DrawVDECDecrypt(contentX, contentY, contentW, contentH); break;
+        case 2: DrawVDECEncrypt(contentX, contentY, contentW, contentH); break;
+        case 3: DrawVDECHash(contentX, contentY, contentW, contentH); break;
+        case 4: DrawVDECMinigame(contentX, contentY, contentW, contentH); break;
+    }
+}
+
+void Desktop::DrawVDECDecrypt(float x, float y, float w, float h) {
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    float t = (float)GetTime();
+    
+    DrawScaledText("🔓 DECRYPTION ENGINE", x, y, 14, COLOR_CYAN);
+    DrawScaledLine(x, y + 22, x + w, y + 22, Color{30, 35, 50, 80});
+    
+    float rowY = y + 34;
+    
+    // Input label
+    DrawScaledText("ENCRYPTED TEXT:", x, rowY, 11, COLOR_GHOST);
+    rowY += 20;
+    
+    // Input box
+    float inputX = x;
+    float inputY = rowY;
+    float inputW = w;
+    float inputH = 80;
+    
+    bool inputHover = RefRectHover(inputX, inputY, inputW, inputH, refMouse);
+    
+    DrawScaledRect(inputX, inputY, inputW, inputH, Color{8, 10, 18, 255});
+    DrawScaledRectLines(inputX, inputY, inputW, inputH, 
+                        m_vdec.inputFocused ? COLOR_CYAN : Color{30, 35, 50, 100});
+    
+    // Show input text with cursor
+    char display[1024];
+    if (m_vdec.inputFocused) {
+        const char* cursor = (fmodf(t * 2.0f, 1.0f) > 0.5f) ? "_" : "";
+        snprintf(display, sizeof(display), "%s%s", m_vdec.inputBuffer, cursor);
+    } else {
+        snprintf(display, sizeof(display), "%s", m_vdec.inputBuffer);
+    }
+    if (strlen(display) == 0 && !m_vdec.inputFocused) {
+        strcpy(display, "Enter encrypted text to decrypt...");
+        DrawScaledText(display, inputX + 8, inputY + 8, 11, {60, 70, 90, 150});
+    } else {
+        DrawScaledText(display, inputX + 8, inputY + 8, 11, COLOR_CYAN);
+    }
+    
+    rowY += inputH + 12;
+    
+    // Decrypt button
+    float btnX = x + w - 120;
+    float btnY = rowY;
+    float btnW = 110;
+    float btnH = 32;
+    
+    bool btnHover = RefRectHover(btnX, btnY, btnW, btnH, refMouse);
+    DrawScaledRect(btnX, btnY, btnW, btnH, btnHover ? COLOR_CYAN : Color{20, 25, 45, 200});
+    DrawScaledRectLines(btnX, btnY, btnW, btnH, COLOR_CYAN);
+    DrawScaledText("DECRYPT", btnX + 16, btnY + 8, 11, btnHover ? COLOR_BLACK : COLOR_CYAN);
+    
+    if (clicked && btnHover && strlen(m_vdec.inputBuffer) > 0) {
+        // Send decrypt request to server
+        std::string payload = std::string(VNetCmd::VDEC_DECRYPT) + ":" + m_vdec.inputBuffer;
+        if (IsVNetConnected()) {
+            VNetSendRaw(payload);
+            PushCliLog("[VDEC] Decrypt request sent");
+        } else {
+            // Offline fallback
+            char decrypted[1024];
+            int shift = m_vdec.bitShiftOffset % 26;
+            for (int i = 0; m_vdec.inputBuffer[i] && i < 1023; i++) {
+                char c = m_vdec.inputBuffer[i];
+                if (c >= 'A' && c <= 'Z') {
+                    decrypted[i] = (char)(((c - 'A' - shift + 26) % 26) + 'A');
+                } else if (c >= 'a' && c <= 'z') {
+                    decrypted[i] = (char)(((c - 'a' - shift + 26) % 26) + 'a');
+                } else {
+                    decrypted[i] = c;
+                }
+            }
+            decrypted[strlen(m_vdec.inputBuffer)] = '\0';
+            strcpy(m_vdec.outputBuffer, decrypted);
+            PushCliLog("[VDEC] Decrypted (offline): %s", decrypted);
+        }
+    }
+    
+    rowY += btnH + 12;
+    DrawScaledLine(x, rowY, x + w, rowY, Color{30, 35, 50, 80});
+    rowY += 8;
+    
+    // Output label
+    DrawScaledText("DECRYPTED TEXT:", x, rowY, 11, COLOR_TOXIC);
+    rowY += 20;
+    
+    // Output box
+    float outX = x;
+    float outY = rowY;
+    float outW = w;
+    float outH = 80;
+    
+    DrawScaledRect(outX, outY, outW, outH, Color{8, 10, 18, 255});
+    DrawScaledRectLines(outX, outY, outW, outH, Color{30, 35, 50, 100});
+    
+    if (strlen(m_vdec.outputBuffer) > 0) {
+        DrawScaledText(m_vdec.outputBuffer, outX + 8, outY + 8, 11, COLOR_TOXIC);
+    } else {
+        DrawScaledText("Decrypted output will appear here...", outX + 8, outY + 8, 11, {60, 70, 90, 150});
+    }
+    
+    // ---- INPUT HANDLING ----
+    if (clicked) {
+        if (inputHover) {
+            m_vdec.inputFocused = true;
+            m_vdec.outputFocused = false;
+        } else if (!RefRectHover(btnX, btnY, btnW, btnH, refMouse)) {
+            m_vdec.inputFocused = false;
+        }
+    }
+    
+    if (m_vdec.inputFocused) {
+        int key = GetCharPressed();
+        while (key > 0) {
+            if (key >= 32 && key <= 126) {
+                size_t len = strlen(m_vdec.inputBuffer);
+                if (len < sizeof(m_vdec.inputBuffer) - 1) {
+                    m_vdec.inputBuffer[len] = (char)key;
+                    m_vdec.inputBuffer[len + 1] = '\0';
+                }
+            }
+            key = GetCharPressed();
+        }
+        
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            int len = (int)strlen(m_vdec.inputBuffer);
+            if (len > 0) m_vdec.inputBuffer[len - 1] = '\0';
+        }
+        
+        if (IsKeyPressed(KEY_ENTER)) {
+            // Trigger decrypt
+            if (strlen(m_vdec.inputBuffer) > 0) {
+                std::string payload = std::string(VNetCmd::VDEC_DECRYPT) + ":" + m_vdec.inputBuffer;
+                if (IsVNetConnected()) {
+                    VNetSendRaw(payload);
+                    PushCliLog("[VDEC] Decrypt request sent");
+                }
+            }
+        }
+    }
+}
+
+void Desktop::DrawVDECEncrypt(float x, float y, float w, float h) {
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    float t = (float)GetTime();
+    
+    DrawScaledText("🔒 ENCRYPTION ENGINE", x, y, 14, COLOR_AMBER);
+    DrawScaledLine(x, y + 22, x + w, y + 22, Color{30, 35, 50, 80});
+    
+    float rowY = y + 34;
+    
+    DrawScaledText("PLAINTEXT:", x, rowY, 11, COLOR_GHOST);
+    rowY += 20;
+    
+    float inputX = x;
+    float inputY = rowY;
+    float inputW = w;
+    float inputH = 80;
+    
+    bool inputHover = RefRectHover(inputX, inputY, inputW, inputH, refMouse);
+    
+    DrawScaledRect(inputX, inputY, inputW, inputH, Color{8, 10, 18, 255});
+    DrawScaledRectLines(inputX, inputY, inputW, inputH, 
+                        m_vdec.inputFocused ? COLOR_AMBER : Color{30, 35, 50, 100});
+    
+    char display[1024];
+    if (m_vdec.inputFocused) {
+        const char* cursor = (fmodf(t * 2.0f, 1.0f) > 0.5f) ? "_" : "";
+        snprintf(display, sizeof(display), "%s%s", m_vdec.inputBuffer, cursor);
+    } else {
+        snprintf(display, sizeof(display), "%s", m_vdec.inputBuffer);
+    }
+    if (strlen(display) == 0 && !m_vdec.inputFocused) {
+        strcpy(display, "Enter text to encrypt...");
+        DrawScaledText(display, inputX + 8, inputY + 8, 11, {60, 70, 90, 150});
+    } else {
+        DrawScaledText(display, inputX + 8, inputY + 8, 11, COLOR_AMBER);
+    }
+    
+    rowY += inputH + 12;
+    
+    float btnX = x + w - 120;
+    float btnY = rowY;
+    float btnW = 110;
+    float btnH = 32;
+    
+    bool btnHover = RefRectHover(btnX, btnY, btnW, btnH, refMouse);
+    DrawScaledRect(btnX, btnY, btnW, btnH, btnHover ? COLOR_AMBER : Color{20, 25, 45, 200});
+    DrawScaledRectLines(btnX, btnY, btnW, btnH, COLOR_AMBER);
+    DrawScaledText("ENCRYPT", btnX + 16, btnY + 8, 11, btnHover ? COLOR_BLACK : COLOR_AMBER);
+    
+    if (clicked && btnHover && strlen(m_vdec.inputBuffer) > 0) {
+        std::string payload = std::string(VNetCmd::VDEC_ENCRYPT) + ":" + m_vdec.inputBuffer;
+        if (IsVNetConnected()) {
+            VNetSendRaw(payload);
+            PushCliLog("[VDEC] Encrypt request sent");
+        } else {
+            char encrypted[1024];
+            int shift = m_vdec.bitShiftOffset % 26;
+            for (int i = 0; m_vdec.inputBuffer[i] && i < 1023; i++) {
+                char c = m_vdec.inputBuffer[i];
+                if (c >= 'A' && c <= 'Z') {
+                    encrypted[i] = (char)(((c - 'A' + shift) % 26) + 'A');
+                } else if (c >= 'a' && c <= 'z') {
+                    encrypted[i] = (char)(((c - 'a' + shift) % 26) + 'a');
+                } else {
+                    encrypted[i] = c;
+                }
+            }
+            encrypted[strlen(m_vdec.inputBuffer)] = '\0';
+            strcpy(m_vdec.outputBuffer, encrypted);
+            PushCliLog("[VDEC] Encrypted (offline): %s", encrypted);
+        }
+    }
+    
+    rowY += btnH + 12;
+    DrawScaledLine(x, rowY, x + w, rowY, Color{30, 35, 50, 80});
+    rowY += 8;
+    
+    DrawScaledText("ENCRYPTED TEXT:", x, rowY, 11, COLOR_AMBER);
+    rowY += 20;
+    
+    float outX = x;
+    float outY = rowY;
+    float outW = w;
+    float outH = 80;
+    
+    DrawScaledRect(outX, outY, outW, outH, Color{8, 10, 18, 255});
+    DrawScaledRectLines(outX, outY, outW, outH, Color{30, 35, 50, 100});
+    
+    if (strlen(m_vdec.outputBuffer) > 0) {
+        DrawScaledText(m_vdec.outputBuffer, outX + 8, outY + 8, 11, COLOR_AMBER);
+    } else {
+        DrawScaledText("Encrypted output will appear here...", outX + 8, outY + 8, 11, {60, 70, 90, 150});
+    }
+    
+    if (clicked) {
+        if (inputHover) {
+            m_vdec.inputFocused = true;
+        } else if (!RefRectHover(btnX, btnY, btnW, btnH, refMouse)) {
+            m_vdec.inputFocused = false;
+        }
+    }
+    
+    if (m_vdec.inputFocused) {
+        int key = GetCharPressed();
+        while (key > 0) {
+            if (key >= 32 && key <= 126) {
+                size_t len = strlen(m_vdec.inputBuffer);
+                if (len < sizeof(m_vdec.inputBuffer) - 1) {
+                    m_vdec.inputBuffer[len] = (char)key;
+                    m_vdec.inputBuffer[len + 1] = '\0';
+                }
+            }
+            key = GetCharPressed();
+        }
+        
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            int len = (int)strlen(m_vdec.inputBuffer);
+            if (len > 0) m_vdec.inputBuffer[len - 1] = '\0';
+        }
+    }
+}
+
+void Desktop::DrawVDECHash(float x, float y, float w, float h) {
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    float t = (float)GetTime();
+    
+    DrawScaledText("🔢 HASH CALCULATOR // CRYPTOGRAPHIC DIGESTS", x, y, 14, COLOR_TOXIC);
+    DrawScaledLine(x, y + 22, x + w, y + 22, Color{30, 35, 50, 80});
+    
+    float rowY = y + 34;
+    
+    DrawScaledText("INPUT TEXT:", x, rowY, 11, COLOR_GHOST);
+    rowY += 20;
+    
+    float inputX = x;
+    float inputY = rowY;
+    float inputW = w;
+    float inputH = 60;
+    
+    bool inputHover = RefRectHover(inputX, inputY, inputW, inputH, refMouse);
+    
+    DrawScaledRect(inputX, inputY, inputW, inputH, Color{8, 10, 18, 255});
+    DrawScaledRectLines(inputX, inputY, inputW, inputH, 
+                        m_vdec.inputFocused ? COLOR_TOXIC : Color{30, 35, 50, 100});
+    
+    char display[1024];
+    if (m_vdec.inputFocused) {
+        const char* cursor = (fmodf(t * 2.0f, 1.0f) > 0.5f) ? "_" : "";
+        snprintf(display, sizeof(display), "%s%s", m_vdec.inputBuffer, cursor);
+    } else {
+        snprintf(display, sizeof(display), "%s", m_vdec.inputBuffer);
+    }
+    if (strlen(display) == 0 && !m_vdec.inputFocused) {
+        strcpy(display, "Enter text to hash...");
+        DrawScaledText(display, inputX + 8, inputY + 8, 11, {60, 70, 90, 150});
+    } else {
+        DrawScaledText(display, inputX + 8, inputY + 8, 11, COLOR_GHOST);
+    }
+    
+    rowY += inputH + 12;
+    
+    // Hash type selector
+    const char* hashTypes[] = {"MD5", "SHA1", "SHA256"};
+    int hashType = 0;
+    
+    float typeX = x;
+    float typeY = rowY;
+    for (int i = 0; i < 3; i++) {
+        float tx = typeX + i * 80;
+        bool hover = RefRectHover(tx, typeY, 70, 28, refMouse);
+        bool active = (i == hashType);
+        
+        DrawScaledRect(tx, typeY, 70, 28, active ? Color{40, 45, 70, 200} : (hover ? Color{20, 25, 45, 150} : Color{10, 12, 20, 200}));
+        DrawScaledRectLines(tx, typeY, 70, 28, active ? COLOR_TOXIC : (hover ? COLOR_CYAN : Color{30, 35, 50, 100}));
+        DrawScaledText(hashTypes[i], tx + 12, typeY + 7, 10, active ? COLOR_TOXIC : COLOR_GHOST);
+        
+        if (clicked && hover) {
+            hashType = i;
+        }
+    }
+    
+    float btnX = x + w - 120;
+    float btnY = typeY;
+    float btnW = 110;
+    float btnH = 28;
+    
+    bool btnHover = RefRectHover(btnX, btnY, btnW, btnH, refMouse);
+    DrawScaledRect(btnX, btnY, btnW, btnH, btnHover ? COLOR_TOXIC : Color{20, 25, 45, 200});
+    DrawScaledRectLines(btnX, btnY, btnW, btnH, COLOR_TOXIC);
+    DrawScaledText("HASH", btnX + 35, btnY + 7, 11, btnHover ? COLOR_BLACK : COLOR_TOXIC);
+    
+    if (clicked && btnHover && strlen(m_vdec.inputBuffer) > 0) {
+        std::string payload = std::string(VNetCmd::VDEC_HASH) + ":" + m_vdec.inputBuffer;
+        if (IsVNetConnected()) {
+            VNetSendRaw(payload);
+            PushCliLog("[VDEC] Hash request sent");
+        } else {
+            // Simple hash
+            unsigned long hash = 5381;
+            for (int i = 0; m_vdec.inputBuffer[i]; i++) {
+                hash = ((hash << 5) + hash) + m_vdec.inputBuffer[i];
+            }
+            snprintf(m_vdec.hashBuffer, sizeof(m_vdec.hashBuffer), "%08lX", hash);
+            PushCliLog("[VDEC] Hash (offline): %s", m_vdec.hashBuffer);
+        }
+    }
+    
+    rowY += 36;
+    DrawScaledLine(x, rowY, x + w, rowY, Color{30, 35, 50, 80});
+    rowY += 8;
+    
+    DrawScaledText("HASH RESULT:", x, rowY, 11, COLOR_TOXIC);
+    rowY += 20;
+    
+    float outX = x;
+    float outY = rowY;
+    float outW = w;
+    float outH = 40;
+    
+    DrawScaledRect(outX, outY, outW, outH, Color{8, 10, 18, 255});
+    DrawScaledRectLines(outX, outY, outW, outH, Color{30, 35, 50, 100});
+    
+    if (strlen(m_vdec.hashBuffer) > 0) {
+        DrawScaledText(m_vdec.hashBuffer, outX + 8, outY + 12, 14, COLOR_TOXIC);
+    } else {
+        DrawScaledText("Hash will appear here...", outX + 8, outY + 12, 11, {60, 70, 90, 150});
+    }
+    
+    if (clicked) {
+        if (inputHover) {
+            m_vdec.inputFocused = true;
+        } else if (!RefRectHover(btnX, btnY, btnW, btnH, refMouse) && 
+                   !RefRectHover(typeX, typeY, 240, 28, refMouse)) {
+            m_vdec.inputFocused = false;
+        }
+    }
+    
+    if (m_vdec.inputFocused) {
+        int key = GetCharPressed();
+        while (key > 0) {
+            if (key >= 32 && key <= 126) {
+                size_t len = strlen(m_vdec.inputBuffer);
+                if (len < sizeof(m_vdec.inputBuffer) - 1) {
+                    m_vdec.inputBuffer[len] = (char)key;
+                    m_vdec.inputBuffer[len + 1] = '\0';
+                }
+            }
+            key = GetCharPressed();
+        }
+        
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            int len = (int)strlen(m_vdec.inputBuffer);
+            if (len > 0) m_vdec.inputBuffer[len - 1] = '\0';
+        }
+    }
+}
+
+void Desktop::DrawVDECMinigame(float x, float y, float w, float h) {
+    Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    float t = (float)GetTime();
+    
+    DrawScaledText("🎯 DECRYPTION CHALLENGE // KAGUYA TRIAL", x, y, 14, COLOR_BLOOD);
+    DrawScaledLine(x, y + 22, x + w, y + 22, Color{30, 35, 50, 80});
+    
+    float rowY = y + 34;
+    
+    // Challenge description
+    DrawScaledText("Decrypt the encrypted number to reveal the key fragment!", 
+                   x, rowY, 11, COLOR_GHOST);
+    rowY += 24;
+    
+    if (!m_vdec.minigameActive) {
+        // Start button
+        float btnX = x + w / 2 - 80;
+        float btnY = rowY;
+        float btnW = 160;
+        float btnH = 40;
+        
+        bool btnHover = RefRectHover(btnX, btnY, btnW, btnH, refMouse);
+        DrawScaledRect(btnX, btnY, btnW, btnH, btnHover ? COLOR_BLOOD : Color{20, 25, 45, 200});
+        DrawScaledRectLines(btnX, btnY, btnW, btnH, COLOR_BLOOD);
+        DrawScaledText("INITIATE CHALLENGE", btnX + 16, btnY + 12, 12, btnHover ? COLOR_BLACK : COLOR_BLOOD);
+        
+        if (clicked && btnHover) {
+            m_vdec.minigameActive = true;
+            m_vdec.minigameTimer = 0.0f;
+            m_vdec.minigameAttempts = 0;
+            m_vdec.minigameSuccess = false;
+            m_vdec.minigameInput[0] = '\0';
+            
+            // Send request to server for challenge
+            if (IsVNetConnected()) {
+                VNetSendRaw(std::string(VNetCmd::VDEC_MINIGAME));
+                PushCliLog("[VDEC] Minigame challenge requested");
+            } else {
+                // Offline fallback
+                m_vdec.minigameTarget = rand() % 9000 + 1000;
+                char targetStr[16];
+                snprintf(targetStr, sizeof(targetStr), "%d", m_vdec.minigameTarget);
+                PushCliLog("[VDEC] Offline challenge target: %s", targetStr);
+            }
+        }
+    } else {
+        // Active minigame
+        float pulse = sinf(t * 2.0f) * 0.3f + 0.7f;
+        float centerX = x + w / 2;
+        
+        // Animated border
+        DrawScaledRect(x + 10, rowY, w - 20, 200, Color{4, 6, 14, 200});
+        DrawScaledRectLines(x + 10, rowY, w - 20, 200, 
+                           Color{220, 20, 40, (unsigned char)(pulse * 150 + 55)});
+        
+        // Decryption matrix animation
+        for (int i = 0; i < 20; i++) {
+            float colX = x + 20 + i * ((w - 40) / 20.0f);
+            float colY = rowY + 20 + sinf(t * 2.0f + i * 0.7f) * 10.0f;
+            char hexChar = "0123456789ABCDEF"[(int)(fmodf(t * 5.0f + i * 3.0f, 16))];
+            DrawScaledText(&hexChar, colX, colY, 10, 
+                          Color{40, 240, 100, (unsigned char)(pulse * 100 + 55)});
+        }
+        
+        // Target display
+        char targetDisplay[64];
+        if (IsVNetConnected() && m_vdec.minigameTarget == 0) {
+            strcpy(targetDisplay, "AWAITING CHALLENGE...");
+        } else {
+            snprintf(targetDisplay, sizeof(targetDisplay), "DECRYPT: %d", m_vdec.minigameTarget);
+        }
+        float targetW = MeasureScaledTextWidth(targetDisplay, 16);
+        DrawScaledText(targetDisplay, centerX - targetW / 2, rowY + 60, 16, 
+                       m_vdec.minigameSuccess ? COLOR_TOXIC : COLOR_CYAN);
+        
+        // Input box
+        float inputX = centerX - 80;
+        float inputY = rowY + 100;
+        float inputW = 160;
+        float inputH = 32;
+        
+        bool inputHover = RefRectHover(inputX, inputY, inputW, inputH, refMouse);
+        
+        DrawScaledRect(inputX, inputY, inputW, inputH, Color{8, 10, 18, 255});
+        DrawScaledRectLines(inputX, inputY, inputW, inputH, 
+                            m_vdec.inputFocused ? COLOR_BLOOD : Color{30, 35, 50, 100});
+        
+        char inputDisplay[32];
+        if (m_vdec.inputFocused) {
+            const char* cursor = (fmodf(t * 2.0f, 1.0f) > 0.5f) ? "_" : "";
+            snprintf(inputDisplay, sizeof(inputDisplay), "%s%s", m_vdec.minigameInput, cursor);
+        } else {
+            snprintf(inputDisplay, sizeof(inputDisplay), "%s", m_vdec.minigameInput);
+        }
+        DrawScaledText(inputDisplay, inputX + 8, inputY + 8, 11, COLOR_GHOST);
+        
+        // Submit button
+        float subX = inputX + inputW + 12;
+        float subY = inputY;
+        float subW = 80;
+        float subH = 32;
+        
+        bool subHover = RefRectHover(subX, subY, subW, subH, refMouse);
+        DrawScaledRect(subX, subY, subW, subH, subHover ? COLOR_BLOOD : Color{20, 25, 45, 200});
+        DrawScaledRectLines(subX, subY, subW, subH, COLOR_BLOOD);
+        DrawScaledText("SUBMIT", subX + 14, subY + 8, 11, subHover ? COLOR_BLACK : COLOR_BLOOD);
+        
+        // Attempt counter
+        char attemptStr[32];
+        snprintf(attemptStr, sizeof(attemptStr), "ATTEMPTS: %d", m_vdec.minigameAttempts);
+        float attemptW = MeasureScaledTextWidth(attemptStr, 10);
+        DrawScaledText(attemptStr, centerX - attemptW / 2, rowY + 150, 10, COLOR_GHOST);
+        
+        // Success message
+        if (m_vdec.minigameSuccess) {
+            float pulse2 = sinf(t * 4.0f) * 0.3f + 0.7f;
+            Color successCol = {40, 240, 100, (unsigned char)(pulse2 * 200 + 55)};
+            DrawScaledText("★ DECRYPTION SUCCESSFUL! ★", centerX - 120, rowY + 175, 14, successCol);
+        }
+        
+        // Input handling
+        if (clicked) {
+            if (inputHover) {
+                m_vdec.inputFocused = true;
+            } else if (!subHover) {
+                m_vdec.inputFocused = false;
+            }
+        }
+        
+        if (clicked && subHover && !m_vdec.minigameSuccess) {
+            if (strlen(m_vdec.minigameInput) > 0) {
+                int attempt = atoi(m_vdec.minigameInput);
+                m_vdec.minigameAttempts++;
+                
+                if (attempt == m_vdec.minigameTarget) {
+                    m_vdec.minigameSuccess = true;
+                    // Unlock a key!
+                    int keyIndex = m_vdec.minigameAttempts % 8;
+                    if (!m_vdec.keysFound[keyIndex]) {
+                        snprintf(m_vdec.keys[keyIndex], sizeof(m_vdec.keys[0]), 
+                                "KEY_%02d_%04d", keyIndex + 1, rand() % 9000 + 1000);
+                        m_vdec.keysFound[keyIndex] = true;
+                        m_vdec.keyCount++;
+                        PushCliLog("[VDEC] ★ KEY %d UNLOCKED! ★", keyIndex + 1);
+                        PushHellroomMessage("[VDEC] Player unlocked key %d!", keyIndex + 1);
+                    }
+                    PushCliLog("[VDEC] ✅ Challenge completed in %d attempts!", m_vdec.minigameAttempts);
+                } else {
+                    PushCliLog("[VDEC] ❌ Incorrect! Target: %d, Got: %d", m_vdec.minigameTarget, attempt);
+                }
+                m_vdec.minigameInput[0] = '\0';
+            }
+        }
+        
+        if (m_vdec.inputFocused && !m_vdec.minigameSuccess) {
+            int key = GetCharPressed();
+            while (key > 0) {
+                if (key >= '0' && key <= '9') {
+                    size_t len = strlen(m_vdec.minigameInput);
+                    if (len < 15) {
+                        m_vdec.minigameInput[len] = (char)key;
+                        m_vdec.minigameInput[len + 1] = '\0';
+                    }
+                }
+                key = GetCharPressed();
+            }
+            
+            if (IsKeyPressed(KEY_BACKSPACE)) {
+                int len = (int)strlen(m_vdec.minigameInput);
+                if (len > 0) m_vdec.minigameInput[len - 1] = '\0';
+            }
+            
+            if (IsKeyPressed(KEY_ENTER)) {
+                if (strlen(m_vdec.minigameInput) > 0 && !m_vdec.minigameSuccess) {
+                    int attempt = atoi(m_vdec.minigameInput);
+                    m_vdec.minigameAttempts++;
+                    
+                    if (attempt == m_vdec.minigameTarget) {
+                        m_vdec.minigameSuccess = true;
+                        int keyIndex = m_vdec.minigameAttempts % 8;
+                        if (!m_vdec.keysFound[keyIndex]) {
+                            snprintf(m_vdec.keys[keyIndex], sizeof(m_vdec.keys[0]), 
+                                    "KEY_%02d_%04d", keyIndex + 1, rand() % 9000 + 1000);
+                            m_vdec.keysFound[keyIndex] = true;
+                            m_vdec.keyCount++;
+                            PushCliLog("[VDEC] ★ KEY %d UNLOCKED! ★", keyIndex + 1);
+                            PushHellroomMessage("[VDEC] Player unlocked key %d!", keyIndex + 1);
+                        }
+                        PushCliLog("[VDEC] ✅ Challenge completed in %d attempts!", m_vdec.minigameAttempts);
+                    } else {
+                        PushCliLog("[VDEC] ❌ Incorrect! Target: %d, Got: %d", m_vdec.minigameTarget, attempt);
+                    }
+                    m_vdec.minigameInput[0] = '\0';
+                }
+            }
+        }
+    }
+}
+
+void Desktop::DrawVDECKeyRing(float x, float y, float w, float h) {
+    float t = (float)GetTime();
+    
+    DrawScaledText("🔑 KEY RING // CRYPTOGRAPHIC KEY STORAGE", x, y, 14, COLOR_AMBER);
+    DrawScaledLine(x, y + 22, x + w, y + 22, Color{30, 35, 50, 80});
+    
+    float rowY = y + 34;
+    float keySize = 80.0f;
+    float spacing = 12.0f;
+    int perRow = 4;
+    
+    for (int i = 0; i < 8; i++) {
+        int col = i % perRow;
+        int row = i / perRow;
+        float kx = x + col * (keySize + spacing);
+        float ky = rowY + row * (keySize + spacing + 30);
+        
+        if (ky > y + h - 20) break;
+        
+        bool found = m_vdec.keysFound[i];
+        bool hover = RefRectHover(kx, ky, keySize, keySize, GetRefMousePos());
+        
+        Color bg = found ? Color{20, 40, 30, 200} : Color{10, 12, 20, 200};
+        if (hover) bg = found ? Color{30, 60, 40, 220} : Color{20, 22, 40, 200};
+        
+        DrawScaledRect(kx, ky, keySize, keySize, bg);
+        DrawScaledRectLines(kx, ky, keySize, keySize, 
+                           found ? COLOR_TOXIC : (hover ? COLOR_CYAN : Color{30, 35, 50, 100}));
+        
+        char slotLabel[16];
+        snprintf(slotLabel, sizeof(slotLabel), "KEY %d", i + 1);
+        DrawScaledText(slotLabel, kx + 6, ky + 4, 8, found ? COLOR_TOXIC : Color{60, 70, 90, 150});
+        
+        if (found) {
+            float glow = sinf(t * 3.0f + i) * 0.3f + 0.7f;
+            Color glowCol = {40, 240, 100, (unsigned char)(glow * 100 + 55)};
+            DrawScaledRect(kx + 4, ky + 18, keySize - 8, 20, glowCol);
+            DrawScaledText(m_vdec.keys[i], kx + 6, ky + 22, 14, COLOR_BLACK);
+            DrawScaledText("✓ FOUND", kx + 6, ky + 48, 9, COLOR_TOXIC);
+        } else {
+            DrawScaledText("🔒", kx + 28, ky + 22, 28, Color{60, 70, 90, 150});
+            DrawScaledText("MISSING", kx + 10, ky + 56, 8, Color{60, 70, 90, 150});
+        }
+    }
+    
+    float summaryY = y + h - 36;
+    DrawScaledLine(x, summaryY - 4, x + w, summaryY - 4, Color{30, 35, 50, 80});
+    
+    char summary[128];
+    snprintf(summary, sizeof(summary), "KEYS FOUND: %d/8  |  BIT-SHIFT OFFSET: %d", 
+             m_vdec.keyCount, m_vdec.bitShiftOffset);
+    DrawScaledText(summary, x + 8, summaryY + 4, 10, COLOR_CYAN);
+}
 // ============================================================
 // GLOBAL ACCESS
 // ============================================================
@@ -2466,6 +3603,169 @@ void DrawSettingsSystem(float x, float y, float w, float h) {
         TriggerJitter(0.3f);
         SetActiveTheme("classic");
         GetMusicPlayer().SetVolume(0.7f);
+    }
+}
+
+// ============================================================
+// HELLROOM HELPERS
+// ============================================================
+
+void Desktop::PushHellroomMessage(const char* fmt, ...) {
+    // Format the message
+    char buffer[512];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    
+    // Check if this message already exists in the feed to avoid duplicates
+    // (optional - helps prevent duplicates from overlapping sources)
+    for (int i = g_feedLogCount - 1; i >= 0 && i >= g_feedLogCount - 3; i--) {
+        if (strcmp(g_feedLogs[i], buffer) == 0) {
+            return;  // Already in feed, skip
+        }
+    }
+    
+    // Push to system feed logs
+    PushFeedLog("%s", buffer);
+    
+    // Also store in hellroom's local buffer
+    if (m_hellroom.messageCount >= 200) {
+        for (int i = 0; i < 199; i++) {
+            strcpy(m_hellroom.chatMessages[i], m_hellroom.chatMessages[i + 1]);
+        }
+        m_hellroom.messageCount = 199;
+    }
+    
+    strcpy(m_hellroom.chatMessages[m_hellroom.messageCount], buffer);
+    m_hellroom.messageCount++;
+    
+    // Auto-scroll to bottom
+    int total = m_hellroom.messageCount;
+    int visibleLines = 20;
+    int maxScroll = (total - visibleLines) * 20;
+    if (maxScroll < 0) maxScroll = 0;
+    m_hellroom.scrollOffset = maxScroll;
+}
+
+void Desktop::SendHellroomMessage() {
+    if (strlen(m_hellroom.inputBuffer) == 0) return;
+    
+    char msg[512];
+    strcpy(msg, m_hellroom.inputBuffer);
+    m_hellroom.inputBuffer[0] = '\0';
+    
+    // Check for commands (starting with /)
+    if (msg[0] == '/') {
+        char cmd[256];
+        strcpy(cmd, msg + 1);
+        
+        // Handle /nick
+        if (strncmp(msg + 1, "nick ", 5) == 0) {
+            char newNick[32];
+            strncpy(newNick, msg + 6, 31);
+            newNick[31] = '\0';
+            char* end = newNick + strlen(newNick) - 1;
+            while (end > newNick && (*end == ' ' || *end == '\t' || *end == '\r' || *end == '\n')) {
+                end--;
+            }
+            end[1] = '\0';
+            
+            if (strlen(newNick) > 0) {
+                strcpy(m_hellroom.currentNick, newNick);
+                strcpy(m_hellroom.nickBuffer, newNick);
+                strcpy(g_player.handle, newNick);
+                // Let server broadcast the nick change
+                std::string payload = std::string(VNetCmd::CHAT) + ":" + 
+                                      std::string(g_player.handle) + ":" + 
+                                      "*** " + std::string(newNick) + " is now known as " + std::string(newNick);
+                if (IsVNetConnected()) {
+                    VNetSendRaw(payload);
+                }
+                // Also show locally
+                PushHellroomMessage("[SERVER] You are now known as %s", m_hellroom.currentNick);
+            }
+            return;
+        }
+        
+        // Handle /me
+        if (strncmp(msg + 1, "me ", 3) == 0) {
+            char action[256];
+            strcpy(action, msg + 4);
+            std::string payload = std::string(VNetCmd::CHAT) + ":" + 
+                                  std::string(g_player.handle) + ":" + 
+                                  "* " + std::string(m_hellroom.currentNick) + " " + action;
+            if (IsVNetConnected()) {
+                VNetSendRaw(payload);
+            }
+            // DON'T add locally - server will broadcast it back
+            // BUT we want to see it immediately, so add a local copy with [ACTION] tag
+            PushHellroomMessage("[ACTION] * %s %s", m_hellroom.currentNick, action);
+            return;
+        }
+        
+        // Handle /clear
+        if (strcmp(msg + 1, "clear") == 0) {
+            // Clear local messages only
+            m_hellroom.messageCount = 0;
+            PushHellroomMessage("[SERVER] Chat cleared");
+            return;
+        }
+        
+        // Handle /help
+        if (strcmp(msg + 1, "help") == 0) {
+            PushHellroomMessage("[SERVER] Available commands:");
+            PushHellroomMessage("[SERVER]   /nick <name>  - Change your nickname");
+            PushHellroomMessage("[SERVER]   /me <action>  - Send an action message");
+            PushHellroomMessage("[SERVER]   /w <nick> <msg> - Whisper to a user");
+            PushHellroomMessage("[SERVER]   /clear        - Clear chat history");
+            PushHellroomMessage("[SERVER]   /help         - Show this help");
+            return;
+        }
+        
+        // Handle /w (whisper)
+        if (strncmp(msg + 1, "w ", 2) == 0 || strncmp(msg + 1, "whisper ", 8) == 0) {
+            char* cmdStart = msg + 1;
+            if (cmdStart[0] == 'w') {
+                cmdStart += 2;
+            } else if (strncmp(cmdStart, "whisper ", 8) == 0) {
+                cmdStart += 8;
+            }
+            while (*cmdStart == ' ') cmdStart++;
+            
+            char target[64] = {0};
+            char whisperMsg[256] = {0};
+            if (sscanf(cmdStart, "%63s %255[^\n]", target, whisperMsg) == 2) {
+                // Send whisper via network
+                std::string payload = std::string(VNetCmd::WHISPER) + ":" + 
+                                      std::string(g_player.handle) + ":" + 
+                                      std::string(target) + ":" + 
+                                      std::string(whisperMsg);
+                if (IsVNetConnected()) {
+                    VNetSendRaw(payload);
+                }
+                // Show locally immediately (server won't echo whispers back to sender)
+                PushHellroomMessage("[WHISPER TO %s] %s", target, whisperMsg);
+            } else {
+                PushHellroomMessage("[SERVER] Usage: /w <nick> <message>");
+            }
+            return;
+        }
+        
+        // For all other commands, pass to ProcessCommand
+        ProcessCommand(cmd);
+        return;
+    }
+    
+    // ---- REGULAR CHAT MESSAGE ----
+    // DO NOT add locally - server will broadcast it back via FEED_EVENT
+    if (IsVNetConnected()) {
+        std::string payload = std::string(VNetCmd::CHAT) + ":" + 
+                              std::string(g_player.handle) + ":" + msg;
+        VNetSendRaw(payload);
+    } else {
+        // Offline fallback - show locally
+        PushHellroomMessage("%s: %s", m_hellroom.currentNick, msg);
     }
 }
 

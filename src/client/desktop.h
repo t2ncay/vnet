@@ -1,6 +1,8 @@
 #pragma once
 #include "raylib.h"
 #include "music_player.h"
+
+#include <cstring>
 #include <string>
 #include <vector>
 #include <functional>
@@ -18,7 +20,9 @@ enum class AppType {
     Settings,
     Feed,
     FileManager,
-    About
+    About,
+    Hellroom,
+    VDEC
 };
 
 struct AppWindow {
@@ -53,6 +57,36 @@ public:
         static Desktop instance;
         return instance;
     }
+
+    struct VDECState {
+        // Key ring - stores found keys
+        char keys[8][32];
+        bool keysFound[8];
+        int keyCount;
+        
+        // Current operation
+        char inputBuffer[1024];
+        char outputBuffer[1024];
+        char hashBuffer[1024];
+        
+        // UI state
+        int selectedTab;  // 0=Keys, 1=Encrypt, 2=Hash, 3=Master
+        int selectedKeyIndex;
+        bool inputFocused;
+        bool outputFocused;
+        float scrollOffset;
+        
+        // Minigame state
+        bool minigameActive;
+        float minigameTimer;
+        int minigameTarget;
+        int minigameAttempts;
+        char minigameInput[16];
+        bool minigameSuccess;
+        
+        // Bit-shift
+        int bitShiftOffset;
+    } m_vdec;
 
     void Init();
     void Shutdown();
@@ -121,11 +155,38 @@ public:
     void NavigateBack();
     void NavigateForward();
 
+    // VDEC helpers
+    void SetVDECOutput(const char* text) { 
+        strncpy(m_vdec.outputBuffer, text, sizeof(m_vdec.outputBuffer) - 1); 
+    }
+    void SetVDECHash(const char* text) { 
+        strncpy(m_vdec.hashBuffer, text, sizeof(m_vdec.hashBuffer) - 1); 
+    }
+    void SetVDECMinigameTarget(int target) { 
+        m_vdec.minigameTarget = target; 
+    }
+
 private:
     Desktop() = default;
     ~Desktop() = default;
     Desktop(const Desktop&) = delete;
     Desktop& operator=(const Desktop&) = delete;
+
+    void DrawHellroom(const AppWindow& win);
+    void PushHellroomMessage(const char* fmt, ...);
+    void SendHellroomMessage();
+
+    // Add to private section
+    struct HellroomState {
+        char inputBuffer[512];
+        char nickBuffer[32];
+        char chatMessages[200][512];
+        int messageCount;
+        bool nickFocused;
+        bool inputFocused;
+        float scrollOffset;
+        char currentNick[32];
+    } m_hellroom;
 
     void DrawTopBar();
     void DrawAppGrid();
@@ -134,6 +195,12 @@ private:
     void DrawWorkspaceIndicator();
     void DrawClock();
     void DrawDesktopIcons();
+    void DrawVDEC(const AppWindow& win);
+    void DrawVDECDecrypt(float x, float y, float w, float h);
+    void DrawVDECEncrypt(float x, float y, float w, float h);
+    void DrawVDECHash(float x, float y, float w, float h);
+    void DrawVDECMinigame(float x, float y, float w, float h);
+    void DrawVDECKeyRing(float x, float y, float w, float h);
     
     // App content renderers
     void DrawBrowser(const AppWindow& win);

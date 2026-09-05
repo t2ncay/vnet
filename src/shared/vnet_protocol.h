@@ -38,6 +38,11 @@ namespace VNetCmd {
     const char* const TRACE_BUST = "TRACE_BUST";
     const char* const SCAN_REQ = "SCAN:REQ";
     const char* const SATSCAN_REQ = "SATSCAN:REQ";
+    const char* const VDEC_DECRYPT = "VDEC_DECRYPT";
+    const char* const VDEC_ENCRYPT = "VDEC_ENCRYPT";
+    const char* const VDEC_HASH = "VDEC_HASH";
+    const char* const VDEC_KEY_STATUS = "VDEC_KEY_STATUS";
+    const char* const VDEC_MINIGAME = "VDEC_MINIGAME";
 }
 
 // Server response prefixes
@@ -66,6 +71,11 @@ namespace VNetResp {
     const char* const SATSCAN_RES = "SATSCAN_RES:";
     const char* const SNIFFER_ADD_ACK = "SNIFFER_ADD_ACK:";
     const char* const WHISPER_IN = "WHISPER_IN:";
+    const char* const VDEC_DECRYPT_RES = "VDEC_DECRYPT_RES:";
+    const char* const VDEC_ENCRYPT_RES = "VDEC_ENCRYPT_RES:";
+    const char* const VDEC_HASH_RES = "VDEC_HASH_RES:";
+    const char* const VDEC_KEY_STATUS_RES = "VDEC_KEY_STATUS_RES:";
+    const char* const VDEC_MINIGAME_RES = "VDEC_MINIGAME_RES:";
 }
 
 // ============================================================

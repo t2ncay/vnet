@@ -1086,6 +1086,95 @@ void RunVNTServer(int port) {
                     BroadcastFeed("[SPY ROUTE] Port " + MaskPort(senderPort) + " encrypted chain through " + proxyNode + " to " + targetURL);
                 }
             }
+
+            // ============================================================
+            // VDEC - Decryption Toolkit
+            // ============================================================
+
+            else if (cmd == VNetCmd::VDEC_DECRYPT) {
+                std::string encrypted = payload;
+                std::string decrypted;
+                
+                // Caesar cipher with shift from g_currentSalt
+                int shift = g_currentSalt % 26;
+                for (char c : encrypted) {
+                    if (c >= 'A' && c <= 'Z') {
+                        decrypted += (char)(((c - 'A' - shift + 26) % 26) + 'A');
+                    } else if (c >= 'a' && c <= 'z') {
+                        decrypted += (char)(((c - 'a' - shift + 26) % 26) + 'a');
+                    } else {
+                        decrypted += c;
+                    }
+                }
+                
+                VNetLib::SendTo(g_serverSock, senderIP, senderPort,
+                                std::string(VNetResp::VDEC_DECRYPT_RES) + decrypted);
+            }
+
+            else if (cmd == VNetCmd::VDEC_ENCRYPT) {
+                std::string plaintext = payload;
+                std::string encrypted;
+                int shift = g_currentSalt % 26;
+                
+                for (char c : plaintext) {
+                    if (c >= 'A' && c <= 'Z') {
+                        encrypted += (char)(((c - 'A' + shift) % 26) + 'A');
+                    } else if (c >= 'a' && c <= 'z') {
+                        encrypted += (char)(((c - 'a' + shift) % 26) + 'a');
+                    } else {
+                        encrypted += c;
+                    }
+                }
+                
+                VNetLib::SendTo(g_serverSock, senderIP, senderPort,
+                                std::string(VNetResp::VDEC_ENCRYPT_RES) + encrypted);
+            }
+
+            else if (cmd == VNetCmd::VDEC_HASH) {
+                // Simple hash for demo - in reality would be proper crypto
+                unsigned long hash = 5381;
+                for (char c : payload) {
+                    hash = ((hash << 5) + hash) + c;
+                }
+                char hashStr[32];
+                snprintf(hashStr, sizeof(hashStr), "%08lX", hash);
+                
+                VNetLib::SendTo(g_serverSock, senderIP, senderPort,
+                                std::string(VNetResp::VDEC_HASH_RES) + hashStr);
+            }
+
+            else if (cmd == VNetCmd::VDEC_KEY_STATUS) {
+                // Send current key status
+                std::string status = VNetResp::VDEC_KEY_STATUS_RES;
+                for (int i = 0; i < 8; i++) {
+                    if (g_keyLocations[i].empty()) {
+                        status += "EMPTY:";
+                    } else {
+                        status += g_keyLocations[i] + ":";
+                    }
+                }
+                VNetLib::SendTo(g_serverSock, senderIP, senderPort, status);
+            }
+
+            else if (cmd == VNetCmd::VDEC_MINIGAME) {
+                // Minigame challenge - send a random number to decrypt
+                int challenge = rand() % 9000 + 1000;
+                int shift = g_currentSalt % 26;
+                
+                // Encrypt the challenge with Caesar
+                std::string challengeStr = std::to_string(challenge);
+                std::string encrypted;
+                for (char c : challengeStr) {
+                    if (c >= '0' && c <= '9') {
+                        encrypted += (char)(((c - '0' + shift) % 10) + '0');
+                    } else {
+                        encrypted += c;
+                    }
+                }
+                
+                VNetLib::SendTo(g_serverSock, senderIP, senderPort,
+                                std::string(VNetResp::VDEC_MINIGAME_RES) + encrypted + ":" + std::to_string(shift));
+            }
             
             // ============================================================
             // Unknown command

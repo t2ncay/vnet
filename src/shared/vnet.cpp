@@ -4,6 +4,8 @@
 #include "vnet_client.h" 
 #include "render.h"
 #include "raylib.h"
+#include "desktop.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -418,6 +420,47 @@ void UpdateVNET(float dt) {
         else if (cmd == "DOS_DROP") {
             PushCliLog("[REWARD]: %s", payload.c_str());
             g_player.vcoin += 0.20f;
+        }
+
+        // In UpdateVNET() - add to packet handling
+
+        else if (cmd == "VDEC_DECRYPT_RES") {
+            PushCliLog("[VDEC] Decrypted: %s", payload.c_str());
+            // Store in desktop's output buffer
+            GetDesktop().SetVDECOutput(payload.c_str());
+        }
+
+        else if (cmd == "VDEC_ENCRYPT_RES") {
+            PushCliLog("[VDEC] Encrypted: %s", payload.c_str());
+            GetDesktop().SetVDECOutput(payload.c_str());
+        }
+
+        else if (cmd == "VDEC_HASH_RES") {
+            PushCliLog("[VDEC] Hash: %s", payload.c_str());
+            GetDesktop().SetVDECHash(payload.c_str());
+        }
+
+        else if (cmd == "VDEC_KEY_STATUS_RES") {
+            PushCliLog("[VDEC] Key status received");
+            // Parse and update key ring
+        }
+
+        else if (cmd == "VDEC_MINIGAME_RES") {
+            // Parse: encrypted:shift
+            size_t sep = payload.find(':');
+            if (sep != std::string::npos) {
+                std::string encrypted = payload.substr(0, sep);
+                int shift = std::stoi(payload.substr(sep + 1));
+                // Decrypt the challenge
+                int target = 0;
+                for (char c : encrypted) {
+                    if (c >= '0' && c <= '9') {
+                        target = target * 10 + (((c - '0' - shift) % 10 + 10) % 10);
+                    }
+                }
+                GetDesktop().SetVDECMinigameTarget(target);
+                PushCliLog("[VDEC] Challenge target set: %d", target);
+            }
         }
 
         // Unknown packet
