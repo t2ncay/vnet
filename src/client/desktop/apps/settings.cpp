@@ -1,7 +1,7 @@
 #include "../desktop.h"
 #include "../../render.h"
 #include "../../../shared/vnet.h"
-#include "../../music_player.h"
+#include "../widgets/music_player.h"
 
 // Forward declarations for category drawers (now in separate files)
 void DrawSettingsTheme(float x, float y, float w, float h);

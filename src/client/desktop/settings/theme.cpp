@@ -1,7 +1,7 @@
 #include "../../render.h"
 #include "../../../shared/vnet.h"
 #include "../../vnet_client.h"
-#include "../../music_player.h"
+#include "../../desktop/widgets/music_player.h"
 
 void DrawSettingsTheme(float x, float y, float w, float h) {
     Vector2 refMouse = GetRefMousePos();

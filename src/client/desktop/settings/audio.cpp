@@ -1,6 +1,6 @@
 #include "../../render.h"
 #include "../../../shared/vnet.h"
-#include "../../music_player.h"
+#include "../../desktop/widgets/music_player.h"
 
 void DrawSettingsAudio(float x, float y, float w, float h) {
     Vector2 refMouse = GetRefMousePos();
