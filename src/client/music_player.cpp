@@ -34,8 +34,9 @@ void MusicPlayer::Init() {
     std::vector<MusicTrack> defaultTracks = {
         {"Vanished", "Crystal Castles", "assets/audios/vanished.mp3", {40, 240, 100, 255}, 0.0f},
         {"Crimewave", "Crystal Castles", "assets/audios/crimewave.mp3", {0, 220, 240, 255}, 0.0f},
+        {"Runaway", "4tvnex", "assets/audios/runaway.mp3", {40, 240, 100, 255}, 0.0f},
         {"UNKNOWN SIGNAL", "VEKTRA // 18.0 Hz", "assets/audios/tuncay.wav", {220, 20, 40, 255}, 0.0f},
-        {"THE DAY OF NIGHT", "AKIRA YAMAOKA", "assets/audios/akira.wav", {220, 20, 40, 255}, 0.0f}
+        {"The Day of Night", "AKIRA YAMAOKA", "assets/audios/akira.wav", {220, 20, 40, 255}, 0.0f}
     };
     LoadTracks(defaultTracks);
 }

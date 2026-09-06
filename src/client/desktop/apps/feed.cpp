@@ -285,7 +285,7 @@ void Desktop::DrawFeed(const AppWindow& win) {
     
     int nodeCount = g_player.assignedCount;
     char nodeStr[32];
-    snprintf(nodeStr, sizeof(nodeStr), "%d / 20 SITES", nodeCount);
+    snprintf(nodeStr, sizeof(nodeStr), "%d / 54 SITES", nodeCount);
     float nodeW = MeasureScaledTextWidth(nodeStr, 12);
     DrawScaledText(nodeStr, panelX + (panelW - nodeW) / 2, panelY, 12, 
                    nodeCount >= 20 ? COLOR_TOXIC : COLOR_AMBER);
@@ -300,7 +300,7 @@ void Desktop::DrawFeed(const AppWindow& win) {
     DrawScaledRect(nodeBarX, nodeBarY, nodeBarW, nodeBarH, Color{12, 15, 20, 255});
     DrawScaledRectLines(nodeBarX, nodeBarY, nodeBarW, nodeBarH, Color{30, 35, 50, 100});
     
-    float nodeFill = (nodeCount / 20.0f) * nodeBarW;
+    float nodeFill = (nodeCount / 54.0f) * nodeBarW;
     if (nodeFill < 2.0f) nodeFill = 2.0f;
     DrawScaledRect(nodeBarX, nodeBarY, nodeFill, nodeBarH, 
                    nodeCount >= 20 ? COLOR_TOXIC : COLOR_CYAN);
