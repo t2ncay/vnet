@@ -272,12 +272,13 @@ static void DrawCRTScanlines(float x, float y, float w, float h, float offset) {
 }
 
 static void DrawCornerReticle(float x, float y, float size, Color color, bool topLeft) {
+    // Horizontal tick always spans [x, x+size] — matches the box the
+    // caller already positioned, regardless of which side it's on.
+    DrawScaledRect(x, y, size, 2, color);
     if (topLeft) {
-        DrawScaledRect(x, y, size, 2, color);
-        DrawScaledRect(x, y, 2, size, color);
+        DrawScaledRect(x, y, 2, size, color);              // vertical tick on the LEFT edge
     } else {
-        DrawScaledRect(x + size, y, size, 2, color);
-        DrawScaledRect(x, y, 2, size, color);
+        DrawScaledRect(x + size - 2, y, 2, size, color);   // vertical tick on the RIGHT edge
     }
 }
 
@@ -457,10 +458,16 @@ void MusicPlayer::DrawControls(float x, float y, float width) {
     float pulse = sinf(t) * 0.3f + 0.7f;
     
     float btnSize = 28.0f;
+    float playBtnSize = 36.0f;
     float spacing = 6.0f;
-    float totalWidth = btnSize * 6 + spacing * 5;
+
+    // 5 real buttons (shuffle, previous, play, next, repeat) → 4 gaps.
+    // Play is taller than the rest, so it's counted at its own size
+    // instead of being folded into a 6th uniform slot.
+    float totalWidth = btnSize * 4 + playBtnSize + spacing * 4;
     float startX = x + (width - totalWidth) / 2.0f;
     float btnY = y;
+    float playY = y - (playBtnSize - btnSize) / 2.0f; // vertically centered on the same row
     
     // ---- SHUFFLE ----
     float btnX = startX;
@@ -486,9 +493,9 @@ void MusicPlayer::DrawControls(float x, float y, float width) {
     btnX += btnSize + spacing;
     
     // ---- PLAY/PAUSE ----
-    float playBtnSize = 36.0f;
-    float playX = btnX - (playBtnSize - btnSize) / 2.0f;
-    float playY = btnY - (playBtnSize - btnSize) / 2.0f;
+    // Placed directly at the running cursor — same `spacing` gap on
+    // both sides as every other button, just taller.
+    float playX = btnX;
     bool playHover = RefRectHover(playX, playY, playBtnSize, playBtnSize, refMouse);
     
     DrawScaledRect(playX, playY, playBtnSize, playBtnSize, 
