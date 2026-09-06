@@ -1,0 +1,19 @@
+[TITLE] GLITCH_REALITY_OVERRIDE
+[CATEGORY] hub
+[MAP_X] 60
+[MAP_Y] 30
+[HAS_KEY] false
+[HACK_DIFFICULTY] 2.0
+
+[CONTENT]
+[TITLE] GLITCH_REALITY_OVERRIDE
+[HR]
+[TEXT] Terminal buffer overflow designed to stress-test rendering pipelines.
+[BOX] +---------------------------------------------------------+
+[BOX] | BUFFER STATE: CORRUPTED | RAM ALLOCATION: 99.9%         |
+[BOX] +---------------------------------------------------------+
+[CODE] GLITCH_CODE: 0xGLITCH_OVERFLOW_999
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

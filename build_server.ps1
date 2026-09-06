@@ -58,6 +58,7 @@ $serverSources = @(
     "src/server/server_core.cpp",
     # Shared - ONLY the ones that don't depend on raylib
     "src/shared/vnet_sites.cpp",
+    "src\shared\vex_parser.cpp",
     "src/shared/utils.cpp",
     # Lib
     "src/lib/vnet_lib.cpp"

@@ -1,0 +1,30 @@
+[TITLE] DEEP WEB ABYSS TERMINAL NODE
+[CATEGORY] horror
+[MAP_X] 35
+[MAP_Y] -20
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.0
+
+[CONTENT]
+[TITLE] DEEP WEB ABYSS TERMINAL NODE // KAIRO_PORT_0
+[HR]
+[GLITCH] YOU HAVE REACHED THE END OF VNET ROUTING TABLES.
+[BLOOD] [WARNING]: RELATIONAL TIES SEVERED. ABSOLUTE ISOLATION DETECTED.
+[BOX] +--------------------------------------------------------------+
+[BOX] | ENTITY STATUS: NOBODY WANTS TO DIE, BUT NOBODY WANTS TO LIVE |
+[BOX] | RED TAPE BOUNDARY: THE LINE BETWEEN THE LIVING AND THE DEAD  |
+[BOX] +--------------------------------------------------------------+
+[TEXT] No routing hops exist beyond this coordinate.
+[TEXT] All packets sent here dissolve into absolute zero memory entropy.
+[TEXT] LOG #991: The dark room behind the red tape isn't empty. Once
+[TEXT] a person's loneliness reaches 100%, the monitor lifeleaks black
+[TEXT] static and the ghosts start occupying empty IP addresses.
+[CODE] NULL_POINTER_EXCEPTION_AT_0X00000000
+[CODE] ENTROPY_LEVEL: 100PERCENT_VOID_LONELINESS
+[TEXT]
+[PULSE] THERE IS NOTHING HERE EXCEPT THE WEEPING ECHO OF YOUR OWN PORT.
+[BLOOD] 'WHY ARE YOU STILL LOOKING AT THIS SCREEN? YOU'RE COMPLETELY ALONE.'
+[HR]
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

@@ -1,0 +1,32 @@
+[TITLE] SUBSTATION 04 - 2014 COLD SIGNAL GROUND ZERO
+[CATEGORY] infrastructure
+[MAP_X] -50
+[MAP_Y] 0
+[HAS_KEY] false
+[HACK_DIFFICULTY] 2.0
+
+[CONTENT]
+[TITLE] SUBSTATION 04 // 2014 COLD SIGNAL GROUND ZERO
+[HR]
+[BADGE:POWER GRID:BLOOD] [BADGE:400kV FEEDBACK:AMBER] [BADGE:DIESEL GENERATOR:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | FACILITY: MUNICIPAL SUBSTATION 04 (ABANDONED INDUSTRIAL ZONE)   |
+[BOX] | INCIDENT: OPERATION COLD SIGNAL (2014-11-03 02:44 UTC)          |
+[BOX] | STATUS  : RUNNING ON DIESEL BACKUP // 400kV TRANSFORMER SURGE   |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:0:GRID_PHASE_DESYNC]
+[TEXT] Severe electrical hum disrupting coax line. Tune RF frequency to 18.0 Hz
+[TEXT] in CLI using 'freq 18.0' to lock signal carrier phase.
+[TEXT]
+[SUBTITLE] HISTORICAL FIELD LOG (2014 INCIDENT):
+[TEXT] 'The Blackout lasted 14 days. The Old Web died here in the dark.'
+[TEXT] 'Corporate cartels built .vnet over the burnt copper coax because it was'
+[TEXT] 'completely isolated from public infrastructure. Substation 04 still'
+[TEXT] 'feeds raw current to the subterranean sumps that never sleep.'
+[HR]
+[LINK:project9.vnet] >> INSPECT SITE 9-B DISPOSAL SUMPS
+[LINK:blackout.vnet] >> VIEW FRACTURE GRID TELEMETRY
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

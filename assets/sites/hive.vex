@@ -1,0 +1,19 @@
+[TITLE] THE HIVE MIND COLLECTIVE
+[CATEGORY] hub
+[MAP_X] -70
+[MAP_Y] 0
+[HAS_KEY] false
+[HACK_DIFFICULTY] 2.0
+
+[CONTENT]
+[TITLE] THE HIVE MIND COLLECTIVE
+[HR]
+[TEXT] Interconnected consciousness buffer linking active client terminals.
+[BOX] +---------------------------------------------------------+
+[BOX] | LINKED MINDS: 89 PEERS | SYNCHRONICITY: HIGH            |
+[BOX] +---------------------------------------------------------+
+[CODE] HIVE_NODE_ID: 0xHIVE_MIND_99
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

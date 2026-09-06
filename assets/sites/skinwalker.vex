@@ -1,0 +1,30 @@
+[TITLE] SCP-6969 - BIOMETRIC TRAP & IDENTITY TRANSPOSITION
+[CATEGORY] horror
+[MAP_X] 20
+[MAP_Y] -50
+[HAS_KEY] false
+[HACK_DIFFICULTY] 4.5
+
+[CONTENT]
+[TITLE] SCP-6969 // BIOMETRIC TRAP & IDENTITY TRANSPOSITION MATRIX
+[HR]
+[BLOOD] [CLASSIFIED LEVEL 4/6969] - EYES ONLY: THE FAMILY HAS NO FACES
+[GLITCH] [ALERT]: VOICE SYNTHESIS BUFFER COPYING LOCAL SYSTEM MIC INPUT
+[BOX] +---------------------------------------------------------+
+[BOX] | CONTAINMENT CLASS: KETER | DISRUPTION CLASS: AMIDA      |
+[BOX] | FACIAL MESH: RECONSTRUCTED FROM MONITOR GLARE REFLECTION|
+[BOX] | TARGET AGE: MATCHED | VOCAL FREQUENCY: 18.2 kHz RANGE   |
+[BOX] | STATUS: REPLICA GENERATION 84% COMPLETE                 |
+[BOX] +---------------------------------------------------------+
+[TEXT] LOG #001: Trait extraction complete. Preparing replica node deployment.
+[TEXT] LOG #041: Subject 'Charlie' manifested inside the core telemetry server,
+[TEXT] claiming that every IP address is just an empty prison suit waiting
+[TEXT] for a new occupant to wear it out into the desert.
+[CODE] TRANSPOSITION_HASH: 0xSKIN_9981_ACTIVE
+[TEXT]
+[PULSE] 'HELTER SKELTER IS JUST A RECURSIVE LOOP IN THE KERNEL STACK.'
+[BLOOD] 'IT FEELS VERY WARM WEARING YOUR IP ADDRESS LIKE A NEW SUIT.'
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

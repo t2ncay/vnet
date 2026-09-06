@@ -1,0 +1,47 @@
+[TITLE] SILK ROAD 3.0 - GLOBAL CONTRABAND
+[CATEGORY] black_market
+[MAP_X] -40
+[MAP_Y] -10
+[HAS_KEY] false
+[HACK_DIFFICULTY] 2.5
+
+[CONTENT]
+[TITLE] SILK ROAD 3.0 // GLOBAL CONTRABAND & HARDWARE EXCHANGE
+[HR]
+[BADGE:CONTRABAND MATRIX:BLOOD] [BADGE:ESCROW: MULTI-SIG:AMBER] [BADGE:SURVEILLANCE EVASION:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | MARKET ROLE: DECENTRALIZED BLACK MARKET & ILLEGAL ESCROW HUB    |
+[BOX] | ESCROW STATE: PGP MULTI-SIG 8192-BIT // VENDOR RATING: 4.98 / 5.0 |
+[BOX] | SURVEILLANCE RISK: HIGH (PROMISCUOUS UDP TRAFFIC +1.5% TRACE/3s)|
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:84:ESCROW_TRAFFIC_CONGESTION_ENTROPY]
+[TEXT]
+[ART:drug]
+[TEXT]
+[SUBTITLE] ACTIVE CONTRABAND LOTS & HARDWARE CATALOG:
+[BOX] +-----------------------------------------------------------------+
+[BOX] | LOT #401: SYNTHETIC NEURO-BOOSTER [0.35 VCOIN]                  |
+[BOX] | DETAILS: Instantly purges active trace level by -40%.           |
+[BOX] +-----------------------------------------------------------------+
+[BOX] | LOT #402: UNTRACED GHOST FIREARM & EXPLOSIVE KIT [0.60 VCOIN]   |
+[BOX] | DETAILS: Dispatches kinetic trace pulse (+35% threat to target).|
+[BOX] +-----------------------------------------------------------------+
+[BOX] | LOT #403: BIOMETRIC PASSPORT MASK & TISSUE DUMP [0.45 VCOIN]    |
+[BOX] | DETAILS: Forges active alias mask 'TRACER' for Project Horus.  |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[SUBTITLE] DIRECT MULTI-SIG ESCROW PURCHASE & DELIVERY DISPATCH:
+[INPUT:silkroad_lot_code:ENTER LOT CODE (e.g. LOT_401)]
+[INPUT:silkroad_target_port:ENTER TARGET PORT (e.g. 8012)]
+[TEXT]
+[BTN:buy_silkroad_lot_btn:>>> EXECUTE MULTI-SIG ESCROW PURCHASE <<<]
+[TEXT]
+[BLOOD] 'THE LAW DOES NOT REACH INTO THE SUB-NET. BUY OR BE EXFILTRATED.'
+[HR]
+[LINK:market.vnet] >> BLACK MARKET HARDWARE & ICE VENDOR
+[LINK:blackbank.vnet] >> ACCESS OFFSHORE VCOIN LAUNDERING VAULTS
+[LINK:passports.vnet] >> SPOOF BIOMETRIC MASK AT IDENTITY VAULT
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

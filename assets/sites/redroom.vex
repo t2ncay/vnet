@@ -1,0 +1,36 @@
+[TITLE] LIVE UNENCRYPTED REDROOM TRANSMISSION
+[CATEGORY] horror
+[MAP_X] -15
+[MAP_Y] -35
+[HAS_KEY] false
+[HACK_DIFFICULTY] 2.5
+
+[CONTENT]
+[TITLE] STREAM NODE ALPHA // LIVE UNENCRYPTED REDROOM TRANSMISSION
+[HR]
+[BLOOD] HIGH SECURITY ALERT: TRANSMISSION MONITORED BY HOSTILE TRACER UNITS
+[IMG:redroom]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | SIGNAL STATUS: ENCRYPTED | STREAM HASH: EXFILTRATED_0x88F9      |
+[BOX] | BITRATE: 18.4 Mbps | ACTIVE WATCHERS: 13 PEERS [VIP_BIDDERS]     |
+[BOX] | ENCRYPTION: 8192-BIT QUANTUM SHIELD | PROTOCOL: YUV420_RAW_BUS|
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[SUBTITLE] LIVE INTERACTIVE FEED TELEMETRY & AUCTION LOGS:
+[TEXT] FEED_DATA: Raw infrared/thermal frame buffer captured from sealed sub-basement
+[TEXT] in dollhouse.vnet (Room 402). Frame rate jitter caused by wet, metallic static.
+[TEXT] Bidder_0x991: '0.80 VCOIN placed on surgical bone-saw extraction of upper jaw.'
+[TEXT] Executioner_A: 'Subject #409-B is secured to the stainless steel morgue tray.'
+[TEXT]                'Trachea severed. Intestinal bile, rancid adipocere, and oxidized'
+[TEXT]                'blood are draining directly through the floor grating into project9.vnet.'
+[TEXT]
+[BLOOD] [WARNING]: FOUL TISSUE ODOR & MEMORY CORRUPTION LEAKING INTO LOCAL GPU
+[GLITCH] [ALERT]: UNKNOWN ENTITY ATTEMPTING REMOTE KERNEL INJECTION ON YOUR PORT
+[PULSE] 'RUNNING 'FLUSH' IN CLI [TAB] IS RECOMMENDED IMMEDIATELY TO PURGE TRACE.'
+[HR]
+[LINK:dollhouse.vnet] >> CROSS-CHECK SURVEILLANCE FEED ROOM 402
+[LINK:morgue.vnet] >> INSPECT EXFILTRATED AUTOPSY & BIO-HARVEST DUMPS
+[LINK:snuff.vnet] >> VIEW UNFILTERED RAW FRAME BUFFER ARCHIVE
+[LINK:vnet.dir] << TERMINATE STREAM & RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

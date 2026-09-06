@@ -1,0 +1,32 @@
+[TITLE] SUB-LEVEL 4 EXPERIMENTAL FACILITY
+[CATEGORY] horror
+[MAP_X] -20
+[MAP_Y] -45
+[HAS_KEY] true
+[HACK_DIFFICULTY] 4.0
+
+[CONTENT]
+[TITLE] SUB-LEVEL 4 EXPERIMENTAL FACILITY // PATIENT TELEMETRY
+[HR]
+[BLOOD] CLASSIFICATION: TOP SECRET // MK-ULTRA MORPHOGENIC ENGINE SUITE
+[PULSE] VITAL MONITORS: FLATLINE DETECTED // BRAINWAVE Delta-LOCK ACTIVE
+[BOX] +-----------------------------------------------------------------+
+[BOX] | SUBJECT: PATIENT #1988 (EX-EXECUTIVE WHISTLEBLOWER)             |
+[BOX] | HEART RATE: 000 BPM | BODY TEMP: 18.2 C | STATUS: CONSCIOUS    |
+[BOX] | IMPLANT: BRAIDED COPPER BUS FUSED TO CEREBELLUM (MORGUE LINK)   |
+[BOX] +-----------------------------------------------------------------+
+[TEXT] PATIENT LOG #881: 'Subject has been clamped into the metallic restraint
+[TEXT] chair for 144 continuous hours. Eyelids excised to force 100% visual lock
+[TEXT] on the Morphogenic static engine patterns. High-voltage pulses delivered
+[TEXT] directly to carotid arteries every 30 seconds to prevent cognitive shutdown.'
+[CODE] CONTAINMENT_LOCK_STATE: COMPROMISED_FROM_INSIDE_NETWORK
+[TEXT]
+[PULSE] WARNING: MORPHOGENIC STATIC LEAKING INTO LOCAL RAM BUS
+[GLITCH] 'CONTAINMENT CELL DOOR OPENED FROM INSIDE THE NETWORK ROUTER'
+[HR]
+[LINK:cult.vnet] >> ACCESS TEMPLE GATE CULT RITUAL GATEWAY
+[LINK:morgue.vnet] >> CROSS-REFERENCE SUBJECT #409 AUTOPSY
+[LINK:snuff.vnet] >> INSPECT UNFILTERED RAW VIDEO RECOVERY
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

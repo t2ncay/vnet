@@ -1,0 +1,19 @@
+[TITLE] WHISPER PROTOCOL MESSAGE BOARD
+[CATEGORY] hub
+[MAP_X] 60
+[MAP_Y] -30
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.0
+
+[CONTENT]
+[TITLE] WHISPER PROTOCOL MESSAGE BOARD
+[HR]
+[TEXT] Ephemeral decentralized messaging channel for covert operatives.
+[BOX] +---------------------------------------------------------+
+[BOX] | MESSAGE LIFETIME: 30 SECONDS | AUTO-WIPED              |
+[BOX] +---------------------------------------------------------+
+[CODE] WHISPER_NODE: 0xWSP_1102_SECURE
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

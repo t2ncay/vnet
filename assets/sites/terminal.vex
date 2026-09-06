@@ -1,0 +1,52 @@
+[TITLE] MASTER DECRYPTION GATEWAY TERMINAL
+[CATEGORY] core
+[MAP_X] 25
+[MAP_Y] 25
+[HAS_KEY] true
+[HACK_DIFFICULTY] 3.0
+
+[CONTENT]
+[TITLE] MASTER DECRYPTION GATEWAY TERMINAL // CORE NODE #003
+[HR]
+[BADGE:CORE NODE #003:BLOOD] [BADGE:CRYPTO GATEWAY:TOXIC]
+[ART:vnet]
+[TEXT]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | SYSTEM ROLE: MASTER VFS ROOT DECRYPTION & COMMAND GATEWAY      |
+[BOX] | SECURITY LAYER: 8-FACTOR QUANTUM HASH SHIELD (VFS VAULT CORE) |
+[BOX] | ACCESS PROTOCOL: PARALLEL SLOT VERIFICATION VIA CLI HANDSHAKE   |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:100:VFS_ROOT_GATEWAY_LOCKDOWN]
+[TEXT]
+[SUBTITLE] CRYPTOGRAPHIC SLOT ALLOCATION MATRIX:
+[BADGE:VFS ROOT OVERRIDE:AMBER]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | SLOT 01: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_1 REQ)    |
+[BOX] | SLOT 02: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_2 REQ)    |
+[BOX] | SLOT 03: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_3 REQ)    |
+[BOX] | SLOT 04: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_4 REQ)    |
+[BOX] | SLOT 05: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_5 REQ)    |
+[BOX] | SLOT 06: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_6 REQ)    |
+[BOX] | SLOT 07: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_7 REQ)    |
+[BOX] | SLOT 08: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_8 REQ)    |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[SUBTITLE] DIRECT VFS ROOT DECRYPTION PAYLOAD INJECTION:
+[TEXT] Enter all 8 exfiltrated key codes below or execute 'win <k1>..<k8>' in CLI [TAB]:
+[INPUT:terminal_key_payload:ENTER 8 KEYS SEPARATED BY SPACES]
+[TEXT]
+[BTN:execute_root_override:>>> EXECUTE MASTER VFS ROOT BREACH & OVERRIDE <<<]
+[TEXT]
+[BLOOD] OVERLOAD TACTIC: Executing 'overload terminal.vnet' in CLI [TAB] locks this core node.
+[PULSE] OVERLOADING ALL 5 CORE NODES (market, vault, terminal, crypto, hellroom)
+[GLITCH] WILL COLLAPSE THE VNET BACKBONE INTO A TOTAL GRID BLACKOUT WIN!
+[TEXT]
+[SUBTITLE] ALTERNATIVE VICTORY PATHWAYS:
+[TEXT] - Economic Takeover: Mine 25.0 VCOIN and execute 'takeover' in CLI [TAB].
+[TEXT] - Grid Blackout: Coordinate with peers to overload all 5 mutual core nodes.
+[HR]
+[LINK:vault.vnet] >> ACCESS CORRUPTED VFS DATA VAULT
+[LINK:vnet.dir] << CLOSE GATEWAY & RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

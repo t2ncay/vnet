@@ -1,0 +1,19 @@
+[TITLE] ENTROPY ENGINE MONITOR
+[CATEGORY] hub
+[MAP_X] 60
+[MAP_Y] 50
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.5
+
+[CONTENT]
+[TITLE] ENTROPY ENGINE MONITOR
+[HR]
+[TEXT] Real-time tracking of thermal decay and information loss across nodes.
+[BOX] +---------------------------------------------------------+
+[BOX] | GLOBAL ENTROPY: INCREASING | DECAY RATE: 0.04/s       |
+[BOX] +---------------------------------------------------------+
+[CODE] ENTROPY_METRIC: 0x99A_DECAY
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

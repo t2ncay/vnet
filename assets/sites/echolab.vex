@@ -1,0 +1,19 @@
+[TITLE] ECHO LABS - FREQUENCY RESEARCH
+[CATEGORY] hub
+[MAP_X] 60
+[MAP_Y] 10
+[HAS_KEY] false
+[HACK_DIFFICULTY] 2.0
+
+[CONTENT]
+[TITLE] ECHO LABS - FREQUENCY RESEARCH
+[HR]
+[TEXT] Acoustic resonance and psychoacoustic weapon testing logs.
+[BOX] +---------------------------------------------------------+
+[BOX] | FREQUENCY RANGE: 1 Hz - 100 kHz | STATUS: TESTING     |
+[BOX] +---------------------------------------------------------+
+[CODE] ECHO_LOG: 0xECHO_9982_RESONANCE
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

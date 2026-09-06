@@ -1,0 +1,20 @@
+[TITLE] HELLROOM.VNET - DEMONIC P2P CHAT HUB
+[CATEGORY] core
+[MAP_X] 0
+[MAP_Y] 0
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.0
+
+[CONTENT]
+[TITLE] HELLROOM.VNET - DEMONIC P2P CHAT HUB
+[HR]
+[BLOOD] [WARNING]: UNENCRYPTED UDP BROADCAST SWARM ACTIVE.
+[BOX] +---------------------------------------------------------+
+[BOX] | CHAT CHANNEL: HELLROOM | PROTOCOL: PLAINTEXT P2P STREAM |
+[BOX] +---------------------------------------------------------+
+[TEXT] Open the app to connect the IRC channel.
+[CODE] STATUS: ONLINE | REALTIME STREAM ACTIVE
+[HR]
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

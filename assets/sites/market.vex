@@ -1,0 +1,51 @@
+[TITLE] THE RED MARKET - BLACK MARKET & HARDWARE EXCHANGE
+[CATEGORY] core
+[MAP_X] -25
+[MAP_Y] -25
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.0
+
+[CONTENT]
+[TITLE] THE RED MARKET - BLACK MARKET & HARDWARE EXCHANGE // NODE #001
+[HR]
+[BADGE:CORE NODE #001:BLOOD] [BADGE:SWARM PEER BROADCAST:AMBER] [BADGE:ICE VENDOR:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | NODE ID: RED_MARKET_0x77A | NETWORK PROTOCOL: UNENCRYPTED P2P  |
+[BOX] | SYSTEM ROLE: CORE BACKBONE #01 (OVERLOAD TARGET FOR BLACKOUT)  |
+[BOX] | ESCROW STATE: MULTI-SIG SMART CONTRACTS (LAUNDERED VIA BLACKBANK)|
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:78:SWARM_UDP_CONGESTION_ENTROPY]
+[TEXT]
+[ART:vmarket]
+[TEXT]
+[SUBTITLE] ACTIVE DEFENSE & COUNTER-EXPLOIT MODULES:
+[BOX] +-----------------------------------------------------------------+
+[BOX] | DEFENSE MODULE #01: ACTIVE ICE FIREWALL SHIELD                  |
+[BOX] | DETAILS: Auto-absorbs 1 inbound DOS, Hijack, or Trace Spike.    |
+[BOX] | PRICE: 0.30 VCOIN | CAP: 3 LAYERS | CURRENT: [ICE_COUNT/3]     |
+[BOX] +-----------------------------------------------------------------+
+[LINK:buy_ice] [>>> CLICK HERE TO PURCHASE ICE SHIELD (0.30 VCOIN) <<<]
+[TEXT]
+[SUBTITLE] CLASSIFIED ARMS, BIOMETRIC & CONTRABAND LOTS:
+[CODE] LOT #881: MILITARY FIRMWARE DUMP - KEY_FRAGMENT_EXFILTRATED
+[CODE] LOT #882: SECTOR 4 BIOMETRIC SCANS - 1,400 SUBJECT RECORDS [0.45 VCOIN]
+[CODE] LOT #883: SYNTHETIC NEURAL INJECTION SUITE // CORTEX HOOK [0.99 VCOIN]
+[CODE] LOT #884: FRESH CORNEAL & VISCERAL DUMPS (FROM MORGUE.VNET) [0.80 VCOIN]
+[TEXT]
+[SUBTITLE] DARKNET VENDOR LOGS & DECOMPOSITION TELEMETRY:
+[TEXT] Vendor_0x77A: 'We sell what corporations pretend does not exist.'
+[TEXT] 'The hardware racks on market.vnet aren't cooled by liquid nitrogen.'
+[TEXT] 'They are submerged in baths of rancid mineral oil mixed with human fat'
+[TEXT] 'and bile extracted from subject morgue trays at morgue.vnet.'
+[TEXT]
+[BLOOD] OVERLOAD TACTIC: Executing 'overload market.vnet' in CLI [TAB] locks this core node.
+[PULSE] OVERLOADING ALL 5 CORE NODES (market, vault, terminal, crypto, hellroom)
+[GLITCH] WILL COLLAPSE THE VNET BACKBONE INTO A TOTAL GRID BLACKOUT WIN!
+[HR]
+[LINK:blackbank.vnet] >> ACCESS OFFSHORE VCOIN LAUNDERING VAULTS
+[LINK:silkroad.vnet] >> ACCESS SILKROAD 3.0 CONTRABAND MATRIX
+[LINK:crypto.vnet] >> MINE VCOIN & LAUNDER TUMBLER POOLS (CORE NODE #004)
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

@@ -1,0 +1,19 @@
+[TITLE] MASTER ROUTING INDEX NODE
+[CATEGORY] hub
+[MAP_X] 60
+[MAP_Y] -10
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.0
+
+[CONTENT]
+[TITLE] MASTER ROUTING INDEX NODE
+[HR]
+[TEXT] Comprehensive directory index for all unlisted vnet gateway nodes.
+[BOX] +---------------------------------------------------------+
+[BOX] | REGISTERED NODES: 50 | ROUTING TABLE: SYNCED            |
+[BOX] +---------------------------------------------------------+
+[CODE] INDEX_HASH: 0xIDX_50_ACTIVE
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

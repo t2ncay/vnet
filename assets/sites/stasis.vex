@@ -1,0 +1,19 @@
+[TITLE] CRYOGENIC STASIS POD TELEMETRY
+[CATEGORY] hub
+[MAP_X] -60
+[MAP_Y] 50
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.0
+
+[CONTENT]
+[TITLE] CRYOGENIC STASIS POD TELEMETRY
+[HR]
+[TEXT] Remote monitoring interface for underground cryo-chambers.
+[BOX] +---------------------------------------------------------+
+[BOX] | POD TEMPERATURE: -196 C | VITAL STATUS: STABLE          |
+[BOX] +---------------------------------------------------------+
+[CODE] STASIS_POD_ID: 0xSTASIS_402_LOCKED
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

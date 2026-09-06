@@ -334,7 +334,7 @@ void Desktop::DrawBrowser(const AppWindow& win) {
         DrawBrowserConnectionOverlay(gameX, gameY, gameW, gameH);
     } else {
         // ---- PAGE TITLE ----
-        const VNETPageData* site = GetSiteData(g_player.currentURL);
+        const VEXSiteData* site = SiteManager::Get().GetSiteData(g_player.currentURL);
         char titleStr[128];
         if (site) {
             snprintf(titleStr, sizeof(titleStr), "// %s", site->title);

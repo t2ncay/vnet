@@ -1,0 +1,40 @@
+[TITLE] PROJECT 9 - SUBTERRANEAN BLACK SITE DATABASE
+[CATEGORY] hub
+[MAP_X] -60
+[MAP_Y] 10
+[HAS_KEY] true
+[HACK_DIFFICULTY] 3.5
+
+[CONTENT]
+[TITLE] PROJECT 9 - SUBTERRANEAN BLACK SITE DATABASE // SITE 9-B
+[HR]
+[BADGE:SECTOR 09:BLOOD] [BADGE:COLD SIGNAL 2014:AMBER] [BADGE:CONTAINMENT BREACH:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | FACILITY  : SITE 9-B SUBTERRANEAN TESTING COMPLEX              |
+[BOX] | OPERATION : COLD SIGNAL (2014 PRIMARY RELAY BLACKOUT VECTOR)    |
+[BOX] | STATUS    : CRITICAL CONTAINMENT BREACH // SECTOR 09 SEALED     |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:12:CONTAINMENT_SEAL_INTEGRITY]
+[TEXT]
+[ART:biohazard]
+[TEXT]
+[SUBTITLE] OPERATION COLD SIGNAL // DECLASSIFIED INCIDENT DOSSIER (2014):
+[TEXT] 'Prior to the 2014 grid blackout, Site 9-B served as the primary subterranean'
+[TEXT] 'optical coaxial relay for Operation Cold Signal.'
+[TEXT] 'Personnel attempted to isolate the corrupt neural memory stack in vault.vnet,'
+[TEXT] 'but hardware registers locked up. To purge evidence, failed candidates'
+[TEXT] 'from bounty.vnet and zeroauction.vnet were dumped directly into the sumps.'
+[CODE] INCIDENT_LOG_2014: 0xPRJ9_COLD_SIGNAL_BREACH_LOG_09
+[TEXT]
+[SUBTITLE] EMERGENCY CONTAINMENT OVERRIDE TERMINAL:
+[INPUT:prj9_override_code:ENTER PURGE AUTHORIZATION CODE]
+[TEXT]
+[BTN:prj9_purge_btn:>>> EXECUTE SUB-SURFACE SUMP FLUSH & PURGE <<<]
+[TEXT]
+[BLOOD] [WARNING]: SUBTERRANEAN GAS LEAK CORRUPTING HARDWARE REGISTER BUS.
+[HR]
+[LINK:archival.vnet] >> ACCESS RESTRICTED SECTOR 09 MILITARY DUMPS
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

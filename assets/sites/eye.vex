@@ -1,0 +1,45 @@
+[TITLE] PROJECT HORUS - THE ALL-SEEING EYE
+[CATEGORY] infrastructure
+[MAP_X] 50
+[MAP_Y] -20
+[HAS_KEY] true
+[HACK_DIFFICULTY] 3.5
+
+[CONTENT]
+[TITLE] PROJECT HORUS // THE ALL-SEEING EYE [GLOBAL SURVEILLANCE MESH]
+[HR]
+[BADGE:LEVEL 5 CLEARANCE:BLOOD] [BADGE:OMNIPRESENT OPTIC:AMBER] [BADGE:SAT-99 LINK:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | INDEXED FACES: 4.2 BILLION | MATCH RATE: 99.4% RELIABILITY      |
+[BOX] | FEED SOURCE: PANOPTICON SAT-99 & METRO CCTV BACKDOOR MESH       |
+[BOX] | TARGET RESOLUTION: SUB-MILLIMETER OPTICAL RETINAL SCANS         |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:99:GLOBAL_RETINAL_SURVEILLANCE_COVERAGE]
+[TEXT]
+[BLOOD]     .--------------------------------------------------------.
+[BLOOD]    |                  .---.                                   |
+[BLOOD]   |                 .'     '.                                  |
+[BLOOD]   |                /   .---. \\                                 |
+[BLOOD]   |               |   /  _  \\ |                                |
+[BLOOD]   |               |  |  (o)  ||   <-- WATCHING YOU THROUGH     |
+[BLOOD]   |               |   \\  ^  / |       MONITOR GLASS            |
+[BLOOD]   |                \\   '---' /                                 |
+[BLOOD]   |                 '.     .'                                  |
+[BLOOD]    |                  '---'                                   |
+[BLOOD]     '--------------------------------------------------------'
+[TEXT]
+[SUBTITLE] DIRECT OCULAR OVERRIDE & RETINAL LOCK SYSTEM:
+[INPUT:horus_target_socket:ENTER TARGET SOCKET / PORT (e.g. 8012)]
+[TEXT]
+[BTN:horus_ocular_lock_btn:>>> ENGAGE KINETIC RETINAL LOCK VIA SAT-99 <<<]
+[TEXT]
+[PULSE] WARNING: RETINAL PATTERN MATCHED // DO NOT LOOK INTO THE CAMERA LENS
+[GLITCH] 'IT DOES NOT MATTER IF YOU TURN OFF THE LIGHTS. IT SEES THE HEAT.'
+[HR]
+[LINK:watchtower.vnet] >> CROSS-CHECK PANOPTICON SAT-99 TELEMETRY
+[LINK:passports.vnet] >> SPOOF BIOMETRIC MASK AT IDENTITY VAULT
+[LINK:morgue.vnet] >> CROSS-CHECK AUTOPSY & BIO-HARVEST DUMPS
+[LINK:vnet.dir] << CLOSE EYE & RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

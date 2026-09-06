@@ -1,0 +1,34 @@
+[TITLE] DEADCHANNEL.VNET - VEKTRA PMC WIRETAP INTERCEPT
+[CATEGORY] infrastructure
+[MAP_X] -50
+[MAP_Y] 20
+[HAS_KEY] false
+[HACK_DIFFICULTY] 3.0
+
+[CONTENT]
+[TITLE] DEADCHANNEL.VNET // VEKTRA PMC WIRETAP INTERCEPT
+[HR]
+[BADGE:SEIZED BROADCAST:BLOOD] [BADGE:CARRIER NOISE: 100%:AMBER] [BADGE:PMC FREQ: 18.0Hz:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | NODE ID: DEADCHANNEL_0x00 | ORIGIN: FORMER CULT CHAT RELAY      |
+[BOX] | INCIDENT: RAIDED BY VEKTRA PMC DIRECTRATE 7 // COMMS DROPPED    |
+[BOX] | CARRIER FREQUENCY: 18.0 Hz | RF CARRIER LOCK: SEARCHING        |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[HEX_STREAM:0x88F9:32:18]
+[TEXT]
+[SUBTITLE] REAL-TIME RF CARRIER WAVEFORM (ANALOG INTERCEPT):
+[CODE]   [RF_SCOPE] ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+[CODE]   [RF_SCOPE] ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+[TEXT]
+[SUBTITLE] CARRIER UNSYNCHRONIZED // HEAVY CARRIER JAMMING:
+[WARN] Signal scrambled by PMC directional jammer. Use CLI command 'freq 18.0'
+[TEXT] Current RF Frequency: 18.0 Hz. Required: 18.0 Hz.
+[TEXT]
+[PULSE] TIP: Open terminal overlay [TAB] and type 'freq 18.0' to lock signal phase.
+[HR]
+[LINK:cult.vnet] >> ACCESS REMNANTS AT CHURCH OF THE SILICON SOUL
+[LINK:weaponry.vnet] >> INSPECT VEKTRA PMC ARMORY EXPORTS
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

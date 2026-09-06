@@ -1,0 +1,19 @@
+[TITLE] CENTRAL NEXUS ROUTING HUB
+[CATEGORY] hub
+[MAP_X] 70
+[MAP_Y] 0
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.0
+
+[CONTENT]
+[TITLE] CENTRAL NEXUS ROUTING HUB
+[HR]
+[TEXT] Primary core switching station managing deep web backbone traffic.
+[BOX] +---------------------------------------------------------+
+[BOX] | THROUGHPUT: 40 Gbps | PACKET DROP: 0.00%               |
+[BOX] +---------------------------------------------------------+
+[CODE] NEXUS_CORE_ID: 0xNEXUS_ROUTER_01
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

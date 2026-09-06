@@ -1,0 +1,36 @@
+[TITLE] THE SILENT CORRIDOR - CASE FILE #204863
+[CATEGORY] horror
+[MAP_X] -30
+[MAP_Y] -30
+[HAS_KEY] true
+[HACK_DIFFICULTY] 3.0
+
+[CONTENT]
+[TITLE] THE SILENT CORRIDOR // CASE FILE #204863
+[HR]
+[BADGE:POLICE FORENSICS:BLOOD] [BADGE:RADIO FREQ 18.0Hz:AMBER] [BADGE:VFS SEALED:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | CASE ID   : #1994-0820 | LOCATION: 204 HILLSIDE RD (SECTOR 09)   |
+[BOX] | INCIDENT  : DOMESTIC HOMICIDE & RECURSIVE NEURAL PSYCHOSIS LOOP |
+[BOX] | EVIDENCE  : BATTERY RADIO RECITING CARRIER WAVE [204863]        |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:98:NEURAL_PSYCHOSIS_ENTROPY]
+[TEXT]
+[ART:skull]
+[TEXT]
+[SUBTITLE] FORENSIC EVIDENCE BRIEF (SECTOR 09 HOMICIDE DUMP):
+[TEXT] Suspect executed spouse and two minors before sitting in the dark hallway.
+[TEXT] Officers noted extreme frost anomalies and a rancid, yellow adipocere
+[TEXT] fluid leaking under the floorboards—identical to tissue dumps at morgue.vnet.
+[CODE] CASE_HASH: 0x204863_DOMESTIC_MASSACRE_NOIR
+[TEXT]
+[PULSE] WARNING: INFRASOUND HUMMING AT 18.0 Hz (TUNE VIA 'freq 18.0')
+[GLITCH] 'LOOK BEHIND YOU. THE DOOR IS ALREADY LOCKED.'
+[HR]
+[LINK:dollhouse.vnet] >> INSPECT ROOM 402 SURVEILLANCE FEED
+[LINK:morgue.vnet] >> CROSS-CHECK AUTOPSY DUMPS FOR CASE #204863
+[LINK:silence.vnet] >> TUNE INFRASOUND ANALYZER TO 18.0 HZ
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

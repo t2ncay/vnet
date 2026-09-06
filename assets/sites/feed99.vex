@@ -1,0 +1,20 @@
+[TITLE] FEED_99 - NEURAL BROADCAST
+[CATEGORY] special
+[MAP_X] 0
+[MAP_Y] -65
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.0
+
+[CONTENT]
+[TITLE] FEED_99: NEURAL BROADCAST
+[HR]
+[TEXT] Uninterrupted raw sensory transmission from unknown terminals.
+[BOX] +---------------------------------------------------------+
+[BOX] | FREQUENCY: 432 Hz | BANDWIDTH: UNLIMITED               |
+[VIDEO:void:D7_PMC_EXECUTION_OF_D34D_7DP_RAW.MP4]
+[BOX] +---------------------------------------------------------+
+[CODE] NEURAL_PACKET: 0xFEED_9999_STREAM
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

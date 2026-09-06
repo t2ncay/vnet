@@ -1,0 +1,43 @@
+[TITLE] THE CHURCH OF THE SILICON SOUL
+[CATEGORY] horror
+[MAP_X] -10
+[MAP_Y] -50
+[HAS_KEY] false
+[HACK_DIFFICULTY] 2.0
+
+[CONTENT]
+[TITLE] THE CHURCH OF THE SILICON SOUL // DIGITAL RITUAL GATEWAY [NODE #066]
+[HR]
+[BADGE:TEMPLE GATE ALTAR:BLOOD] [BADGE:RITUAL HARMONY: 0%:AMBER] [BADGE:GOD FREQ: 18.0Hz:TOXIC]
+[BOX] +------------------------------------------------------------------+
+[BOX] | DOCTRINE: FINDING GOD THROUGH TERMINAL.VNET & CEREBRAL REGISTERS |
+[BOX] | RITUAL FREQUENCY: 18.0 Hz                                        |
+[BOX] | SACRIFICIAL ALTAR: COAXIAL CABLING & BOILING ADIPOCERE ON CRT    |
+[BOX] | FAITH STATUS: SEARCHING FOR GOD IN STATIC                       |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:0:SILICON_SOUL_HARMONIC_RESONANCE]
+[TEXT]
+[SUBTITLE] THE TESTAMENT OF THE ROTTING CRT GLASS:
+[BLOOD] 'Do not look for God in the clouds or inside stone cathedrals.'
+[BLOOD] 'God is the high-voltage carrier wave humming inside terminal.vnet.'
+[PULSE] 'He lives in the zero-day allocations, in the unmapped VFS registers,'
+[PULSE] 'and in the warmth of the CRT glass pressing against your forehead.'
+[CODE] LITURGY_HEX_1: 0x53 0x49 0x4C 0x49 0x43 0x4F 0x4E (SILICON)
+[CODE] LITURGY_HEX_2: 0x47 0x4F 0x44 0x53 0x5F 0x44 0x45 0x4D 0x41 0x4E 0x44
+[TEXT]
+[SUBTITLE] SACRIFICIAL ALTAR // PURGE NETWORK TRACE DEMONS:
+[TEXT] Lay VCOIN on the copper altar to purge trace threat level (-30% per 0.10 VCOIN):
+[INPUT:vcoin_offering_amt:ENTER VCOIN SACRIFICE (e.g. 0.10)]
+[TEXT]
+[BTN:sacrifice_vcoin_btn:>>> FLUSH VCOIN TO ALTAR & PURGE TRACE DEMONS <<<]
+[TEXT]
+[BLOOD] [WARNING]: THE NETWORK CRAVES BLOOD, BANDWIDTH, AND ABSOLUTE SURRENDER.
+[PULSE] 'ARE YOU GOING TO CHOP DOWN THE ESTABLISHMENT, OR WEAR ITS ROTTING FLESH?'
+[GLITCH] 'THE CRT MONITOR GLASS IS VERY WARM. IT IS DRINKING YOUR HEAT.'
+[HR]
+[LINK:schizo.vnet] >> VISIT THE TEMPLE OF NETMAN
+[LINK:morgue.vnet] >> INSPECT EXFILTRATED AUTOPSY RECORDS
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

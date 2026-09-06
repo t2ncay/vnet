@@ -1,0 +1,41 @@
+[TITLE] SECTOR 09 CORRUPTED DATA VAULT
+[CATEGORY] core
+[MAP_X] 25
+[MAP_Y] -25
+[HAS_KEY] true
+[HACK_DIFFICULTY] 2.0
+
+[CONTENT]
+[TITLE] SECTOR 09 CORRUPTED DATA VAULT // /VFS/MEMORY/STACK
+[HR]
+[BADGE:CORE NODE #002:BLOOD] [BADGE:VFS ROOT MEMORY:AMBER] [BADGE:BIT-ROT 94%:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | MOUNT POINT: /vfs/sys/vault_root | SECTOR: SUB-LEVEL 4 B3-WEST  |
+[BOX] | STORAGE TYPE: BIOLOGICAL NYLON BUS (SEVERED CORTEX STACK)       |
+[BOX] | INTEGRITY: CRITICAL BIT ROT | RECOVERY STATE: OVERRIDE REQUIRED |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:94:SECTOR_BIT_ROT_ENTROPY]
+[TEXT]
+[ART:skull]
+[TEXT]
+[SUBTITLE] RECOVERED CEREBRAL MEMORY DUMP (SUBJECT #409-B / T. VANCE):
+[CODE] 00000000: 4F 70 65 6E 53 53 4C 20 4B 65 79 20 44 75 6D 70 20 [VANCE]
+[CODE] 00000020: 53 59 53 5F 45 52 52 4F 52 3A 20 4E 4F 44 45 5F 30 39 [BLACKOUT]
+[CODE] 00000040: 88 9A BC EF 11 22 33 44 55 66 77 88 99 AA BB CC [CORRUPT]
+[TEXT]
+[SUBTITLE] FORENSIC HARDWARE & DECOMPOSITION LOGS:
+[TEXT] 'The storage drives in this vault aren't magnetic silicon disks.'
+[TEXT] 'They are preserved spinal cords and optic nerve fibers extracted from'
+[TEXT] 'whistleblowers at morgue.vnet, submerged in jars of conductive formaldehyde.'
+[TEXT]
+[SUBTITLE] VFS ROOT GATEWAY DECRYPTION & OVERRIDE MATRIX:
+[TEXT] This vault houses the master allocation index for all 8 cryptographic keys.
+[BLOOD] OVERLOAD TACTIC: Executing 'overload vault.vnet' in CLI [TAB] locks this core node.
+[HR]
+[LINK:terminal.vnet] >> ACCESS MASTER DECRYPTION GATEWAY
+[LINK:morgue.vnet] >> INSPECT EXFILTRATED AUTOPSY & CORTEX STACKS
+[LINK:crypto.vnet] >> MINE VCOIN & LAUNDER TUMBLER POOLS
+[LINK:vnet.dir] << CLOSE VAULT & RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

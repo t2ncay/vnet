@@ -1,0 +1,45 @@
+[TITLE] LUNA.VNET - SILENT_ASPHYXIA
+[CATEGORY] special
+[MAP_X] -30
+[MAP_Y] 60
+[HAS_KEY] false
+[HACK_DIFFICULTY] 4.0
+
+[CONTENT]
+[GLITCH] ───〔 0x099 // LUNA.VNET // SILENT_ASPHYXIA 〕───
+[TITLE]  ♡  L U N A  |  月  //  y o u r  f a v  e x e c u t i o n e r
+[HR]
+[BADGE:STATUS: STALKING YOU] [BADGE:PULSE: 38 BPM] [BADGE:TARGET: LOCKED:BLOOD]
+[TEXT]
+[BOX] +-- [ MEMORY MEMOIR : SUBJECT #099 ] --------------------------+
+[BOX] |  "i love how warm the server racks get when someone panics."  |
+[BOX] |  "softly, softly... until your connection snaps in my hands."|
+[BOX] |  SPECIALTY : Surgical memory severing & quiet port intrusion. |
+[BOX] |  FEE       : 5.00 VCOIN (and a piece of your silence)          |
+[BOX] +---------------------------------------------------------------+
+[TEXT]
+[GAUGE:99:HEARTBEAT_SYNCHRONIZATION]
+[TEXT]
+[IMG:luna]
+[TEXT]
+[SUBTITLE] ░▒▓ WHISPERS FROM THE SEWER CONDUITS
+[CODE] [LOG_099] 'i don't cut the cable. i make the wire forget it ever carried life.'
+[TEXT]  │ 'Have you ever heard a data stream bleed out in silence?'
+[TEXT]  │ 'I crawl through the wet, dark sumps under Sector 09... so cold. so peaceful.'
+[TEXT]  │ 'I press my cheek against your socket. I can hear your fans spinning faster.'
+[BLOOD]  │ » "kuriyoru desu... (i'm coming inside now...)"
+[TEXT]
+[SUBTITLE] ░▒▓ DISPATCH TERMINAL // WHO ARE WE ERASING TODAY?
+[INPUT:luna_target_port:» TARGET PORT ADDRESS (e.g. 8012)]
+[TEXT]
+[BTN:deploy_luna_btn:[ ♡ RELEASE LUNA INTO THEIR SOCKET // 3.50 VCOIN ♡ ]]
+[TEXT]
+[BLOOD] ⚠ 'once i start sliding down the wire, i don't stop. not even if you beg.'
+[PULSE] 'can you feel the cold draft behind your neck right now?'
+[GLITCH] 'kuriyoru desu...  kuriyoru desu...  kuriyoru desu...'
+[HR]
+[LINK:bounty.vnet] ◆ ACCESS KAGUYA TRIAL & PEER BOUNTY INDEX
+[LINK:weaponry.vnet] ◆ INSPECT VEKTRA PMC ARMORY EXPORTS
+[LINK:vnet.dir] ◄ ESCAPE BACK TO SAFETY
+[HR]
+[/CONTENT]

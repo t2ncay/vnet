@@ -167,6 +167,7 @@ $essentialFiles = @(
     "src\client\desktop\desktop.cpp",
     "src\client\desktop\desktop.h",
     "src\shared\vnet.cpp",
+    "src\shared\vex_parser.cpp",
     "src\shared\vnet_sites.cpp"
 )
 

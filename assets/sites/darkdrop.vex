@@ -1,0 +1,35 @@
+[TITLE] PHYSICAL DEAD-DROP GPS REGISTRY
+[CATEGORY] black_market
+[MAP_X] 40
+[MAP_Y] 25
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.5
+
+[CONTENT]
+[TITLE] PHYSICAL DEAD-DROP GPS REGISTRY // CONTRABAND LOCATOR
+[HR]
+[BADGE:GPS REGISTRY:BLOOD] [BADGE:ENCRYPTED DROPS:AMBER] [BADGE:COURIER SWARM:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | SYSTEM ROLE: AUTONOMOUS DEAD-DROP COORDINATE MATRIX             |
+[BOX] | DISPATCH   : SUBTERRANEAN SEWER SUMPS & SUBWAY DUCTS            |
+[BOX] | INTEGRITY  : PGP SIGNED BY VENDOR_0x77 // UNTRACED DISPATCH     |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:88:DEAD_DROP_CACHE_AVAILABILITY]
+[TEXT]
+[SUBTITLE] ACTIVE PHYSICAL DEAD-DROP COORDINATES:
+[BOX] +-----------------------------------------------------------------+
+[BOX] | DROP #901: SECTOR 09 SUBWAY SUMP B3  | CONTENTS: SUPPRESSED AR-9|
+[BOX] | COORD    : 39.9334° N, 32.8597° E    | STATUS  : UNCLAIMED      |
+[BOX] +-----------------------------------------------------------------+
+[BOX] | DROP #902: SUBSTATION 04 DRAIN PIPE  | CONTENTS: COLD WALLET 5.0|
+[BOX] | COORD    : 41.0082° N, 28.9784° E    | STATUS  : LOCKED         |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[BLOOD] [WARNING]: DO NOT ACCESS DROPS WITHOUT ACTIVE PASSPORT MASKING.
+[PULSE] 'THE PACKAGE IS WAITING IN THE DARK. SO IS THE PMC BREACH TEAM.'
+[HR]
+[LINK:silkroad.vnet] >> PURCHASE CONTRABAND LOTS VIA ESCROW
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

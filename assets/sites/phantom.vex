@@ -1,0 +1,19 @@
+[TITLE] PHANTOM NODE PROTOCOL
+[CATEGORY] hub
+[MAP_X] -60
+[MAP_Y] 30
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.5
+
+[CONTENT]
+[TITLE] PHANTOM NODE PROTOCOL
+[HR]
+[TEXT] Dynamic shifting proxy node that changes IP every 60 seconds.
+[BOX] +---------------------------------------------------------+
+[BOX] | MIGRATION TIMER: 34s REMAINING | STATUS: SHIFTING       |
+[BOX] +---------------------------------------------------------+
+[CODE] PHANTOM_HASH: 0xPHANTOM_ROUTE_9
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

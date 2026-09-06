@@ -1,0 +1,20 @@
+[TITLE] RAW HEX MEMORY DUMPS
+[CATEGORY] hub
+[MAP_X] -60
+[MAP_Y] -10
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.5
+
+[CONTENT]
+[TITLE] RAW HEX MEMORY DUMPS
+[HR]
+[TEXT] Direct hex dumps from unallocated cluster sectors across vnet servers.
+[BOX] +---------------------------------------------------------+
+[BOX] | SECTOR SIZE: 64 MB | INTEGRITY: CORRUPTED               |
+[BOX] +---------------------------------------------------------+
+[CODE] 0000FF00: AA BB CC DD EE FF 00 11 22 33 44 55 66 77 88 99
+[HEX_STREAM:0x88F9:32:18]
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

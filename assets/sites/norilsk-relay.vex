@@ -1,0 +1,34 @@
+[TITLE] NORILSK ARCTIC OPTICAL TRANSIT
+[CATEGORY] infrastructure
+[MAP_X] 50
+[MAP_Y] 40
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.5
+
+[CONTENT]
+[TITLE] NORILSK ARCTIC OPTICAL TRANSIT // GATEWAY SECTOR 00-NORTH
+[HR]
+[BADGE:PERMAFROST ARRAY:BLOOD] [BADGE:OLD NET TUNNEL:TOXIC] [BADGE:TEMP -38 C:AMBER]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | FACILITY  : SUB-SURFACE NICKEL MINE 09 // COPPER TRUNK RELAY    |
+[BOX] | FUNCTION  : UNENCRYPTED VNET PASSTHROUGH TO PRE-2014 OLD NET   |
+[BOX] | COOLING   : NATURAL SUB-ZERO PERMAFROST & LIQUID NITROGEN BUS   |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:92:OLD_NET_CARRIER_SIGNAL_PURITY]
+[TEXT]
+[SUBTITLE] PHYSICAL TELEMETRY & SUB-SURFACE OPTICAL BRIDGE:
+[TEXT] 'Norilsk is the last place on Earth where the signal doesn't burn.'
+[TEXT] 'Outside the permafrost, New Net algorithms monitor every synaptic drop,'
+[TEXT] 'Here, deep inside the subterranean nickel shafts, ancient Soviet copper lines'
+[TEXT] 'and sub-zero permafrost shield our sockets from Directorate 7 neural probes.'
+[CODE] GATEWAY_SOCKET_STATUS: PASS-THROUGH TUNNEL OPEN // PORT 8000 BRIDGED
+[TEXT]
+[BLOOD] 'DISCONNECT YOUR NEURAL LIMITER BEFORE ENGAGING THE HANDSHAKE.'
+[PULSE] 'THE AIR OUTSIDE IS MINUS 40. INSIDE THE OLD NET, IT IS ALWAYS SPRING.'
+[HR]
+[LINK:oldnet-archive.vnet] >> ENTER OLD NET SANCTUARY GATEWAY
+[LINK:frostline.vnet] >> CHECK SMUGGLER TRANSIT MANIFESTS TO NORILSK
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

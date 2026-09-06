@@ -1,0 +1,19 @@
+[TITLE] SUB-CELLULAR TELEMETRY OVERRIDE
+[CATEGORY] special
+[MAP_X] 30
+[MAP_Y] 60
+[HAS_KEY] false
+[HACK_DIFFICULTY] 2.0
+
+[CONTENT]
+[TITLE] SUB-CELLULAR TELEMETRY OVERRIDE
+[HR]
+[TEXT] Experimental bio-metric monitoring and pulse telemetry node.
+[BOX] +---------------------------------------------------------+
+[BOX] | SUBJECTS ONLINE: 812 | SIGNAL: SYNCHRONIZED             |
+[BOX] +---------------------------------------------------------+
+[CODE] BIO_HASH: 0xCELL_9011_DNA_SYNC
+[HR]
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

@@ -1,0 +1,29 @@
+[TITLE] CITY WIDE CCTV BACKDOOR MESH
+[CATEGORY] infrastructure
+[MAP_X] -50
+[MAP_Y] -20
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.5
+
+[CONTENT]
+[TITLE] CITY WIDE CCTV BACKDOOR MESH // MULTIPLEX FEED
+[HR]
+[BADGE:4,192 CAMERAS ONLINE:TOXIC] [BADGE:ACTIVE CHANNEL: CAM_01:AMBER]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | FEED FEEDBACK : OPTICAL RETINAL SCANNER ACTIVE VIA PROJECT HORUS |
+[BOX] | STREAM METHOD : UNENCRYPTED PROMISCUOUS UDP MULTICAST BUS       |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[SUBTITLE] LIVE FEED: SECTOR 4 METRO GRID INTERSECTION
+[TEXT] Patrol cruisers parked outside site 9-B. Optical recognition matching faces.
+[TEXT]
+[SUBTITLE] MANUAL CAMERA CHANNEL SWITCHER:
+[BTN:cam_select_1:>>> CHANNEL 01: METRO <<<]
+[BTN:cam_select_2:>>> CHANNEL 02: ROOM 402 <<<]
+[BTN:cam_select_3:>>> CHANNEL 03: ASYLUM <<<]
+[BTN:cam_select_4:>>> CHANNEL 04: SAT-99 <<<]
+[HR]
+[LINK:eye.vnet] >> CROSS-CHECK RETINAL SCANS AT PROJECT HORUS
+[LINK:vnet.dir] << RETURN TO DIRECTORY
+[HR]
+[/CONTENT]

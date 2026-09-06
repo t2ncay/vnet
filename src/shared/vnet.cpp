@@ -6,6 +6,8 @@
 #include "raylib.h"
 #include "desktop.h"
 #include "../client/raid/raid.h"
+#include "vex_parser.h"
+#include "vnet_sites.h"
 
 #include <cstdio>
 #include <cstdlib>
