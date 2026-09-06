@@ -1197,6 +1197,17 @@ void ProcessCommand(const char* cmd) {
             return;
         }
         
+        if (args && g_player.raidStage == RAID_STAGE_CHOICE) {
+            int choice = atoi(args);
+            if (choice >= 1 && choice <= 3) {
+                HandleRaidChoice(args);
+                return;
+            } else {
+                PushCliLog("[RAID]: Invalid choice! Use 1, 2, or 3");
+                return;
+            }
+        }
+        
         // Active raid - show status
         const char* stageNames[] = {"ALERT", "CHOICE", "MINIGAME", "RESULT", "COMPLETE"};
         const char* typeNames[] = {"EVADE", "ESCAPE", "BURN"};
@@ -1223,6 +1234,7 @@ void ProcessCommand(const char* cmd) {
                     PushCliLog("[RAID]: TYPE: purge <target>");
                     break;
             }
+            PushCliLog("[RAID]: You have %.0fs remaining!", GetRaidRemainingTime());
         }
         return;
     }

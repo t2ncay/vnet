@@ -274,6 +274,7 @@ void Desktop::DrawBrowser(const AppWindow& win) {
     
     // ---- NAVIGATION BUTTONS ----
     Vector2 refMouse = GetRefMousePos();
+    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
     
     // Back button
     bool backHover = RefRectHover(navX, navY, navSize, navSize, refMouse);
@@ -305,17 +306,113 @@ void Desktop::DrawBrowser(const AppWindow& win) {
     float urlW = cw - (urlX - cx) - 20;
     float urlH = navSize;
     
-    DrawScaledRect(urlX, urlY, urlW, urlH, COLOR_URLBAR);
-    DrawScaledRectLines(urlX, urlY, urlW, urlH, COLOR_BORDER);
+    // ============================================================
+    // FIX: Track if URL bar is focused
+    // ============================================================
+    static bool urlBarFocused = false;
+    static char urlInputBuffer[256] = "";
+    static float cursorBlinkTimer = 0.0f;
+    static bool showCursor = true;
     
-    // Show current or pending URL
-    char urlDisplay[192];
-    if (g_player.isConnecting) {
-        snprintf(urlDisplay, sizeof(urlDisplay), "vnet://%s", g_player.pendingURL);
-    } else {
-        snprintf(urlDisplay, sizeof(urlDisplay), "vnet://%s", g_player.currentURL);
+    bool urlHover = RefRectHover(urlX, urlY, urlW, urlH, refMouse);
+    
+    // Click to focus
+    if (clicked && urlHover) {
+        urlBarFocused = true;
+        // Copy current URL to input buffer when focusing
+        if (strlen(urlInputBuffer) == 0) {
+            strncpy(urlInputBuffer, g_player.currentURL, sizeof(urlInputBuffer) - 1);
+        }
+    } else if (clicked && !urlHover) {
+        urlBarFocused = false;
     }
-    DrawScaledText(urlDisplay, urlX + 8, urlY + 8, 11, g_player.isConnecting ? COLOR_AMBER : COLOR_CYAN);
+    
+    // Cursor blink
+    cursorBlinkTimer += GetFrameTime();
+    if (cursorBlinkTimer >= 0.5f) {
+        cursorBlinkTimer = 0.0f;
+        showCursor = !showCursor;
+    }
+    
+    // ---- URL BAR DRAWING ----
+    DrawScaledRect(urlX, urlY, urlW, urlH, urlBarFocused ? Color{16, 20, 30, 255} : COLOR_URLBAR);
+    DrawScaledRectLines(urlX, urlY, urlW, urlH, urlBarFocused ? COLOR_BLOOD : COLOR_BORDER);
+    
+    // Show URL text
+    char urlDisplay[256];
+    if (urlBarFocused) {
+        const char* cursor = showCursor ? "_" : "";
+        if (strlen(urlInputBuffer) == 0 && !showCursor) {
+            snprintf(urlDisplay, sizeof(urlDisplay), "%s", cursor);
+        } else {
+            snprintf(urlDisplay, sizeof(urlDisplay), "%s%s", urlInputBuffer, cursor);
+        }
+    } else {
+        if (g_player.isConnecting) {
+            snprintf(urlDisplay, sizeof(urlDisplay), "vnet://%s", g_player.pendingURL);
+        } else {
+            snprintf(urlDisplay, sizeof(urlDisplay), "vnet://%s", g_player.currentURL);
+        }
+    }
+    
+    Color urlColor = urlBarFocused ? COLOR_TOXIC : (g_player.isConnecting ? COLOR_AMBER : COLOR_CYAN);
+    DrawScaledText(urlDisplay, urlX + 8, urlY + 8, 11, urlColor);
+    
+    // ---- URL BAR INPUT HANDLING ----
+    if (urlBarFocused) {
+        // Character input
+        int key = GetCharPressed();
+        while (key > 0) {
+            if (key >= 32 && key <= 126) {
+                size_t len = strlen(urlInputBuffer);
+                if (len < sizeof(urlInputBuffer) - 1) {
+                    urlInputBuffer[len] = (char)key;
+                    urlInputBuffer[len + 1] = '\0';
+                }
+            }
+            key = GetCharPressed();
+        }
+        
+        // Backspace
+        if (IsKeyPressed(KEY_BACKSPACE)) {
+            int len = (int)strlen(urlInputBuffer);
+            if (len > 0) {
+                urlInputBuffer[len - 1] = '\0';
+            }
+        }
+        
+        // Enter - Navigate!
+        if (IsKeyPressed(KEY_ENTER) && strlen(urlInputBuffer) > 0) {
+            // Clean the URL
+            char cleanURL[256];
+            strncpy(cleanURL, urlInputBuffer, sizeof(cleanURL) - 1);
+            cleanURL[sizeof(cleanURL) - 1] = '\0';
+            
+            // Remove vnet:// prefix if present
+            if (strncmp(cleanURL, "vnet://", 7) == 0) {
+                memmove(cleanURL, cleanURL + 7, strlen(cleanURL) - 6);
+            }
+            
+            // If no .vnet and not vnet.dir, add .vnet
+            if (strstr(cleanURL, ".vnet") == NULL && strcmp(cleanURL, "vnet.dir") != 0) {
+                strcat(cleanURL, ".vnet");
+            }
+            
+            // Navigate!
+            TriggerRouteNavigation(cleanURL);
+            
+            // Clear input buffer and unfocus
+            urlInputBuffer[0] = '\0';
+            urlBarFocused = false;
+            PushCliLog("[BROWSER]: Navigated to %s", cleanURL);
+        }
+        
+        // Escape - unfocus
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            urlBarFocused = false;
+            urlInputBuffer[0] = '\0';
+        }
+    }
     
     // ---- PAGE CONTENT ----
     float gameX = cx + 8;
@@ -366,11 +463,11 @@ void Desktop::DrawBrowser(const AppWindow& win) {
     DrawScaledText(status, cx + 12, statusY + 5, 9, COLOR_GHOST);
     
     // ---- BUTTON INTERACTIONS ----
-    bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
-    
     if (clicked && !g_player.isConnecting) {
         if (homeHover) {
             TriggerRouteNavigation("vnet.dir");
+            urlBarFocused = false;
+            urlInputBuffer[0] = '\0';
         }
         else if (reloadHover) {
             RefreshPage();
@@ -378,6 +475,8 @@ void Desktop::DrawBrowser(const AppWindow& win) {
         }
         else if (backHover && strlen(g_player.prevURL) > 0) {
             TriggerRouteNavigation(g_player.prevURL);
+            urlBarFocused = false;
+            urlInputBuffer[0] = '\0';
         }
         else if (fwdHover) {
             PushCliLog("[BROWSER]: Forward navigation not implemented yet");

@@ -26,11 +26,22 @@ void ProcessRaidCommand(const char* token, const char* args, const char* cmd) {
             return;
         }
         
+        // ============================================================
+        // FIX: Handle "raid 1", "raid 2", "raid 3" choices
+        // ============================================================
+        if (args && g_player.raidStage == RAID_STAGE_CHOICE) {
+            int choice = atoi(args);
+            if (choice >= 1 && choice <= 3) {
+                HandleRaidChoice(args);
+                return;
+            }
+        }
+        
         // Active raid - show status
         const char* stageNames[] = {"ALERT", "CHOICE", "MINIGAME", "RESULT", "COMPLETE"};
         const char* typeNames[] = {"EVADE", "ESCAPE", "BURN"};
         
-        PushCliLog("[RAID]: ⚡ ACTIVE FEDERAL E-RAID!");
+        PushCliLog("[RAID]: ACTIVE FEDERAL E-RAID!");
         PushCliLog("[RAID]: Stage: %s", stageNames[g_player.raidStage + 1]);
         PushCliLog("[RAID]: Type: %s", typeNames[g_player.raidType]);
         PushCliLog("[RAID]: Time remaining: %.1fs", GetRaidRemainingTime());
@@ -56,8 +67,8 @@ void ProcessRaidCommand(const char* token, const char* args, const char* cmd) {
         return;
     }
     
-    // === RAID CHOICE ===
-    if (strcmp(token, "raidchoice") == 0) {
+    // === RAID CHOICE (alternative format) ===
+    if (strcmp(token, "raidchoice") == 0 || strcmp(token, "r") == 0) {
         if (!args) {
             PushCliLog("[RAID]: Usage: raidchoice <1|2|3>");
             return;

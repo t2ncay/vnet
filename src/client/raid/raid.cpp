@@ -75,7 +75,7 @@ void TriggerFederalRaid(void) {
     // Random timing
     g_player.raidActive = true;
     g_player.raidTimer = 0.0f;
-    g_player.raidResponseTime = 18.0f + ((float)(rand() % 40) / 10.0f); // 18-22s
+    g_player.raidResponseTime = 15.0f;
     g_player.raidStage = RAID_STAGE_ALERT;
     g_player.raidSuccess = false;
     g_player.raidAlertTimer = 0.0f;
@@ -184,7 +184,6 @@ void UpdateRaid(float dt) {
     // --- STAGE: CHOICE (waiting for player to pick) ---
     if (g_player.raidStage == RAID_STAGE_CHOICE) {
         if (g_player.raidTimer > g_player.raidResponseTime) {
-            // Player didn't choose - automatic fail
             PushCliLog("[FEDERAL RAID]: ⚠ NO RESPONSE! FEDERAL SCANNERS LOCKING ON...");
             ApplyRaidFailure();
             return;
@@ -195,7 +194,6 @@ void UpdateRaid(float dt) {
     // --- STAGE: MINIGAME ---
     if (g_player.raidStage == RAID_STAGE_MINIGAME) {
         if (g_player.raidTimer > g_player.raidResponseTime) {
-            // Time's up!
             if (!g_player.raidSuccess) {
                 PushCliLog("[FEDERAL RAID]: ⚠ TIME'S UP! FEDERAL AGENTS BREACHING...");
                 ApplyRaidFailure();
@@ -235,28 +233,40 @@ void HandleRaidChoice(const char* input) {
     }
     
     if (g_player.raidStage != RAID_STAGE_CHOICE) {
-        PushCliLog("[RAID]: Invalid stage for choice.");
+        PushCliLog("[RAID]: You already made your choice!");
         return;
     }
     
     int choice = atoi(input);
+    
+    // Also handle "evade", "escape", "burn" text input
+    if (choice == 0) {
+        if (strcmp(input, "evade") == 0) choice = 1;
+        else if (strcmp(input, "escape") == 0) choice = 2;
+        else if (strcmp(input, "burn") == 0) choice = 3;
+    }
+    
     if (choice < 1 || choice > 3) {
-        PushCliLog("[FEDERAL RAID]: INVALID CHOICE! (1-3)");
+        PushCliLog("[FEDERAL RAID]: INVALID CHOICE! Use 1, 2, or 3");
+        PushCliLog("[FEDERAL RAID]:   raid 1  - EVADE (deploy decoys)");
+        PushCliLog("[FEDERAL RAID]:   raid 2  - ESCAPE (port migration)");
+        PushCliLog("[FEDERAL RAID]:   raid 3  - BURN (scorched earth)");
         return;
     }
     
     g_player.raidType = choice - 1;
     g_player.raidStage = RAID_STAGE_MINIGAME;
     g_player.raidTimer = 0.0f;
-    g_player.raidResponseTime = 18.0f + ((float)(rand() % 40) / 10.0f); // 18-22s
+    g_player.raidResponseTime = 15.0f;  // 15 seconds for minigame
     g_player.raidSuccess = false;
     g_player.raidInput[0] = '\0';
     
     const char* typeNames[] = {"EVADE", "ESCAPE", "BURN"};
     PushCliLog("[FEDERAL RAID]: STRATEGY SELECTED: %s", typeNames[g_player.raidType]);
     PushCliLog("[FEDERAL RAID]: INITIATING %s PROTOCOL...", typeNames[g_player.raidType]);
+    PushCliLog("[FEDERAL RAID]: YOU HAVE %.0fs TO COMPLETE!", g_player.raidResponseTime);
     
-    // Show minigame instructions based on type
+    // Show minigame instructions
     switch (g_player.raidType) {
         case RAID_EVADE:
             PushCliLog("[RAID]: TYPE: decoy <node> <port>");
@@ -265,16 +275,16 @@ void HandleRaidChoice(const char* input) {
             break;
         case RAID_ESCAPE:
             PushCliLog("[RAID]: TYPE: patch <port>");
-            PushCliLog("[RAID]: Choose a new port to migrate to.");
+            PushCliLog("[RAID]: Choose a new port to migrate to (8001-8999).");
             PushCliLog("[RAID]: Example: patch 8050");
             break;
         case RAID_BURN:
             PushCliLog("[RAID]: TYPE: purge <target>");
             PushCliLog("[RAID]: Choose a log file to purge.");
+            PushCliLog("[RAID]: Available: access.log, audit.bin, hash.log, config.sys, vfs_cache, route.db, ice_log, crypto_mem");
             PushCliLog("[RAID]: Example: purge access.log");
             break;
     }
-    PushCliLog("[FEDERAL RAID]: YOU HAVE %.0fs TO RESPOND!", g_player.raidResponseTime);
 }
 
 // ============================================================
@@ -284,7 +294,7 @@ void HandleRaidChoice(const char* input) {
 void ProcessRaidMinigameInput(const char* input) {
     if (!g_player.raidActive) return;
     if (g_player.raidStage != RAID_STAGE_MINIGAME) return;
-    if (g_player.raidSuccess) return;  // Already succeeded
+    if (g_player.raidSuccess) return;
     
     strncpy(g_player.raidInput, input, 63);
     g_player.raidInput[63] = '\0';
@@ -297,7 +307,7 @@ void ProcessRaidMinigameInput(const char* input) {
             // decoy <node> <port>
             char node[32] = {0}, port[16] = {0};
             if (sscanf(input, "decoy %31s %15s", node, port) == 2) {
-                // Check if node exists (from assigned sites)
+                // Check if node exists in assigned sites
                 bool nodeExists = false;
                 for (int i = 0; i < g_player.assignedCount; i++) {
                     if (strcmp(g_player.assignedSites[i], node) == 0) {
@@ -305,11 +315,14 @@ void ProcessRaidMinigameInput(const char* input) {
                         break;
                     }
                 }
-                if (nodeExists && atoi(port) > 0 && atoi(port) < 65535) {
+                int portNum = atoi(port);
+                if (nodeExists && portNum > 0 && portNum < 65535) {
                     success = true;
                     resultMsg = "Decoy deployed! Federal scanners redirected!";
                 } else {
                     resultMsg = "Invalid node or port!";
+                    if (!nodeExists) PushCliLog("[RAID]: Node '%s' not in your assigned sites", node);
+                    if (portNum <= 0 || portNum >= 65535) PushCliLog("[RAID]: Invalid port (1-65534)");
                 }
             } else {
                 resultMsg = "Usage: decoy <node> <port>";
@@ -326,7 +339,7 @@ void ProcessRaidMinigameInput(const char* input) {
                     g_player.port = newPort;
                     resultMsg = "Port migrated successfully! Trace reset!";
                 } else {
-                    resultMsg = "Invalid port! (8001-8999)";
+                    resultMsg = "Invalid port! Use 8001-8999";
                 }
             } else {
                 resultMsg = "Usage: patch <port>";
@@ -337,6 +350,7 @@ void ProcessRaidMinigameInput(const char* input) {
             // purge <target>
             char target[32] = {0};
             if (sscanf(input, "purge %31s", target) == 1) {
+                // Allow any of the target files
                 bool validTarget = false;
                 for (int i = 0; i < RAID_TARGET_FILE_COUNT; i++) {
                     if (strcmp(RAID_TARGET_FILES[i], target) == 0) {
@@ -349,6 +363,7 @@ void ProcessRaidMinigameInput(const char* input) {
                     resultMsg = "System purged! Logs wiped, trace reduced!";
                 } else {
                     resultMsg = "Invalid target file!";
+                    PushCliLog("[RAID]: Available: access.log, audit.bin, hash.log, config.sys, vfs_cache, route.db, ice_log, crypto_mem");
                 }
             } else {
                 resultMsg = "Usage: purge <target>";
@@ -365,7 +380,6 @@ void ProcessRaidMinigameInput(const char* input) {
         ApplyRaidSuccess();
     } else {
         PushCliLog("[FEDERAL RAID]: ❌ %s", resultMsg);
-        // Give one more chance or fail
         float remaining = g_player.raidResponseTime - g_player.raidTimer;
         if (remaining <= 0.0f) {
             PushCliLog("[FEDERAL RAID]: ⚠ TIME'S UP!");
