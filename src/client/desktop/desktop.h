@@ -1,6 +1,6 @@
 #pragma once
 #include "raylib.h"
-#include "music_player.h"
+#include "./widgets/music_player.h"
 
 #include <cstring>
 #include <string>

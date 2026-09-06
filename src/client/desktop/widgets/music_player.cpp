@@ -307,7 +307,7 @@ void MusicPlayer::Draw(float x, float y, float width, float height) {
     DrawScaledLine(x + 4, y + 4 + headerH, x + width - 4, y + 4 + headerH, Color{30, 35, 50, 100});
     
     // VEKTRA OS styled header
-    DrawScaledText("◈ VEKTRA // AUDIO", x + 14, y + 12, 11, Color{0, 220, 240, 200});
+    DrawScaledText("VEKTRA // AUDIO", x + 14, y + 12, 11, Color{0, 220, 240, 200});
     
     // Status indicator with pulse
     Color statusCol = m_playlist.isPlaying ? 
@@ -317,14 +317,14 @@ void MusicPlayer::Draw(float x, float y, float width, float height) {
     DrawScaledText(m_playlist.isPlaying ? "LIVE" : "IDLE", x + width - 56, y + 11, 9, 
                    m_playlist.isPlaying ? COLOR_TOXIC : COLOR_GHOST);
     
-    // Close button
-    float closeX = x + width - 22;
-    bool closeHover = RefRectHover(closeX, y + 6, 16, 16, refMouse);
-    DrawScaledRect(closeX, y + 6, 16, 16, closeHover ? Color{220, 20, 40, 180} : Color{30, 35, 50, 120});
-    DrawScaledText("✕", closeX + 4, y + 8, 10, closeHover ? COLOR_BLACK : COLOR_GHOST);
-    if (clicked && closeHover) {
-        PushCliLog("[MUSIC]: Widget minimized");
-    }
+    // [ DEPRECATED ] Close button
+    // float closeX = x + width - 22;
+    // bool closeHover = RefRectHover(closeX, y + 6, 16, 16, refMouse);
+    // DrawScaledRect(closeX, y + 6, 16, 16, closeHover ? Color{220, 20, 40, 180} : Color{30, 35, 50, 120});
+    // DrawScaledText("✕", closeX + 4, y + 8, 10, closeHover ? COLOR_BLACK : COLOR_GHOST);
+    // if (clicked && closeHover) {
+    //    PushCliLog("[MUSIC]: Widget minimized");
+    // }
     
     float contentY = y + headerH + 8.0f;
     float contentH = height - headerH - 12.0f;

@@ -2,7 +2,7 @@
 #include "vnet.h"
 #include "player.h"
 #include "render.h"
-#include "music_player.h"
+#include "./desktop/widgets/music_player.h"
 #include "vnet_client.h"
 #include "vnet_protocol.h" 
 #include "desktop.h"
