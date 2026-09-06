@@ -1,4 +1,4 @@
-[TITLE] MASTER DECRYPTION GATEWAY TERMINAL
+[TITLE] MASTER DECRYPTION GATEWAY // THE KEYS TO THE KINGDOM
 [CATEGORY] core
 [MAP_X] 25
 [MAP_Y] 25
@@ -31,6 +31,19 @@
 [BOX] | SLOT 07: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_7 REQ)    |
 [BOX] | SLOT 08: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_8 REQ)    |
 [BOX] +-----------------------------------------------------------------+
+[TEXT]
+[SUBTITLE] THE WHISTLEBLOWER'S GIFT (d34d_7dp):
+[TEXT] 'd34d_7dp was a senior systems architect at Vektra Corporation.'
+[TEXT] 'He had access to the master key allocation system. He watched'
+[TEXT] 'the 2014 blackout from the inside. He saw the cover-up.'
+[TEXT] 'He knew about the six agents before they were deployed.'
+[TEXT] 'In his final transmission, he wrote: "The keys are not codes.'
+[TEXT] 'They are memories. Each key unlocks a fragment of what happened'
+[TEXT] 'in the summer of 2014. Find them. Assemble them. And when you do,'
+[TEXT] 'the terminal will open. Not just the network—the truth."'
+[TEXT] 'He was executed by Directorate 7 two hours after sending that message.'
+[BLOOD] 'His body was never recovered. But his words are still here.'
+[PULSE] 'Waiting. For someone who can read between the bytes.'
 [TEXT]
 [SUBTITLE] DIRECT VFS ROOT DECRYPTION PAYLOAD INJECTION:
 [TEXT] Enter all 8 exfiltrated key codes below or execute 'win <k1>..<k8>' in CLI [TAB]:

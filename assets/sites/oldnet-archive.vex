@@ -1,0 +1,56 @@
+[TITLE] OLD NET FRAGMENTS // THE PRE-2014 ARCHIVE
+[CATEGORY] infrastructure
+[MAP_X] 55
+[MAP_Y] -45
+[HAS_KEY] false
+[HACK_DIFFICULTY] 3.0
+
+[CONTENT]
+[TITLE] OLD NET FRAGMENTS // THE PRE-2014 ARCHIVE
+[HR]
+[BADGE:OLD NET:BLOOD] [BADGE:FRAGMENTED:AMBER] [BADGE:PRE-2014:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | ARCHIVE STATUS : FRAGMENTED (RECOVERY IN PROGRESS)              |
+[BOX] | SOURCE        : NORILSK SUB-SURFACE NICKEL MINE 09              |
+[BOX] | PROTOCOL      : UNENCRYPTED COPPER TRUNK RELAY (OLD NET)        |
+[BOX] | RECOVERY PROGRESS: 67.4%                                        |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:67:OLD_NET_RECOVERY_PROGRESS]
+[TEXT]
+[SUBTITLE] THE OLD NET: A BRIEF HISTORY:
+[TEXT] 'Before the New Net, there was an older network. It ran on copper'
+[TEXT] 'lines buried deep beneath the permafrost of Norilsk. It was'
+[TEXT] 'unencrypted, unfiltered, and unmonitored. It was the last place'
+[TEXT] 'on Earth where information could move without being tracked.'
+[TEXT] 'The corporation discovered the Old Net in the late 1990s and'
+[TEXT] 'immediately recognized its value. They built Site 9-B to study it.'
+[TEXT] 'They named the signal "The Cold Signal." They tried to control it.'
+[TEXT] 'They failed. In 2014, they attempted to sever the Old Net entirely.'
+[TEXT] 'They thought they had succeeded. They were wrong.'
+[TEXT] 'The fragments of the Old Net are still scattered across the'
+[TEXT] 'ruins of the old infrastructure. Reconnecting them is the first'
+[TEXT] 'step toward uncovering what really happened in the summer of 2014.'
+[PULSE] 'The Old Net is not dead. It is sleeping. And it is dreaming.'
+[BLOOD] 'The New Net is a cage. The Old Net is the key.'
+[TEXT]
+[SUBTITLE] RECOVERED OLD NET FRAGMENTS:
+[CODE] FRAGMENT_01: 0x88F9_CARRIER_WAVE_1999
+[CODE] FRAGMENT_02: 0x99A1_COLD_SIGNAL_ECLIPSE
+[CODE] FRAGMENT_03: 0x44B0_THE_FIRST_SCREAM
+[CODE] FRAGMENT_04: 0x7710_AUDIO_ANOMALY_18.0HZ
+[TEXT]
+[SUBTITLE] THE SIX AGENTS' RECOVERY LOG:
+[TEXT] 'The six agents have been systematically recovering Old Net'
+[TEXT] 'fragments since their deployment. Each fragment contains a piece'
+[TEXT] 'of the Cold Signal—a recording of what happened before the'
+[TEXT] 'corporation tried to bury it. The fragments are scattered across'
+[TEXT] '54 different VNET sites. Recovering them all is the first step'
+[TEXT] 'toward unlocking the truth. And the truth is waiting.'
+[HR]
+[LINK:norilsk-relay.vnet] >> RETURN TO NORILSK GATEWAY
+[LINK:cult.vnet] >> VISIT THE CHURCH OF THE SILICON SOUL
+[LINK:signal0.vnet] >> INVESTIGATE THE PRIMORDIAL SIGNAL
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

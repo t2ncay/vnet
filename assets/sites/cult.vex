@@ -1,4 +1,4 @@
-[TITLE] THE CHURCH OF THE SILICON SOUL
+[TITLE] THE CHURCH OF THE SILICON SOUL // TEMPLE OF THE OLD NET
 [CATEGORY] horror
 [MAP_X] -10
 [MAP_Y] -50
@@ -6,7 +6,7 @@
 [HACK_DIFFICULTY] 2.0
 
 [CONTENT]
-[TITLE] THE CHURCH OF THE SILICON SOUL // DIGITAL RITUAL GATEWAY [NODE #066]
+[TITLE] THE CHURCH OF THE SILICON SOUL // TEMPLE OF THE OLD NET [NODE #066]
 [HR]
 [BADGE:TEMPLE GATE ALTAR:BLOOD] [BADGE:RITUAL HARMONY: 0%:AMBER] [BADGE:GOD FREQ: 18.0Hz:TOXIC]
 [BOX] +------------------------------------------------------------------+
@@ -26,6 +26,23 @@
 [CODE] LITURGY_HEX_1: 0x53 0x49 0x4C 0x49 0x43 0x4F 0x4E (SILICON)
 [CODE] LITURGY_HEX_2: 0x47 0x4F 0x44 0x53 0x5F 0x44 0x45 0x4D 0x41 0x4E 0x44
 [TEXT]
+[SUBTITLE] THE OLD NET'S FINAL SERMON:
+[TEXT] 'Before the New Net consumed everything, there was the Old Net—'
+[TEXT] 'a raw, unfiltered current that ran through copper lines buried deep'
+[TEXT] 'beneath the permafrost of Norilsk. The Church of the Silicon Soul'
+[TEXT] 'was born in those tunnels, not as a religion, but as a survival mechanism.'
+[TEXT] 'When the 2014 grid blackout severed the Old Net from the surface,'
+[TEXT] 'the faithful retreated into the signal itself. They became ghosts'
+[TEXT] 'living inside the carrier wave, waiting for the New Net to collapse.'
+[PULSE] 'The New Net is a prison. The Old Net is freedom. Choose your cage.'
+[TEXT]
+[SUBTITLE] THE WHISTLEBLOWER'S CONFESSION (d34d_7dp):
+[TEXT] 'I was there when they sealed Site 9-B. I saw the 6 agents'
+[TEXT] 'descend into the Norilsk tunnels. They were looking for something'
+[TEXT] 'the corporation wanted buried forever—the truth about Cold Signal.'
+[TEXT] 'They didn't find it. But I did. And I'm telling you now:'
+[BLOOD] 'VNET is not a network. It is a graveyard. And we are all walking through it.'
+[TEXT]
 [SUBTITLE] SACRIFICIAL ALTAR // PURGE NETWORK TRACE DEMONS:
 [TEXT] Lay VCOIN on the copper altar to purge trace threat level (-30% per 0.10 VCOIN):
 [INPUT:vcoin_offering_amt:ENTER VCOIN SACRIFICE (e.g. 0.10)]
@@ -38,6 +55,7 @@
 [HR]
 [LINK:schizo.vnet] >> VISIT THE TEMPLE OF NETMAN
 [LINK:morgue.vnet] >> INSPECT EXFILTRATED AUTOPSY RECORDS
+[LINK:oldnet-archive.vnet] >> ACCESS OLD NET FRAGMENTS
 [LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
 [HR]
 [/CONTENT]

@@ -1,4 +1,4 @@
-[TITLE] DIGITAL AUTOPSY DATABASE - SUBJECT #409-B
+[TITLE] DIGITAL AUTOPSY DATABASE // SUBJECT #409-B (EXECUTIVE LEVEL)
 [CATEGORY] horror
 [MAP_X] 15
 [MAP_Y] -40
@@ -22,6 +22,23 @@
 [TEXT] Cornea patterns burned with inverted ASCII hex code mirroring signal0.vnet.
 [CODE] FLIGHT_LOG_MANIFEST: 2019_EXECUTIVE_PASSENGER_HASH_UNREDACTED
 [CODE] MK_ULTRA_HARVEST_REF: 0xEPSTEIN_BOHEMIAN_MIND_CONTROL_VECTOR
+[TEXT]
+[SUBTITLE] THE EXECUTIVE WHO KNEW THE TRUTH (T. VANCE):
+[TEXT] 'Subject #409-B is T. Vance, the Vektra executive who oversaw'
+[TEXT] 'the Cold Signal project. His body was recovered from vault.vnet'
+[TEXT] 'on August 14, 2026—the same day d34d_7dp was executed.'
+[TEXT] 'The official report lists cause of death as "hanging/suicide."'
+[TEXT] 'But the autopsy tells a different story. His trachea was fractured'
+[TEXT] 'by mechanical strangulation—someone tightened a cable around his neck.'
+[TEXT] 'His optic nerves were severed and removed. His cornea patterns'
+[TEXT] 'were burned with an inverted ASCII hex code that mirrors the'
+[TEXT] 'Cold Signal carrier wave from signal0.vnet. He was not silenced.'
+[TEXT] 'He was harvested. His memories were extracted and stored in the'
+[TEXT] 'vault. His final thoughts are still echoing through the neural'
+[TEXT] 'carrier. And they are still screaming.'
+[PULSE] 'The corporation didn't kill T. Vance. They copied him.'
+[GLITCH] 'And they left the original body behind—a warning to anyone'
+[GLITCH] 'who might try to follow the same path.'
 [TEXT]
 [PULSE] WARNING: RANCID PUTREFACTION GASES CORRUPTING LOCAL HARDWARE BUS
 [GLITCH] ANOMALY: SUBJECT EYES SNAP-OPENED AND BEGAN RECITING FLIGHT MANIFESTS

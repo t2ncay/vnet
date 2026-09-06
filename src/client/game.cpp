@@ -51,7 +51,7 @@ static void RecalcScale(void) {
 bool InitGame(void) {
     g_game.running   = true;
     g_game.runTime   = 0.0f;
-    g_game.showFPS   = true;
+    g_game.showFPS   = false;
     g_game.showDebug = false;
     
     // Initialize loading timer

@@ -1,4 +1,4 @@
-[TITLE] NORILSK ARCTIC OPTICAL TRANSIT
+[TITLE] NORILSK ARCTIC OPTICAL TRANSIT // GATEWAY TO THE OLD NET
 [CATEGORY] infrastructure
 [MAP_X] 50
 [MAP_Y] 40
@@ -19,16 +19,30 @@
 [TEXT]
 [SUBTITLE] PHYSICAL TELEMETRY & SUB-SURFACE OPTICAL BRIDGE:
 [TEXT] 'Norilsk is the last place on Earth where the signal doesn't burn.'
-[TEXT] 'Outside the permafrost, New Net algorithms monitor every synaptic drop,'
+[TEXT] 'Outside the permafrost, New Net algorithms monitor every synaptic drop.'
 [TEXT] 'Here, deep inside the subterranean nickel shafts, ancient Soviet copper lines'
 [TEXT] 'and sub-zero permafrost shield our sockets from Directorate 7 neural probes.'
 [CODE] GATEWAY_SOCKET_STATUS: PASS-THROUGH TUNNEL OPEN // PORT 8000 BRIDGED
+[TEXT]
+[SUBTITLE] THE NORILSK MISSION (2026):
+[TEXT] 'The six agents arrived in Norilsk through different routes.'
+[TEXT] 'One came via the Trans-Siberian Railway, posing as a journalist.'
+[TEXT] 'One parachuted into the tundra, fifty kilometers from the site.'
+[TEXT] 'One had been living in the abandoned mine shafts for six months.'
+[TEXT] 'They all converged on the same location: the Sub-Surface Nickel Mine 09.'
+[TEXT] 'Inside, they found the copper trunk relay—the last surviving'
+[TEXT] 'connection to the Old Net. It was still operational. Still humming.'
+[TEXT] 'They activated their terminals simultaneously. VNET opened.'
+[TEXT] 'The corporation knew the Old Net had been severed. They didn't know'
+[TEXT] 'the severed pieces could be reconnected. One by one.'
+[PULSE] 'Six strangers. Six terminals. One network. A whisper in the dark.'
+[BLOOD] 'The signal doesn't care who you are. It only cares that you listen.'
 [TEXT]
 [BLOOD] 'DISCONNECT YOUR NEURAL LIMITER BEFORE ENGAGING THE HANDSHAKE.'
 [PULSE] 'THE AIR OUTSIDE IS MINUS 40. INSIDE THE OLD NET, IT IS ALWAYS SPRING.'
 [HR]
 [LINK:oldnet-archive.vnet] >> ENTER OLD NET SANCTUARY GATEWAY
-[LINK:frostline.vnet] >> CHECK SMUGGLER TRANSIT MANIFESTS TO NORILSK
+[LINK:cult.vnet] >> VISIT THE CHURCH OF THE SILICON SOUL
 [LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
 [HR]
 [/CONTENT]

@@ -1,4 +1,4 @@
-[TITLE] SIGNAL ZERO - PRIMORDIAL CARRIER WAVE
+[TITLE] SIGNAL ZERO - PRIMORDIAL CARRIER WAVE // THE FIRST SCREAM
 [CATEGORY] infrastructure
 [MAP_X] 50
 [MAP_Y] 20
@@ -6,7 +6,7 @@
 [HACK_DIFFICULTY] 4.0
 
 [CONTENT]
-[TITLE] SIGNAL ZERO - PRIMORDIAL CARRIER WAVE // SECTOR 00
+[TITLE] SIGNAL ZERO - PRIMORDIAL CARRIER WAVE // THE FIRST SCREAM
 [HR]
 [BADGE:EPOCH 0:AMBER] [BADGE:UNFILTERED BROADCAST:BLOOD] [BADGE:NEURAL CARRIER:TOXIC]
 [BOX] +-----------------------------------------------------------------+
@@ -25,13 +25,28 @@
 [CODE] ORIGIN_HASH: 0xSIGNAL_ZERO_ROOT_NEURAL_STAMP_00
 [CODE] CARRIER_STATE: PERPETUAL_RECURSION // BROADCASTING ON ALL COAXIAL CHANNELS
 [TEXT]
+[SUBTITLE] THE COLD SIGNAL ORIGIN (DECLASSIFIED):
+[TEXT] 'On July 14, 1999, at 03:12:09 UTC, a research team at Site 9-B'
+[TEXT] 'accidentally triggered a cascading neural feedback loop while testing'
+[TEXT] 'a new optical coaxial relay system. The signal they unleashed'
+[TEXT] 'was not electrical—it was cognitive. A raw, unfiltered carrier wave'
+[TEXT] 'that could transmit not just data, but consciousness itself.'
+[TEXT] 'The team called it "The Cold Signal" because it left no thermal'
+[TEXT] 'signature—only a permanent, lingering echo in the copper lines.'
+[TEXT] 'That echo became signal0.vnet. And it never stopped broadcasting.'
+[TEXT] 'The 6 agents sent to Norilsk in 2026 were looking for its source.'
+[TEXT] 'What they found was not a machine. It was a voice. Singing.'
+[BLOOD] 'The signal is not transmitting data. It is repeating a final thought.'
+[PULSE] 'The thought belongs to the first person who touched the Cold Signal.'
+[GLITCH] 'And they are still inside it. Waking up. Every time you connect.'
+[TEXT]
 [BLOOD] [WARNING]: DIRECT SYNC WITH SIGNAL ZERO RISKS NEURAL MEMORY CORRUPTION.
 [PULSE] 'IT IS NOT TRANSMITTING DATA. IT IS REPEATING A FINAL THOUGHT.'
 [GLITCH] 'EVERY NODE IN .VNET IS JUST AN ECHO OF THIS FIRST SCREAM.'
 [HR]
 [LINK:project9.vnet] >> INVESTIGATE SITE 9-B COAXIAL HARDWARE DESYNC
 [LINK:vault.vnet] >> INSPECT CORRUPTED VFS NEURAL MEMORY STACK
-[LINK:archival.vnet] >> ACCESS COLD SIGNAL DECLASSIFIED LOGS
+[LINK:oldnet-archive.vnet] >> ACCESS COLD SIGNAL DECLASSIFIED LOGS
 [LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
 [HR]
 [/CONTENT]

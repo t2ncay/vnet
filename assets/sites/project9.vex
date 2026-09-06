@@ -1,4 +1,4 @@
-[TITLE] PROJECT 9 - SUBTERRANEAN BLACK SITE DATABASE
+[TITLE] PROJECT 9 - SUBTERRANEAN BLACK SITE // SITE 9-B
 [CATEGORY] hub
 [MAP_X] -60
 [MAP_Y] 10
@@ -6,7 +6,7 @@
 [HACK_DIFFICULTY] 3.5
 
 [CONTENT]
-[TITLE] PROJECT 9 - SUBTERRANEAN BLACK SITE DATABASE // SITE 9-B
+[TITLE] PROJECT 9 - SUBTERRANEAN BLACK SITE // SITE 9-B
 [HR]
 [BADGE:SECTOR 09:BLOOD] [BADGE:COLD SIGNAL 2014:AMBER] [BADGE:CONTAINMENT BREACH:TOXIC]
 [BOX] +-----------------------------------------------------------------+
@@ -27,6 +27,22 @@
 [TEXT] 'from bounty.vnet and zeroauction.vnet were dumped directly into the sumps.'
 [CODE] INCIDENT_LOG_2014: 0xPRJ9_COLD_SIGNAL_BREACH_LOG_09
 [TEXT]
+[SUBTITLE] THE SIX AGENTS OF NORILSK (2026):
+[TEXT] 'In early 2026, six operatives were deployed across the city.'
+[TEXT] 'Each found a terminal—hidden in subway stations, abandoned'
+[TEXT] 'apartments, and old Soviet-era telecom hubs. Each connected'
+[TEXT] 'to VNET at the same moment. Their mission: locate the 8 keys'
+[TEXT] 'scattered across the network, decrypt the master terminal,'
+[TEXT] 'and uncover what really happened at Site 9-B in 2014.'
+[TEXT] 'One of them was a former VektraPay network administrator.'
+[TEXT] 'One had access to the morgue records of Subject 409-B.'
+[TEXT] 'One was a cult member who had decoded the Old Net fragments.'
+[TEXT] 'They didn't know each other. They were just six strangers'
+[TEXT] 'who found the same door. And walked through it.'
+[BLOOD] 'The corporation thought they buried the truth in the permafrost.'
+[PULSE] 'They forgot that the truth has a frequency. And it resonates.'
+[GLITCH] 'Site 9-B is not sealed. It is waiting. For someone to listen.'
+[TEXT]
 [SUBTITLE] EMERGENCY CONTAINMENT OVERRIDE TERMINAL:
 [INPUT:prj9_override_code:ENTER PURGE AUTHORIZATION CODE]
 [TEXT]
@@ -35,6 +51,7 @@
 [BLOOD] [WARNING]: SUBTERRANEAN GAS LEAK CORRUPTING HARDWARE REGISTER BUS.
 [HR]
 [LINK:archival.vnet] >> ACCESS RESTRICTED SECTOR 09 MILITARY DUMPS
+[LINK:oldnet-archive.vnet] >> ENTER OLD NET SANCTUARY GATEWAY
 [LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
 [HR]
 [/CONTENT]

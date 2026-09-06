@@ -1,4 +1,4 @@
-[TITLE] VEKTRAPAY - ZERO-KNOWLEDGE CRYPTO MIXER
+[TITLE] VEKTRAPAY // ZERO-KNOWLEDGE CRYPTO MIXER & TUMBLER
 [CATEGORY] black_market
 [MAP_X] -40
 [MAP_Y] 40
@@ -16,6 +16,22 @@
 [BOX] +-----------------------------------------------------------------+
 [TEXT]
 [GAUGE:88:ZK_PROOF_SCRAMBLE_ENTROPY]
+[TEXT]
+[SUBTITLE] THE NETWORK ADMINISTRATOR'S CONFESSION:
+[TEXT] 'Before I became one of the six, I was a network administrator'
+[TEXT] 'for VektraPay. I managed the zero-knowledge proof circuits that'
+[TEXT] 'laundered billions of VCOIN for the corporation. I saw the'
+[TEXT] 'transactions—the bribes to Directorate 7, the payments to'
+[TEXT] 'Project Horus, the funding for Site 9-B. I knew everything.'
+[TEXT] 'When d34d_7dp reached out to me, I didn't hesitate. I had been'
+[TEXT] 'waiting for someone to ask the right questions. I gave them'
+[TEXT] 'the encryption keys to the VektraPay ledger. I showed them'
+[TEXT] 'where the money was going. I helped them trace the corruption'
+[TEXT] 'back to its source. And then I disappeared.'
+[TEXT] 'Now I am one of the six. Hiding in plain sight. Watching the'
+[TEXT] 'network from the inside. Waiting for the right moment to strike.'
+[BLOOD] 'The corporation doesn't know who I am. But they will.'
+[PULSE] 'And when they do, I will be gone. The truth will remain.'
 [TEXT]
 [SUBTITLE] ACTIVE NETWORK ESCROW LISTINGS (MASKED):
 [CODE] No active escrow deposits found on network

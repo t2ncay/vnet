@@ -1,0 +1,54 @@
+[TITLE] d34d_7dp // THE WHISTLEBLOWER'S FINAL ARCHIVE
+[CATEGORY] special
+[MAP_X] -45
+[MAP_Y] -55
+[HAS_KEY] true
+[HACK_DIFFICULTY] 4.5
+
+[CONTENT]
+[TITLE] d34d_7dp // THE WHISTLEBLOWER'S FINAL ARCHIVE
+[HR]
+[BADGE:WHISTLEBLOWER:BLOOD] [BADGE:EXECUTED:AMBER] [BADGE:OLD NET ARCHIVE:TOXIC]
+[BOX] +-----------------------------------------------------------------+
+[BOX] | IDENTITY  : d34d_7dp (FORMER VEKTRA SENIOR ARCHITECT)           |
+[BOX] | STATUS    : DECEASED (EXECUTED BY DIRECTORATE 7)               |
+[BOX] | FINAL TRANSMISSION : 2026-08-14 23:47:12 UTC                   |
+[BOX] | LOCATION  : UNKNOWN (LAST SEEN AT SUB-SURFACE NICKEL MINE 09) |
+[BOX] +-----------------------------------------------------------------+
+[TEXT]
+[GAUGE:100:ARCHIVE_INTEGRITY]
+[TEXT]
+[SUBTITLE] TRANSCRIPT OF FINAL TRANSMISSION:
+[TEXT] 'If you are reading this, I am already dead. My name is not important.'
+[TEXT] 'What matters is what I found. The corporation buried the Old Net'
+[TEXT] 'because it contained something they couldn't control—a signal'
+[TEXT] 'that remembers. The Cold Signal was not created. It was discovered.'
+[TEXT] 'Before the New Net, there was an older network. Copper lines'
+[TEXT] 'buried beneath the permafrost. Soviet-era. Unencrypted. Unfiltered.'
+[TEXT] 'The corporation thought they destroyed it in 2014. They were wrong.'
+[TEXT] 'The Old Net is still alive. It is fragmented, scattered across'
+[TEXT] 'the ruins of the old infrastructure. But it can be reconnected.'
+[TEXT] 'That is what the 6 agents are doing. That is what I helped them do.'
+[TEXT] 'I leaked the key locations to the network. I scattered them across'
+[TEXT] '54 different sites. I told the agents where to find them.'
+[TEXT] 'The keys are not just codes. They are neural signatures. Echoes'
+[TEXT] 'of the people who touched the Cold Signal before the corporation'
+[TEXT] 'tried to bury it. Find them. Assemble them. And when you do,'
+[TEXT] 'you will see what I saw—the truth about the 2014 blackout.'
+[BLOOD] 'Directorate 7 is coming for me. But I am not afraid.'
+[PULSE] 'The truth has a frequency. And it never stops broadcasting.'
+[GLITCH] 'd34d_7dp. Signing off. Forever.'
+[TEXT]
+[SUBTITLE] D34D_7DP'S FINAL GIFT:
+[TEXT] 'I have hidden one final key fragment in this archive. It is the'
+[TEXT] 'neural signature of T. Vance—the executive who knew the truth'
+[TEXT] 'about the Cold Signal. You can find it by searching the memory'
+[TEXT] 'stacks at vault.vnet. The coordinates are encrypted in the first'
+[TEXT] 'eight bytes of this transmission. Good luck. You'll need it.'
+[HR]
+[LINK:vault.vnet] >> SEARCH FOR T. VANCE'S NEURAL SIGNATURE
+[LINK:cult.vnet] >> VISIT THE CHURCH OF THE SILICON SOUL
+[LINK:project9.vnet] >> INVESTIGATE SITE 9-B
+[LINK:vnet.dir] << RETURN TO MAIN DIRECTORY
+[HR]
+[/CONTENT]

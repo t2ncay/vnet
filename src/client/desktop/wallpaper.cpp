@@ -280,7 +280,7 @@ void DrawVektraWallpaper(float width, float height) {
                    {160, 165, 178, 180});
     DrawScaledLine(ribbonX + ribbonW, ribbonY + ribbonH, ribbonX + ribbonW + 8.0f, ribbonY + ribbonH / 2.0f,
                    {160, 165, 178, 180});
-    DrawScaledText("VEKTRA", centerX - ribbonTextW / 2.0f, ribbonY + 4.0f, ribbonFontSize,
+    DrawScaledText("VEKTRA", centerX - ribbonTextW / 2.0f, ribbonY + 1.5f, ribbonFontSize,
                    {220, 225, 235, 255});
 
     // ============================================================
