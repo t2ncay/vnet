@@ -342,7 +342,30 @@ void InitColors(void) {
 }
 
 void LoadAssets(void) {
-    g_fontVCR = LoadFont("assets/JetBrainsMono-Bold.ttf");
+    // LoadFont() only bakes the default 95 ASCII codepoints (32-126).
+    // Any character outside that range (box-drawing glyphs, arrows,
+    // emoji used throughout the UI and in .vex site titles/content)
+    // has no glyph in the atlas, and raylib silently substitutes the
+    // fallback '?' glyph for each missing codepoint - which is why
+    // stylized titles/icons were showing up as strings of "?????".
+    //
+    // Build an explicit codepoint set: the base ASCII range plus every
+    // special character actually used in the UI strings. Extend this
+    // sample string if you add new symbols/emoji elsewhere.
+    static const char* kExtraGlyphSample =
+        " !\"#$%&'()*+,-./0123456789:;<=>?@"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+        "abcdefghijklmnopqrstuvwxyz{|}~"
+        "°"                     // degree sign (CRT HEAT display)
+        "◈▶★✓✗║▓▒░⚙⚡📡";        // decorative symbols used across apps/*.cpp
+
+    int codepointCount = 0;
+    int* codepoints = LoadCodepoints(kExtraGlyphSample, &codepointCount);
+
+    g_fontVCR = LoadFontEx("assets/fonts/JetBrainsMono-Bold.ttf", 32, codepoints, codepointCount);
+
+    UnloadCodepoints(codepoints);
+
     if (g_fontVCR.texture.id == 0) {
         printf("Warning: Could not load JetBrainsMono-Bold font. Using default font.\n");
     } else {
