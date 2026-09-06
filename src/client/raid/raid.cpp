@@ -75,7 +75,7 @@ void TriggerFederalRaid(void) {
     // Random timing
     g_player.raidActive = true;
     g_player.raidTimer = 0.0f;
-    g_player.raidResponseTime = 12.0f + ((float)(rand() % 40) / 10.0f); // 12-15s
+    g_player.raidResponseTime = 18.0f + ((float)(rand() % 40) / 10.0f); // 18-22s
     g_player.raidStage = RAID_STAGE_ALERT;
     g_player.raidSuccess = false;
     g_player.raidAlertTimer = 0.0f;
@@ -248,7 +248,7 @@ void HandleRaidChoice(const char* input) {
     g_player.raidType = choice - 1;
     g_player.raidStage = RAID_STAGE_MINIGAME;
     g_player.raidTimer = 0.0f;
-    g_player.raidResponseTime = 6.0f + ((float)(rand() % 40) / 10.0f); // 6-10s
+    g_player.raidResponseTime = 18.0f + ((float)(rand() % 40) / 10.0f); // 18-22s
     g_player.raidSuccess = false;
     g_player.raidInput[0] = '\0';
     
