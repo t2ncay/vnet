@@ -729,150 +729,188 @@ void DrawRaidSequenceOverlay() {
             float rightW = REF_WIDTH * 0.45f;
             
             // ============================================================
-            // LEFT PANEL: HEX STREAM + NETWORK SNIFFER
+            // LEFT PANEL: MODERN DASHBOARD (Hex Sidebar, Radar, Sniffer)
             // ============================================================
             {
-                // Background with subtle grid
+                // 1. Clean Background (No chaotic lines, just a dark slate)
                 DrawScaledRect(leftX, 0, leftW, REF_HEIGHT, Color{4, 6, 10, 255});
                 
-                // Animated grid lines
-                for (int i = 0; i < 40; i++) {
-                    float x = (i / 40.0f) * leftW;
-                    float alpha = 0.04f + 0.04f * sinf(t * 0.5f + i * 0.5f);
-                    DrawScaledLine(leftX + x, 0, leftX + x, REF_HEIGHT, Fade(COLOR_CYAN, alpha));
+                // Subtle dot-matrix grid instead of heavy lines
+                for (int x = 10; x < leftW; x += 20) {
+                    for (int y = 10; y < REF_HEIGHT; y += 20) {
+                        DrawScaledRect(leftX + x, y, 1, 1, Fade(COLOR_CYAN, 0.05f));
+                    }
                 }
-                for (int i = 0; i < 20; i++) {
-                    float y = (i / 20.0f) * REF_HEIGHT;
-                    float alpha = 0.04f + 0.04f * sinf(t * 0.7f + i * 0.3f);
-                    DrawScaledLine(leftX, y, leftX + leftW, y, Fade(COLOR_CYAN, alpha));
-                }
+
+                // ---- LAYOUT DEFINITIONS ----
+                // Sidebar for Hex Dump
+                float sideW = 60.0f;
+                float sideX = leftX + 10.0f;
                 
-                // ---- HEX STREAM (falling characters) ----
-                int hexCols = 30;
-                int hexRows = 40;
-                float hexW = leftW / hexCols;
-                float hexH = REF_HEIGHT / hexRows;
+                // Main content area math
+                float pad = 10.0f;
+                float mainX = sideX + sideW + pad;
+                float mainW = leftW - sideW - (pad * 3);
+                
+                float radarY = pad;
+                float radarH = REF_HEIGHT * 0.35f;
+                
+                float snifferY = radarY + radarH + pad;
+                float snifferH = REF_HEIGHT * 0.45f;
+                
+                float opY = snifferY + snifferH + pad;
+                float opH = REF_HEIGHT - opY - pad;
+
+                // ------------------------------------------------------------
+                // MODULE 1: HEX DUMP SIDEBAR (Constrained, doesn't ruin readability)
+                // ------------------------------------------------------------
+                DrawScaledRect(sideX, pad, sideW, REF_HEIGHT - (pad*2), Color{6, 8, 14, 180});
+                DrawScaledRectLines(sideX, pad, sideW, REF_HEIGHT - (pad*2), Fade(COLOR_CYAN, 0.1f));
+                DrawScaledText("MEM", sideX + 20, pad + 5, 8, Fade(COLOR_CYAN, 0.5f));
+                
+                int hexCols = 4; // Down from 30, much cleaner
+                int hexRows = 35;
+                float hexW = sideW / hexCols;
+                float hexH = (REF_HEIGHT - (pad*2)) / hexRows;
                 
                 for (int col = 0; col < hexCols; col++) {
-                    for (int row = 0; row < hexRows; row++) {
-                        // Random hex character
+                    for (int row = 2; row < hexRows - 1; row++) {
                         char hexChars[] = "0123456789ABCDEF";
                         char c = hexChars[rand() % 16];
                         
-                        // Each column has a different speed and offset
-                        float speed = 0.5f + (col % 5) * 0.15f;
-                        float phase = col * 0.7f + row * 0.3f;
+                        float speed = 0.8f + (col % 2) * 0.2f;
+                        float phase = col * 0.5f + row * 0.1f;
                         float offset = fmodf(t * speed + phase, 2.0f);
                         
-                        // Only show some characters (density effect)
-                        float density = 0.6f + 0.3f * sinf(t * 0.2f + col);
-                        if (offset < 1.0f && (rand() % 100) < density * 80) {
-                            float alpha = (1.0f - offset) * 0.5f + 0.2f;
+                        if (offset < 1.0f && (rand() % 100) < 60) { // Sparser density
+                            float alpha = (1.0f - offset) * 0.6f;
+                            Color colColor = (col % 2 == 0) ? Fade(COLOR_TOXIC, alpha) : Fade(COLOR_GHOST, alpha * 0.5f);
                             
-                            // Color variations
-                            Color colColor;
-                            if (col % 3 == 0) colColor = Fade(COLOR_TOXIC, alpha);
-                            else if (col % 3 == 1) colColor = Fade(COLOR_CYAN, alpha * 0.7f);
-                            else colColor = Fade(COLOR_GHOST, alpha * 0.5f);
-                            
-                            float xPos = leftX + col * hexW + hexW * 0.3f;
-                            float yPos = (row + 1) * hexH - offset * hexH * 2;
-                            if (yPos > 0 && yPos < REF_HEIGHT) {
-                                DrawScaledText(&c, xPos, yPos, hexH * 0.7f, colColor);
-                            }
+                            float xPos = sideX + col * hexW + 6.0f;
+                            float yPos = pad + row * hexH - offset * hexH;
+                            DrawScaledText(&c, xPos, yPos, hexH * 0.8f, colColor);
                         }
                     }
                 }
+
+                // ------------------------------------------------------------
+                // MODULE 2: RADAR & TARGET ACQUISITION
+                // ------------------------------------------------------------
+                DrawScaledRect(mainX, radarY, mainW, radarH, Color{6, 8, 14, 180});
+                DrawScaledRectLines(mainX, radarY, mainW, radarH, Fade(COLOR_CYAN, 0.15f));
                 
-                // ---- NETWORK SNIFFER VISUALIZATION (overlay) ----
-                float snifferX = leftX + 20;
-                float snifferY = 40;
-                float snifferW = leftW - 40;
-                float snifferH = REF_HEIGHT - 80;
+                // Tech Header
+                DrawScaledRect(mainX, radarY, mainW, 18, Fade(COLOR_CYAN, 0.1f));
+                DrawScaledText(":: SIGNAL GEO-LOCATION ::", mainX + 8, radarY + 4, 9, COLOR_CYAN);
                 
-                // Panel background (semi-transparent)
-                DrawScaledRect(snifferX, snifferY, snifferW, snifferH, Color{6, 8, 14, 180});
-                DrawScaledRectLines(snifferX, snifferY, snifferW, snifferH, Fade(COLOR_CYAN, 0.15f));
+                // Modern Radar Drawing
+                float rX = mainX + (mainW / 2.0f);
+                float rY = radarY + (radarH / 2.0f) + 8.0f;
+                float maxR = radarH * 0.35f;
                 
-                // ---- SNIFFER HEADER ----
-                DrawScaledText("█ NETWORK SNIFFER // PACKET CAPTURE", snifferX + 12, snifferY + 8, 11, COLOR_TOXIC);
-                DrawScaledLine(snifferX + 10, snifferY + 26, snifferX + snifferW - 10, snifferY + 26, Fade(COLOR_CYAN, 0.15f));
+                // Crosshairs
+                DrawScaledLine(mainX + 20, rY, mainX + mainW - 20, rY, Fade(COLOR_CYAN, 0.1f));
+                DrawScaledLine(rX, radarY + 25, rX, radarY + radarH - 10, Fade(COLOR_CYAN, 0.1f));
                 
-                // ---- PACKET STREAM (scrolling lines) ----
-                float packetY = snifferY + 34;
-                int packetCount = 12;
-                float packetH = 28.0f;
+                DrawScaledCircleLines(rX, rY, maxR, Fade(COLOR_CYAN, 0.3f));
+                DrawScaledCircleLines(rX, rY, maxR * 0.66f, Fade(COLOR_CYAN, 0.15f));
+                DrawScaledCircleLines(rX, rY, maxR * 0.33f, Fade(COLOR_CYAN, 0.05f));
                 
-                for (int i = 0; i < packetCount; i++) {
-                    float offset = fmodf(t * (0.3f + i * 0.02f) + i * 0.5f, 2.0f);
-                    if (offset > 1.0f) continue;
-                    
-                    float alpha = (1.0f - offset) * 0.6f + 0.2f;
-                    float yPos = snifferY + 34 + i * packetH;
-                    
-                    // Packet line
-                    char packetLine[128];
-                    int srcPort = 8000 + (rand() % 999);
-                    int dstPort = 80 + (rand() % 1000);
-                    int size = 64 + (rand() % 1400);
-                    int ttl = 64 + (rand() % 64);
-                    
-                    snprintf(packetLine, sizeof(packetLine), 
-                            "[%04d] 0x%04X  %d.%d.%d.%d:%d  >  %d.%d.%d.%d:%d  TCP  len=%d  TTL=%d",
-                            (int)(t * 10 + i) % 9999,
-                            rand() % 0xFFFF,
-                            rand() % 255, rand() % 255, rand() % 255, rand() % 255, srcPort,
-                            rand() % 255, rand() % 255, rand() % 255, rand() % 255, dstPort,
-                            size, ttl);
-                    
-                    // Color based on packet type
-                    Color pktColor = (i % 3 == 0) ? Fade(COLOR_TOXIC, alpha) : 
-                                    (i % 3 == 1) ? Fade(COLOR_CYAN, alpha * 0.8f) : 
-                                    Fade(COLOR_GHOST, alpha * 0.6f);
-                    
-                    DrawScaledText(packetLine, snifferX + 12, yPos, 9, pktColor);
-                }
-                
-                // ---- SNIFFER STATS ----
-                float statsY = snifferY + snifferH - 30;
-                DrawScaledLine(snifferX + 10, statsY, snifferX + snifferW - 10, statsY, Fade(COLOR_CYAN, 0.1f));
-                
-                int pps = (int)(t * 34.7f) % 1000 + 200;
-                int total = (int)(t * 128.3f) % 99999 + 10000;
-                char statsLine[128];
-                snprintf(statsLine, sizeof(statsLine), 
-                        "PACKETS: %d/s  |  TOTAL: %d  |  DROPS: %d  |  ACTIVE: %d",
-                        pps, total, (int)(t * 2.3f) % 50, (int)(t * 0.7f) % 6 + 1);
-                DrawScaledText(statsLine, snifferX + 12, statsY + 6, 8, Fade(COLOR_GHOST, 0.6f));
-                
-                // ---- SCANNING PULSE (radar effect) ----
-                float radarX = snifferX + snifferW - 60;
-                float radarY = snifferY + 60;
-                float radarR = 40.0f;
-                
-                // Radar background
-                DrawScaledCircle(radarX, radarY, radarR, Fade(COLOR_BLACK, 0.8f));
-                DrawScaledCircleLines(radarX, radarY, radarR, Fade(COLOR_CYAN, 0.2f));
-                DrawScaledCircleLines(radarX, radarY, radarR * 0.5f, Fade(COLOR_CYAN, 0.1f));
-                
-                // Scanning line
-                float angle = t * 1.5f;
-                float endX = radarX + cosf(angle) * radarR;
-                float endY = radarY + sinf(angle) * radarR;
-                DrawScaledLine(radarX, radarY, endX, endY, Fade(COLOR_TOXIC, 0.4f));
+                // Smooth Scanner Sweep
+                float angle = t * 2.0f;
+                DrawScaledLine(rX, rY, rX + cosf(angle) * maxR, rY + sinf(angle) * maxR, Fade(COLOR_TOXIC, 0.6f));
                 
                 // Blips
-                for (int i = 0; i < 4; i++) {
-                    float a = t * 0.7f + i * 1.57f;
-                    float r = radarR * (0.2f + 0.3f * sinf(t * 0.5f + i));
-                    float bx = radarX + cosf(a) * r;
-                    float by = radarY + sinf(a) * r;
-                    float blip = sinf(t * 2.0f + i * 1.2f) * 0.5f + 0.5f;
-                    DrawScaledCircle(bx, by, 2.0f + blip * 2.0f, Fade(COLOR_BLOOD, 0.3f + blip * 0.5f));
+                for (int i = 0; i < 3; i++) {
+                    float a = t * 0.2f + i * 2.1f;
+                    float r = maxR * (0.4f + 0.4f * sinf(i * 1.5f));
+                    float bx = rX + cosf(a) * r;
+                    float by = rY + sinf(a) * r;
+                    float blipAlpha = sinf(t * 3.0f - angle + a) > 0.8f ? 1.0f : 0.2f; // Flash when scanner passes
+                    DrawScaledCircle(bx, by, 3.0f, Fade(COLOR_BLOOD, blipAlpha));
+                    if (blipAlpha > 0.5f) {
+                        DrawScaledRectLines(bx - 6, by - 6, 12, 12, Fade(COLOR_TOXIC, blipAlpha));
+                    }
+                }
+
+                // ------------------------------------------------------------
+                // MODULE 3: NETWORK SNIFFER (Tabular & Clean)
+                // ------------------------------------------------------------
+                DrawScaledRect(mainX, snifferY, mainW, snifferH, Color{6, 8, 14, 180});
+                DrawScaledRectLines(mainX, snifferY, mainW, snifferH, Fade(COLOR_CYAN, 0.15f));
+                
+                DrawScaledRect(mainX, snifferY, mainW, 18, Fade(COLOR_CYAN, 0.1f));
+                DrawScaledText(":: PACKET CAPTURE (PROMISCUOUS MODE) ::", mainX + 8, snifferY + 4, 9, COLOR_CYAN);
+                
+                // ---- COLUMN X POSITIONS (Relative to panel width) ----
+                float colTime = mainX + 8;
+                float colSrc  = mainX + mainW * 0.15f;
+                float colDst  = mainX + mainW * 0.48f;
+                float colType = mainX + mainW * 0.80f;
+                float colSize = mainX + mainW * 0.90f;
+
+                // Column Headers
+                float colY = snifferY + 22;
+                DrawScaledText("TIME", colTime, colY, 8, Fade(COLOR_GHOST, 0.6f));
+                DrawScaledText("SRC IP:PORT", colSrc, colY, 8, Fade(COLOR_GHOST, 0.6f));
+                DrawScaledText("DST IP:PORT", colDst, colY, 8, Fade(COLOR_GHOST, 0.6f));
+                DrawScaledText("TYPE", colType, colY, 8, Fade(COLOR_GHOST, 0.6f));
+                DrawScaledText("SIZE", colSize, colY, 8, Fade(COLOR_GHOST, 0.6f));
+                DrawScaledLine(mainX + 5, colY + 12, mainX + mainW - 5, colY + 12, Fade(COLOR_CYAN, 0.2f));
+
+                // Packet List (Scrolling cleanly upwards)
+                float packetH = 14.0f;
+                int maxPackets = (int)((snifferH - 50) / packetH);
+                
+                for (int i = 0; i < maxPackets; i++) {
+                    float yPos = colY + 16 + (i * packetH);
+                    
+                    // Generate stable pseudo-random data per row based on time
+                    int seed = (int)(t * 2.0f) + i; 
+                    srand(seed); 
+                    
+                    char timeStr[16], srcStr[32], dstStr[32], typeStr[8], sizeStr[16];
+                    snprintf(timeStr, sizeof(timeStr), "%04d", (int)(t * 10 + i) % 9999);
+                    snprintf(srcStr, sizeof(srcStr), "%d.%d.%d.%d:%d", 192, 168, 1, rand()%255, 8000 + rand()%999);
+                    snprintf(dstStr, sizeof(dstStr), "%d.%d.%d.%d:%d", rand()%255, rand()%255, rand()%255, rand()%255, 80);
+                    
+                    int type = rand() % 3;
+                    strcpy(typeStr, type == 0 ? "TCP" : (type == 1 ? "UDP" : "HTTP"));
+                    snprintf(sizeStr, sizeof(sizeStr), "%db", 64 + rand()%1400);
+                    
+                    // Row alternating color
+                    Color rowCol = (i % 2 == 0) ? Fade(COLOR_GHOST, 0.8f) : Fade(COLOR_CYAN, 0.6f);
+                    if (type == 2) rowCol = COLOR_TOXIC; // Highlight HTTP
+                    
+                    DrawScaledText(timeStr, colTime, yPos, 8, Fade(COLOR_GHOST, 0.4f));
+                    DrawScaledText(srcStr, colSrc, yPos, 8, rowCol);
+                    DrawScaledText(dstStr, colDst, yPos, 8, rowCol);
+                    DrawScaledText(typeStr, colType, yPos, 8, (type==2) ? COLOR_TOXIC : Fade(COLOR_GHOST, 0.5f));
+                    DrawScaledText(sizeStr, colSize, yPos, 8, Fade(COLOR_GHOST, 0.4f));
                 }
                 
-                // ---- OPERATOR DIALOGUE (bottom left) ----
-                DrawScaledText(g_player.raidSeqOperatorDialogue, snifferX + 12, snifferY + snifferH - 60, 13, Fade(COLOR_TOXIC, 0.9f));
+                // Sniffer Stats Footer
+                float statsY = snifferY + snifferH - 20;
+                DrawScaledLine(mainX + 5, statsY, mainX + mainW - 5, statsY, Fade(COLOR_CYAN, 0.2f));
+                char statsLine[128];
+                snprintf(statsLine, sizeof(statsLine), "PKT/S: %d  |  TOTAL: %d  |  DROPS: 0", (int)(t * 34.7f) % 1000 + 200, (int)(t * 128.3f) % 99999 + 10000);
+                DrawScaledText(statsLine, mainX + 8, statsY + 6, 8, Fade(COLOR_TOXIC, 0.7f));
+
+                // ------------------------------------------------------------
+                // MODULE 4: OPERATOR DIALOGUE
+                // ------------------------------------------------------------
+                DrawScaledRect(mainX, opY, mainW, opH, Color{10, 2, 2, 180}); // Slight red tint
+                DrawScaledRectLines(mainX, opY, mainW, opH, Fade(COLOR_BLOOD, 0.4f));
+                
+                DrawScaledRect(mainX, opY, mainW, 16, Fade(COLOR_BLOOD, 0.2f));
+                DrawScaledText(":: COMMS LINK ::", mainX + 8, opY + 4, 8, COLOR_BLOOD);
+                
+                // Blinking prompt
+                if ((int)(t * 2.0f) % 2 == 0) {
+                    DrawScaledRect(mainX + 8, opY + 24, 6, 12, COLOR_TOXIC);
+                }
+                
+                DrawScaledText(g_player.raidSeqOperatorDialogue, mainX + 20, opY + 25, 11, COLOR_TOXIC);
             }
             
             // ============================================================
