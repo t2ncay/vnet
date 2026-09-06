@@ -27,6 +27,20 @@ Color COLOR_AMBER   = {255, 150, 0, 255};
 Color COLOR_TOXIC   = {40, 240, 100, 255};
 Color COLOR_GHOST   = {160, 170, 185, 255};
 
+// Extended accents + semantic aliases — all derived in SetActiveTheme()
+// below, so adding a color here never requires touching the 15-row
+// theme table.
+Color COLOR_VOID         = {1, 1, 2, 255};
+Color COLOR_SIGNAL       = {40, 240, 200, 255};
+Color COLOR_NEON_PURPLE  = {150, 90, 220, 255};
+Color COLOR_NEON_PINK    = {255, 90, 130, 255};
+Color COLOR_STATIC       = {160, 170, 185, 40};
+
+Color COLOR_SUCCESS = {40, 240, 100, 255};
+Color COLOR_WARNING = {255, 150, 0, 255};
+Color COLOR_ERROR   = {220, 20, 40, 255};
+Color COLOR_INFO    = {0, 220, 240, 255};
+
 Font g_fontVCR = {0};
 
 float g_uiScale = 1.0f;
@@ -251,6 +265,23 @@ static const ThemeDef kThemes[] = {
 };
 static const int kThemeCount = sizeof(kThemes) / sizeof(kThemes[0]);
 
+// Blends two colors (0..1 weight toward b), optionally boosting brightness.
+// Kept local since raylib's own ColorLerp isn't present in every version
+// this project has been built against.
+static Color BlendColor(Color a, Color b, float t, float boost = 1.0f) {
+    auto lerp8 = [](unsigned char x, unsigned char y, float w) -> unsigned char {
+        float v = x + (y - x) * w;
+        return (unsigned char)(v < 0 ? 0 : (v > 255 ? 255 : v));
+    };
+    Color out = { lerp8(a.r, b.r, t), lerp8(a.g, b.g, t), lerp8(a.b, b.b, t), 255 };
+    if (boost != 1.0f) {
+        out.r = (unsigned char)fminf(255.0f, out.r * boost);
+        out.g = (unsigned char)fminf(255.0f, out.g * boost);
+        out.b = (unsigned char)fminf(255.0f, out.b * boost);
+    }
+    return out;
+}
+
 void SetActiveTheme(const char* name) {
     const ThemeDef* t = &kThemes[0]; // default: classic
     for (int i = 0; i < kThemeCount; i++) {
@@ -266,6 +297,19 @@ void SetActiveTheme(const char* name) {
     COLOR_AMBER  = t->amber;
     COLOR_TOXIC  = t->toxic;
     COLOR_GHOST  = t->ghost;
+
+    // ---- Extended accents, derived per-theme ----
+    COLOR_VOID        = BlendColor(t->bg, BLACK, 0.4f);              // darker than bg, for deep vignette layers
+    COLOR_SIGNAL       = BlendColor(t->cyan, t->toxic, 0.5f, 1.15f);  // "live data" accent
+    COLOR_NEON_PURPLE  = BlendColor(t->cyan, t->blood, 0.5f, 1.05f);  // gradient midpoint
+    COLOR_NEON_PINK    = BlendColor(t->blood, t->amber, 0.4f, 1.05f); // gradient midpoint
+    COLOR_STATIC       = Fade(t->ghost, 0.16f);                       // faint CRT noise tint
+
+    // ---- Semantic aliases ----
+    COLOR_SUCCESS = t->toxic;
+    COLOR_WARNING = t->amber;
+    COLOR_ERROR   = t->blood;
+    COLOR_INFO    = t->cyan;
 }
 
 // ============================================================
@@ -319,6 +363,61 @@ void DrawScaledCircleLines(float centerX, float centerY, float radius, Color col
         radius * g_uiScale,
         color
     );
+}
+
+// ============================================================
+// ANIMATION / GLOW HELPERS
+// ============================================================
+
+float PulseWave(float speed, float phase) {
+    return sinf((float)GetTime() * speed + phase) * 0.5f + 0.5f;
+}
+
+Color ColorPulse(Color base, float speed, float minAlpha, float maxAlpha) {
+    float p = PulseWave(speed);
+    float a = minAlpha + (maxAlpha - minAlpha) * p;
+    return Fade(base, a);
+}
+
+void DrawGlowRect(float x, float y, float w, float h, Color color, float glowSize, int layers) {
+    if (layers < 1) layers = 1;
+    for (int i = layers; i >= 1; i--) {
+        float t = (float)i / (float)layers;          // 1.0 (outer) -> ~0 (inner)
+        float pad = glowSize * t;
+        float alpha = (1.0f - t) * (1.0f - t) * 0.55f; // outer layers fainter, falls off quadratically
+        DrawScaledRectLines(x - pad, y - pad, w + pad * 2.0f, h + pad * 2.0f, Fade(color, alpha));
+    }
+    DrawScaledRectLines(x, y, w, h, color);
+}
+
+void DrawScanlineOverlay(float x, float y, float w, float h, Color tint, float speed, float spacing) {
+    float t = (float)GetTime();
+    for (float i = 0; i < h; i += spacing) {
+        float scanY = y + i + fmodf(t * speed, spacing);
+        DrawScaledRect(x, scanY, w, 1.0f, tint);
+    }
+}
+
+void DrawDataStream(float x, float y, float w, float h, Color color, int columns, float speed) {
+    if (columns < 1) columns = 1;
+    float t = (float)GetTime();
+    float colW = w / (float)columns;
+    for (int i = 0; i < columns; i++) {
+        // Per-column seed so columns don't all move in lockstep.
+        unsigned int seed = (unsigned int)(i * 7919u + 13u);
+        float colSpeed = speed * (0.6f + (float)(seed % 100) / 130.0f);
+        float offset   = (float)(seed % 1000) / 1000.0f * h;
+        float dropY    = fmodf(t * colSpeed + offset, h + 40.0f) - 40.0f;
+
+        float cx = x + i * colW + colW * 0.5f;
+        int glyphCount = 5;
+        for (int g = 0; g < glyphCount; g++) {
+            float gy = y + dropY - g * 14.0f;
+            if (gy < y || gy > y + h) continue;
+            float fade = 1.0f - (float)g / (float)glyphCount;
+            DrawScaledRect(cx - 2.0f, gy, 3.0f, 8.0f, Fade(color, fade * 0.8f));
+        }
+    }
 }
 
 Vector2 GetRefMousePos(void) {

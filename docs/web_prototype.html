@@ -1,0 +1,3034 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VEKTRAOS v9.5 // COLD SIGNAL</title>
+    <style>
+      /* ============================================================
+           ROOT VARIABLES / DESIGN TOKENS
+           ============================================================ */
+      :root {
+        /* Dark Base */
+        --color-black: #0a0a0a;
+        --color-dark: #121212;
+        --color-dark-surface: #1a1a1a;
+        --color-dark-elevated: #242424;
+
+        /* Neutrals */
+        --color-gray-100: #e8e8e8;
+        --color-gray-300: #a8a8a8;
+        --color-gray-500: #686868;
+        --color-gray-700: #383838;
+        --color-gray-800: #282828;
+        --color-gray-900: #181818;
+
+        /* Neon / Hacker Accents */
+        --color-cyber-green: #00ff41;
+        --color-cyber-blue: #00d4ff;
+        --color-cyber-purple: #6a00ff;
+        --color-cyber-pink: #ff006e;
+        --color-cyber-orange: #ff6a00;
+
+        --color-accent-primary: #00ff41;
+        --color-accent-secondary: #00d4ff;
+        --color-accent-tertiary: #6a00ff;
+
+        /* Semantic */
+        --color-success: #00ff41;
+        --color-warning: #ff6a00;
+        --color-error: #ff006e;
+        --color-info: #00d4ff;
+
+        /* Gradients */
+        --gradient-cyber: linear-gradient(135deg, #00ff41 0%, #00d4ff 100%);
+
+        /* Typography */
+        --font-mono:
+          "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", monospace;
+        --font-display: "Orbitron", "Inter", sans-serif;
+
+        /* Spacing */
+        --space-1: 0.4rem;
+        --space-2: 0.8rem;
+        --space-3: 1.2rem;
+        --space-4: 1.6rem;
+        --space-5: 2.4rem;
+        --space-6: 3.2rem;
+        --space-7: 4.8rem;
+
+        /* Glows */
+        --glow-green: 0 0 20px rgba(0, 255, 65, 0.3);
+        --glow-blue: 0 0 20px rgba(0, 212, 255, 0.3);
+        --glow-purple: 0 0 20px rgba(106, 0, 255, 0.3);
+
+        /* Transitions */
+        --transition-fast: 150ms ease;
+        --transition-base: 250ms ease;
+        --transition-slow: 350ms ease;
+        --transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+        /* Radius */
+        --radius-sm: 0.4rem;
+        --radius-md: 0.8rem;
+        --radius-lg: 1.2rem;
+        --radius-xl: 2rem;
+
+        /* Shadows */
+        --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+        --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.7);
+
+        /* Top bar height */
+        --top-bar-height: 44px;
+        --window-title-height: 30px;
+      }
+
+      /* ============================================================
+           RESET & BASE
+           ============================================================ */
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 62.5%;
+        /* 10px base */
+      }
+
+      body {
+        font-family: var(--font-mono);
+        background: var(--color-black);
+        color: var(--color-gray-100);
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        user-select: none;
+        cursor: default;
+        font-size: 1.4rem;
+        line-height: 1.5;
+      }
+
+      /* Scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--color-dark-surface);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--color-gray-700);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-cyber-green);
+      }
+
+      /* ============================================================
+           FONTS (Google Fonts fallback)
+           ============================================================ */
+      @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@400;700&display=swap");
+
+      /* ============================================================
+           LOGIN SCREEN
+           ============================================================ */
+      #login-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: var(--color-black);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        transition:
+          opacity 0.8s ease,
+          transform 0.8s ease;
+      }
+      #login-screen.hidden {
+        opacity: 0;
+        transform: scale(1.02);
+        pointer-events: none;
+      }
+
+      .login-grid-bg {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        opacity: 0.15;
+      }
+      .login-grid-bg .node {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        background: var(--color-cyber-blue);
+        border-radius: 50%;
+        box-shadow: 0 0 8px var(--color-cyber-blue);
+      }
+      .login-grid-bg .line {
+        position: absolute;
+        height: 1px;
+        background: var(--color-cyber-blue);
+        opacity: 0.2;
+        transform-origin: left center;
+      }
+
+      .login-box {
+        position: relative;
+        z-index: 2;
+        background: rgba(8, 10, 16, 0.92);
+        border: 1px solid rgba(0, 220, 240, 0.25);
+        border-radius: var(--radius-lg);
+        padding: var(--space-7) var(--space-6);
+        width: 520px;
+        max-width: 92vw;
+        box-shadow:
+          var(--shadow-xl),
+          0 0 60px rgba(0, 220, 240, 0.06);
+        backdrop-filter: blur(4px);
+      }
+      .login-box .corner-tl,
+      .login-box .corner-tr,
+      .login-box .corner-bl,
+      .login-box .corner-br {
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        border-color: rgba(0, 220, 240, 0.5);
+        border-style: solid;
+        border-width: 0;
+        transition: border-color 0.3s;
+      }
+      .login-box .corner-tl {
+        top: -1px;
+        left: -1px;
+        border-top-width: 2px;
+        border-left-width: 2px;
+      }
+      .login-box .corner-tr {
+        top: -1px;
+        right: -1px;
+        border-top-width: 2px;
+        border-right-width: 2px;
+      }
+      .login-box .corner-bl {
+        bottom: -1px;
+        left: -1px;
+        border-bottom-width: 2px;
+        border-left-width: 2px;
+      }
+      .login-box .corner-br {
+        bottom: -1px;
+        right: -1px;
+        border-bottom-width: 2px;
+        border-right-width: 2px;
+      }
+
+      .login-logo {
+        text-align: center;
+        margin-bottom: var(--space-5);
+      }
+      .login-logo h1 {
+        font-family: var(--font-display);
+        font-size: 3.6rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        background: var(--gradient-cyber);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 30px rgba(0, 255, 65, 0.15);
+      }
+      .login-logo .sub {
+        font-size: 1.1rem;
+        letter-spacing: 0.3em;
+        color: var(--color-gray-500);
+        margin-top: 4px;
+        font-family: var(--font-mono);
+      }
+      .login-logo .sub span {
+        color: var(--color-cyber-blue);
+      }
+
+      .login-divider {
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(0, 220, 240, 0.3),
+          transparent
+        );
+        margin: var(--space-4) 0;
+      }
+
+      .login-field {
+        margin-bottom: var(--space-4);
+      }
+      .login-field label {
+        display: block;
+        font-size: 1rem;
+        letter-spacing: 0.08em;
+        color: var(--color-gray-500);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+      .login-field input {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid var(--color-gray-800);
+        border-radius: var(--radius-sm);
+        padding: var(--space-3) var(--space-4);
+        font-family: var(--font-mono);
+        font-size: 1.4rem;
+        color: var(--color-cyber-green);
+        outline: none;
+        transition:
+          border-color var(--transition-fast),
+          box-shadow var(--transition-fast);
+      }
+      .login-field input:focus {
+        border-color: var(--color-cyber-green);
+        box-shadow: var(--glow-green);
+      }
+      .login-field input::placeholder {
+        color: var(--color-gray-700);
+      }
+
+      .login-btn {
+        width: 100%;
+        padding: var(--space-3) var(--space-5);
+        background: var(--color-cyber-green);
+        color: var(--color-black);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.4rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border: none;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all var(--transition-base);
+        position: relative;
+        overflow: hidden;
+        margin-top: var(--space-2);
+      }
+      .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--glow-green), var(--shadow-lg);
+      }
+      .login-btn:active {
+        transform: translateY(0);
+      }
+      .login-btn::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        transform: translateX(-100%);
+        transition: transform 0.6s;
+      }
+      .login-btn:hover::before {
+        transform: translateX(100%);
+      }
+
+      .login-footer {
+        margin-top: var(--space-4);
+        text-align: center;
+        font-size: 0.9rem;
+        color: var(--color-gray-700);
+        letter-spacing: 0.04em;
+      }
+      .login-footer .warn {
+        color: rgba(220, 20, 40, 0.6);
+        animation: pulse-warn 2s infinite;
+      }
+
+      @keyframes pulse-warn {
+        0%,
+        100% {
+          opacity: 0.6;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      /* ============================================================
+           DESKTOP
+           ============================================================ */
+      #desktop {
+        position: fixed;
+        inset: 0;
+        background: var(--color-black);
+        display: none;
+        flex-direction: column;
+      }
+      #desktop.active {
+        display: flex;
+      }
+
+      /* --- Top Bar --- */
+      #top-bar {
+        height: var(--top-bar-height);
+        background: rgba(28, 30, 40, 0.95);
+        border-bottom: 1px solid rgba(40, 45, 60, 0.8);
+        display: flex;
+        align-items: center;
+        padding: 0 var(--space-4);
+        flex-shrink: 0;
+        z-index: 100;
+        backdrop-filter: blur(6px);
+        gap: var(--space-3);
+      }
+      #top-bar .brand {
+        font-family: var(--font-display);
+        font-size: 1.2rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: var(--color-cyber-green);
+        margin-right: var(--space-4);
+      }
+      #top-bar .brand small {
+        font-weight: 400;
+        color: var(--color-gray-500);
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+      }
+
+      #top-bar .ws-indicator {
+        display: flex;
+        gap: 6px;
+        margin-right: var(--space-4);
+      }
+      #top-bar .ws-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--color-gray-800);
+        border: 1px solid var(--color-gray-700);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+      }
+      #top-bar .ws-dot.active {
+        background: var(--color-cyber-green);
+        border-color: var(--color-cyber-green);
+        box-shadow: var(--glow-green);
+      }
+      #top-bar .ws-dot:hover {
+        border-color: var(--color-cyber-blue);
+      }
+
+      #top-bar .spacer {
+        flex: 1;
+      }
+
+      #top-bar .top-status {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        font-size: 1rem;
+        color: var(--color-gray-500);
+      }
+      #top-bar .top-status .live-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--color-cyber-green);
+        animation: pulse-dot 1.2s infinite;
+      }
+      @keyframes pulse-dot {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.3;
+          transform: scale(0.8);
+        }
+      }
+      #top-bar .top-status .vcoin {
+        color: var(--color-cyber-green);
+      }
+      #top-bar .top-status .clock {
+        color: var(--color-cyber-blue);
+        font-family: var(--font-mono);
+        min-width: 60px;
+        text-align: right;
+      }
+
+      /* --- Desktop Icons --- */
+      #desktop-icons {
+        position: absolute;
+        top: calc(var(--top-bar-height) + 20px);
+        left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 10;
+        pointer-events: none;
+      }
+      #desktop-icons .d-icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 72px;
+        padding: 8px 4px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        pointer-events: auto;
+        transition: background var(--transition-fast);
+        background: transparent;
+        border: none;
+        color: var(--color-gray-100);
+        font-family: var(--font-mono);
+      }
+      #desktop-icons .d-icon:hover {
+        background: rgba(40, 45, 65, 0.5);
+      }
+      #desktop-icons .d-icon .icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-md);
+        background: rgba(20, 22, 35, 0.7);
+        border: 1px solid var(--color-gray-800);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        transition:
+          border-color var(--transition-fast),
+          box-shadow var(--transition-fast);
+        margin-bottom: 4px;
+      }
+      #desktop-icons .d-icon:hover .icon-box {
+        border-color: var(--color-cyber-green);
+        box-shadow: var(--glow-green);
+      }
+      #desktop-icons .d-icon .label {
+        font-size: 0.85rem;
+        color: var(--color-gray-300);
+        text-align: center;
+        line-height: 1.2;
+        max-width: 64px;
+        word-break: break-word;
+      }
+
+      /* --- Windows --- */
+      #windows-container {
+        position: absolute;
+        inset: var(--top-bar-height) 0 0 0;
+        pointer-events: none;
+        z-index: 20;
+      }
+      .window {
+        position: absolute;
+        min-width: 320px;
+        min-height: 200px;
+        background: var(--color-dark-surface);
+        border: 1px solid var(--color-gray-800);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-xl);
+        pointer-events: auto;
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow var(--transition-fast);
+        overflow: hidden;
+        resize: none;
+      }
+      .window.focused {
+        border-color: var(--color-cyber-green);
+        box-shadow: var(--shadow-xl), var(--glow-green);
+        z-index: 30;
+      }
+      .window.minimized {
+        display: none !important;
+      }
+
+      .window-titlebar {
+        height: var(--window-title-height);
+        background: var(--color-dark-elevated);
+        display: flex;
+        align-items: center;
+        padding: 0 var(--space-3);
+        flex-shrink: 0;
+        cursor: grab;
+        border-bottom: 1px solid var(--color-gray-800);
+      }
+      .window.focused .window-titlebar {
+        background: rgba(0, 255, 65, 0.08);
+        border-bottom-color: var(--color-cyber-green);
+      }
+      .window-titlebar .win-title {
+        flex: 1;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--color-gray-300);
+        letter-spacing: 0.04em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-left: var(--space-2);
+      }
+      .window.focused .win-title {
+        color: var(--color-cyber-green);
+      }
+
+      .window-controls {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .window-controls .ctrl {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        transition:
+          transform var(--transition-fast),
+          opacity var(--transition-fast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        color: rgba(0, 0, 0, 0.5);
+        padding: 0;
+        line-height: 1;
+      }
+      .window-controls .ctrl:hover {
+        transform: scale(1.15);
+      }
+      .window-controls .ctrl-close {
+        background: #ff5f57;
+      }
+      .window-controls .ctrl-close:hover {
+        background: #ff3b30;
+      }
+      .window-controls .ctrl-min {
+        background: #ffbd2e;
+      }
+      .window-controls .ctrl-min:hover {
+        background: #ffa00a;
+      }
+      .window-controls .ctrl-max {
+        background: #28c840;
+      }
+      .window-controls .ctrl-max:hover {
+        background: #1ea832;
+      }
+
+      .window-content {
+        flex: 1;
+        background: var(--color-black);
+        overflow: hidden;
+        position: relative;
+        padding: var(--space-3);
+      }
+      .window-content .win-inner {
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 4px;
+      }
+
+      /* ============================================================
+           APP: TERMINAL
+           ============================================================ */
+      .terminal-output {
+        font-family: var(--font-mono);
+        font-size: 1.15rem;
+        line-height: 1.6;
+        color: var(--color-gray-300);
+        white-space: pre-wrap;
+        word-break: break-word;
+        padding: 4px 0;
+      }
+      .terminal-output .log-line {
+        padding: 1px 0;
+        border-bottom: 1px solid rgba(40, 45, 60, 0.15);
+      }
+      .terminal-output .log-line .lnum {
+        display: inline-block;
+        width: 32px;
+        color: var(--color-gray-700);
+        font-size: 0.8rem;
+        text-align: right;
+        margin-right: 10px;
+        user-select: none;
+      }
+      .terminal-output .log-line .msg {
+        display: inline;
+      }
+      .terminal-output .log-line .msg .hl-green {
+        color: var(--color-cyber-green);
+      }
+      .terminal-output .log-line .msg .hl-cyan {
+        color: var(--color-cyber-blue);
+      }
+      .terminal-output .log-line .msg .hl-amber {
+        color: #ff9600;
+      }
+      .terminal-output .log-line .msg .hl-red {
+        color: var(--color-cyber-pink);
+      }
+      .terminal-output .log-line .msg .hl-ghost {
+        color: var(--color-gray-500);
+      }
+
+      .terminal-input-row {
+        display: flex;
+        align-items: center;
+        padding: var(--space-2) 0;
+        border-top: 1px solid var(--color-gray-800);
+        margin-top: 4px;
+        background: var(--color-black);
+        position: sticky;
+        bottom: 0;
+      }
+      .terminal-input-row .prompt {
+        color: var(--color-cyber-green);
+        font-weight: 700;
+        margin-right: var(--space-2);
+        flex-shrink: 0;
+      }
+      .terminal-input-row input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--color-gray-100);
+        font-family: var(--font-mono);
+        font-size: 1.15rem;
+        padding: 2px 0;
+        caret-color: var(--color-cyber-green);
+      }
+      .terminal-input-row input::selection {
+        background: rgba(0, 255, 65, 0.2);
+      }
+
+      /* ============================================================
+           APP: FEED
+           ============================================================ */
+      .feed-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      .feed-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: var(--space-2);
+        border-bottom: 1px solid var(--color-gray-800);
+        flex-shrink: 0;
+      }
+      .feed-header .feed-title {
+        font-size: 1.2rem;
+        color: var(--color-cyber-blue);
+        letter-spacing: 0.05em;
+      }
+      .feed-header .feed-count {
+        color: var(--color-gray-500);
+        font-size: 0.9rem;
+      }
+      .feed-body {
+        flex: 1;
+        overflow-y: auto;
+        padding-top: var(--space-2);
+      }
+      .feed-item {
+        padding: 3px 0;
+        border-bottom: 1px solid rgba(40, 45, 60, 0.15);
+        font-size: 1.05rem;
+        line-height: 1.5;
+        display: flex;
+        gap: 8px;
+      }
+      .feed-item .ftag {
+        color: var(--color-gray-700);
+        flex-shrink: 0;
+        font-size: 0.8rem;
+      }
+      .feed-item .fmsg {
+        flex: 1;
+        word-break: break-word;
+      }
+      .feed-item .fmsg .hl-green {
+        color: var(--color-cyber-green);
+      }
+      .feed-item .fmsg .hl-cyan {
+        color: var(--color-cyber-blue);
+      }
+      .feed-item .fmsg .hl-amber {
+        color: #ff9600;
+      }
+      .feed-item .fmsg .hl-red {
+        color: var(--color-cyber-pink);
+      }
+      .feed-item .fmsg .hl-ghost {
+        color: var(--color-gray-500);
+      }
+
+      /* ============================================================
+           APP: PROFILE
+           ============================================================ */
+      .profile-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-4);
+        height: 100%;
+      }
+      .profile-col {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+      .profile-stat {
+        background: rgba(10, 12, 18, 0.6);
+        border: 1px solid var(--color-gray-800);
+        border-radius: var(--radius-sm);
+        padding: var(--space-3);
+      }
+      .profile-stat .label {
+        font-size: 0.85rem;
+        color: var(--color-gray-500);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .profile-stat .value {
+        font-size: 1.4rem;
+        font-weight: 500;
+        margin-top: 2px;
+      }
+      .profile-stat .value.green {
+        color: var(--color-cyber-green);
+      }
+      .profile-stat .value.cyan {
+        color: var(--color-cyber-blue);
+      }
+      .profile-stat .value.amber {
+        color: #ff9600;
+      }
+      .profile-stat .value.red {
+        color: var(--color-cyber-pink);
+      }
+
+      .profile-stat .bar-track {
+        width: 100%;
+        height: 8px;
+        background: var(--color-gray-900);
+        border-radius: 4px;
+        margin-top: 6px;
+        overflow: hidden;
+        border: 1px solid var(--color-gray-800);
+      }
+      .profile-stat .bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.6s ease;
+      }
+      .profile-stat .bar-fill.green {
+        background: var(--color-cyber-green);
+      }
+      .profile-stat .bar-fill.cyan {
+        background: var(--color-cyber-blue);
+      }
+      .profile-stat .bar-fill.amber {
+        background: #ff9600;
+      }
+      .profile-stat .bar-fill.red {
+        background: var(--color-cyber-pink);
+      }
+
+      /* ============================================================
+           APP: SETTINGS
+           ============================================================ */
+      .settings-layout {
+        display: flex;
+        height: 100%;
+        gap: var(--space-3);
+      }
+      .settings-sidebar {
+        width: 150px;
+        flex-shrink: 0;
+        border-right: 1px solid var(--color-gray-800);
+        padding-right: var(--space-3);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .settings-sidebar .s-item {
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: 1rem;
+        color: var(--color-gray-500);
+        transition: all var(--transition-fast);
+        border: 1px solid transparent;
+      }
+      .settings-sidebar .s-item:hover {
+        background: rgba(40, 45, 65, 0.3);
+        color: var(--color-gray-300);
+      }
+      .settings-sidebar .s-item.active {
+        background: rgba(0, 255, 65, 0.08);
+        border-color: var(--color-cyber-green);
+        color: var(--color-cyber-green);
+      }
+      .settings-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--space-2) var(--space-3);
+      }
+      .settings-content .s-title {
+        font-size: 1.3rem;
+        color: var(--color-cyber-blue);
+        margin-bottom: var(--space-3);
+        letter-spacing: 0.04em;
+      }
+      .settings-content .s-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-2) 0;
+        border-bottom: 1px solid rgba(40, 45, 60, 0.2);
+      }
+      .settings-content .s-row .s-label {
+        width: 100px;
+        flex-shrink: 0;
+        color: var(--color-gray-500);
+        font-size: 0.95rem;
+      }
+      .settings-content .s-row .s-value {
+        flex: 1;
+        color: var(--color-gray-300);
+      }
+      .settings-content .s-row .s-value .theme-swatch {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        border: 1px solid var(--color-gray-700);
+        vertical-align: middle;
+        margin-right: 4px;
+      }
+
+      .theme-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: var(--space-2);
+        margin-top: var(--space-2);
+      }
+      .theme-card {
+        background: rgba(10, 12, 18, 0.6);
+        border: 1px solid var(--color-gray-800);
+        border-radius: var(--radius-sm);
+        padding: var(--space-2);
+        text-align: center;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        font-size: 0.85rem;
+        color: var(--color-gray-500);
+      }
+      .theme-card:hover {
+        border-color: var(--color-cyber-blue);
+        color: var(--color-gray-300);
+      }
+      .theme-card.active {
+        border-color: var(--color-cyber-green);
+        color: var(--color-cyber-green);
+        background: rgba(0, 255, 65, 0.06);
+      }
+      .theme-card .swatches {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        margin-bottom: 4px;
+      }
+      .theme-card .swatches span {
+        width: 20px;
+        height: 12px;
+        border-radius: 2px;
+        border: 1px solid var(--color-gray-800);
+      }
+
+      /* ============================================================
+           APP: BROWSER
+           ============================================================ */
+      .browser-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding-bottom: var(--space-2);
+        border-bottom: 1px solid var(--color-gray-800);
+        flex-shrink: 0;
+        flex-wrap: wrap;
+      }
+      .browser-toolbar .nav-btn {
+        background: transparent;
+        border: 1px solid var(--color-gray-800);
+        border-radius: var(--radius-sm);
+        color: var(--color-gray-500);
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all var(--transition-fast);
+        font-family: var(--font-mono);
+      }
+      .browser-toolbar .nav-btn:hover {
+        border-color: var(--color-cyber-blue);
+        color: var(--color-cyber-blue);
+      }
+      .browser-toolbar .url-bar {
+        flex: 1;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--color-gray-800);
+        border-radius: var(--radius-sm);
+        padding: 4px 10px;
+        font-family: var(--font-mono);
+        font-size: 1rem;
+        color: var(--color-cyber-blue);
+        outline: none;
+        min-width: 120px;
+        transition: border-color var(--transition-fast);
+      }
+      .browser-toolbar .url-bar:focus {
+        border-color: var(--color-cyber-green);
+      }
+      .browser-toolbar .url-bar .connecting {
+        color: var(--color-cyber-orange);
+      }
+
+      .browser-page {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--space-2) 0;
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: var(--color-gray-300);
+      }
+      .browser-page .bp-line {
+        padding: 1px 0;
+      }
+      .browser-page .bp-line .hl-title {
+        color: var(--color-cyber-pink);
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      .browser-page .bp-line .hl-sub {
+        color: #ff9600;
+        font-size: 1.15rem;
+      }
+      .browser-page .bp-line .hl-green {
+        color: var(--color-cyber-green);
+      }
+      .browser-page .bp-line .hl-cyan {
+        color: var(--color-cyber-blue);
+      }
+      .browser-page .bp-line .hl-amber {
+        color: #ff9600;
+      }
+      .browser-page .bp-line .hl-red {
+        color: var(--color-cyber-pink);
+      }
+      .browser-page .bp-line .hl-ghost {
+        color: var(--color-gray-500);
+      }
+      .browser-page .bp-line .hl-link {
+        color: var(--color-cyber-blue);
+        cursor: pointer;
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 2px;
+        transition: color var(--transition-fast);
+      }
+      .browser-page .bp-line .hl-link:hover {
+        color: var(--color-cyber-green);
+      }
+      .browser-page .bp-line .hl-badge {
+        display: inline-block;
+        padding: 0 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        margin-right: 4px;
+        color: var(--color-black);
+      }
+      .browser-page .bp-line .hl-badge.b-blood {
+        background: var(--color-cyber-pink);
+      }
+      .browser-page .bp-line .hl-badge.b-amber {
+        background: #ff9600;
+      }
+      .browser-page .bp-line .hl-badge.b-green {
+        background: var(--color-cyber-green);
+      }
+      .browser-page .bp-line .hl-badge.b-cyan {
+        background: var(--color-cyber-blue);
+      }
+
+      .browser-page .bp-divider {
+        border: none;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--color-gray-700),
+          transparent
+        );
+        margin: var(--space-2) 0;
+      }
+
+      /* ============================================================
+           CRT SCANLINE OVERLAY (subtle global)
+           ============================================================ */
+      #scanlines {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 99999;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent 0px,
+          transparent 2px,
+          rgba(0, 0, 0, 0.03) 2px,
+          rgba(0, 0, 0, 0.03) 4px
+        );
+        opacity: 0.6;
+      }
+
+      /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+      @media (max-width: 768px) {
+        .login-box {
+          padding: var(--space-5) var(--space-4);
+          width: 94vw;
+        }
+        .login-logo h1 {
+          font-size: 2.4rem;
+        }
+        .window {
+          min-width: 280px;
+          min-height: 160px;
+        }
+        .profile-grid {
+          grid-template-columns: 1fr;
+        }
+        .settings-layout {
+          flex-direction: column;
+        }
+        .settings-sidebar {
+          width: 100%;
+          flex-direction: row;
+          flex-wrap: wrap;
+          border-right: none;
+          border-bottom: 1px solid var(--color-gray-800);
+          padding-bottom: var(--space-2);
+        }
+        .settings-sidebar .s-item {
+          flex: 1;
+          min-width: 60px;
+          text-align: center;
+        }
+        #desktop-icons .d-icon .label {
+          font-size: 0.7rem;
+        }
+        #desktop-icons .d-icon {
+          width: 56px;
+          padding: 4px 2px;
+        }
+        #desktop-icons .d-icon .icon-box {
+          width: 38px;
+          height: 38px;
+          font-size: 1.6rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .login-logo h1 {
+          font-size: 1.8rem;
+        }
+        .login-field input {
+          font-size: 1.2rem;
+          padding: var(--space-2);
+        }
+        .window {
+          min-width: 240px;
+          min-height: 140px;
+        }
+        .window-titlebar .win-title {
+          font-size: 0.85rem;
+        }
+        .terminal-output {
+          font-size: 0.95rem;
+        }
+        .terminal-input-row input {
+          font-size: 0.95rem;
+        }
+        #top-bar .brand {
+          font-size: 0.9rem;
+        }
+        #top-bar .top-status .clock {
+          font-size: 0.8rem;
+          min-width: 44px;
+        }
+        .browser-toolbar .url-bar {
+          font-size: 0.85rem;
+        }
+      }
+
+      /* ============================================================
+           UTILITY
+           ============================================================ */
+      .hidden {
+        display: none !important;
+      }
+      .flex-1 {
+        flex: 1;
+      }
+      .overflow-auto {
+        overflow: auto;
+      }
+      .text-center {
+        text-align: center;
+      }
+      .text-mono {
+        font-family: var(--font-mono);
+      }
+      .text-display {
+        font-family: var(--font-display);
+      }
+      .glow-green {
+        box-shadow: var(--glow-green);
+      }
+      .glow-blue {
+        box-shadow: var(--glow-blue);
+      }
+      .mt-1 {
+        margin-top: var(--space-1);
+      }
+      .mt-2 {
+        margin-top: var(--space-2);
+      }
+      .mb-1 {
+        margin-bottom: var(--space-1);
+      }
+      .mb-2 {
+        margin-bottom: var(--space-2);
+      }
+      .gap-1 {
+        gap: var(--space-1);
+      }
+      .gap-2 {
+        gap: var(--space-2);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============================================================
+    SCANLINES OVERLAY
+    ============================================================ -->
+    <div id="scanlines"></div>
+
+    <!-- ============================================================
+    LOGIN SCREEN
+    ============================================================ -->
+    <div id="login-screen">
+      <div class="login-grid-bg" id="loginGrid"></div>
+
+      <div class="login-box">
+        <div class="corner-tl"></div>
+        <div class="corner-tr"></div>
+        <div class="corner-bl"></div>
+        <div class="corner-br"></div>
+
+        <div class="login-logo">
+          <h1>VEKTRA</h1>
+          <div class="sub">
+            OPERATING SYSTEM // <span>COLD SIGNAL v9.5</span>
+          </div>
+        </div>
+
+        <div class="login-divider"></div>
+
+        <div class="login-field">
+          <label for="loginIP">TARGET GATEWAY</label>
+          <input
+            type="text"
+            id="loginIP"
+            value="127.0.0.1"
+            placeholder="Enter IP address..."
+            autofocus
+          />
+        </div>
+
+        <div class="login-field">
+          <label for="loginHandle">OPERATOR HANDLE</label>
+          <input
+            type="text"
+            id="loginHandle"
+            value="sh4d0w"
+            placeholder="Your callsign..."
+          />
+        </div>
+
+        <button class="login-btn" id="loginBtn">INITIALIZE UPLINK</button>
+
+        <div class="login-footer">
+          <span class="warn"
+            >⚠ UNREGISTERED SYSTEM // AUTHORIZED PERSONNEL ONLY</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+    DESKTOP
+    ============================================================ -->
+    <div id="desktop">
+      <!-- Top Bar -->
+      <div id="top-bar">
+        <div class="brand">VEKTRA <small>// COLD SIGNAL</small></div>
+        <div class="ws-indicator" id="wsIndicator">
+          <div class="ws-dot active" data-ws="0" title="Main"></div>
+          <div class="ws-dot" data-ws="1" title="Work"></div>
+          <div class="ws-dot" data-ws="2" title="Chat"></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="top-status">
+          <span class="live-dot"></span>
+          <span class="vcoin" id="topVcoin">0.00 VCOIN</span>
+          <span class="clock" id="topClock">00:00</span>
+        </div>
+      </div>
+
+      <!-- Desktop Icons -->
+      <div id="desktop-icons">
+        <button class="d-icon" data-app="browser">
+          <div class="icon-box">🌐</div>
+          <span class="label">Browser</span>
+        </button>
+        <button class="d-icon" data-app="terminal">
+          <div class="icon-box">⌨</div>
+          <span class="label">Terminal</span>
+        </button>
+        <button class="d-icon" data-app="profile">
+          <div class="icon-box">👤</div>
+          <span class="label">Profile</span>
+        </button>
+        <button class="d-icon" data-app="settings">
+          <div class="icon-box">⚙</div>
+          <span class="label">Settings</span>
+        </button>
+        <button class="d-icon" data-app="feed">
+          <div class="icon-box">📡</div>
+          <span class="label">Feed</span>
+        </button>
+      </div>
+
+      <!-- Windows Container -->
+      <div id="windows-container"></div>
+    </div>
+
+    <!-- ============================================================
+    JAVASCRIPT
+    ============================================================ -->
+    <script>
+      // ============================================================
+      // STATE
+      // ============================================================
+      const STATE = {
+        loggedIn: false,
+        handle: "sh4d0w",
+        port: 8001 + Math.floor(Math.random() * 999),
+        vcoin: 1.5,
+        traceLevel: 14,
+        iceShields: 1,
+        crtHeat: 35.0,
+        paranoia: 0.0,
+        runTime: 0,
+        currentURL: "vnet.dir",
+        assignedSites: [
+          "market.vnet",
+          "vault.vnet",
+          "terminal.vnet",
+          "crypto.vnet",
+          "hellroom.vnet",
+          "forum.vnet",
+          "bounty.vnet",
+          "vektrapay.vnet",
+          "hashbeat.vnet",
+        ],
+        discoveredSites: [],
+        feedLogs: [],
+        cliLogs: [],
+        terminalInput: "",
+        theme: "classic",
+        windows: [],
+        windowIdCounter: 0,
+        focusedWindowId: null,
+        wsCurrent: 0,
+        wsWindows: [[], [], []],
+        pageLines: [],
+        browserHistory: ["vnet.dir"],
+        browserHistoryIndex: 0,
+        connecting: false,
+        pendingURL: "",
+        connectTimer: 0,
+        targetConnectTime: 0,
+        raidActive: false,
+        raidStage: -1,
+        raidTimer: 0,
+        raidResponseTime: 0,
+        raidType: 0,
+        raidSuccess: false,
+        raidInput: "",
+        raidCount: 0,
+        raidFailedCount: 0,
+        isFlagged: false,
+        raidCooldown: 0,
+        minedBlockIds: [],
+        minedBlocks: [],
+        miningCooldown: 0,
+        glitchIntensity: 0,
+      };
+
+      // ============================================================
+      // THEMES
+      // ============================================================
+      const THEMES = {
+        classic: {
+          name: "Classic",
+          bg: "#0A0A0A",
+          panel: "#1A1A1A",
+          border: "#383838",
+          blood: "#DC1428",
+          cyan: "#00D4FF",
+          amber: "#FF9600",
+          toxic: "#00FF41",
+          ghost: "#A0AAB9",
+        },
+        tokyo: {
+          name: "Tokyo",
+          bg: "#10121C",
+          panel: "#161926",
+          border: "#343C5C",
+          blood: "#F7768E",
+          cyan: "#7AA2F7",
+          amber: "#BB9AF7",
+          toxic: "#73DACA",
+          ghost: "#C0CAF5",
+        },
+        redroom: {
+          name: "Redroom",
+          bg: "#0A0305",
+          panel: "#16080C",
+          border: "#55161E",
+          blood: "#FF1432",
+          cyan: "#F02D41",
+          amber: "#FF8C00",
+          toxic: "#00E6B4",
+          ghost: "#EBD2D7",
+        },
+        amber: {
+          name: "Amber",
+          bg: "#0C0802",
+          panel: "#181005",
+          border: "#5A3C0F",
+          blood: "#F03C1E",
+          cyan: "#FFAF00",
+          amber: "#DC7800",
+          toxic: "#B4F050",
+          ghost: "#FFD282",
+        },
+        matrix: {
+          name: "Matrix",
+          bg: "#040A06",
+          panel: "#08160C",
+          border: "#195028",
+          blood: "#F02846",
+          cyan: "#00D2FF",
+          amber: "#28F064",
+          toxic: "#32FF78",
+          ghost: "#C8FFD7",
+        },
+        cyberpunk: {
+          name: "Cyberpunk",
+          bg: "#120A1A",
+          panel: "#1E102A",
+          border: "#641E78",
+          blood: "#FF0055",
+          cyan: "#00E6FF",
+          amber: "#FFD700",
+          toxic: "#32FF78",
+          ghost: "#DCC8F0",
+        },
+      };
+
+      let currentTheme = "classic";
+
+      // ============================================================
+      // DOM REFS
+      // ============================================================
+      const $ = (id) => document.getElementById(id);
+      const loginScreen = $("login-screen");
+      const desktop = $("desktop");
+      const windowsContainer = $("windows-container");
+      const topClock = $("topClock");
+      const topVcoin = $("topVcoin");
+      const loginIP = $("loginIP");
+      const loginHandle = $("loginHandle");
+      const loginBtn = $("loginBtn");
+      const wsIndicator = $("wsIndicator");
+
+      // ============================================================
+      // LOGIN GRID BACKGROUND
+      // ============================================================
+      (function initLoginGrid() {
+        const container = $("loginGrid");
+        const w = window.innerWidth,
+          h = window.innerHeight;
+        for (let i = 0; i < 40; i++) {
+          const node = document.createElement("div");
+          node.className = "node";
+          node.style.left = Math.random() * w + "px";
+          node.style.top = Math.random() * h + "px";
+          node.style.animation = `float-node ${4 + Math.random() * 6}s ease-in-out infinite`;
+          node.style.animationDelay = Math.random() * 4 + "s";
+          container.appendChild(node);
+        }
+        // Inject keyframes
+        const style = document.createElement("style");
+        style.textContent = `
+                @keyframes float-node {
+                    0%, 100% { transform: translate(0,0); opacity: 0.2; }
+                    50% { transform: translate(${Math.random() > 0.5 ? "" : "-"}30px, ${Math.random() > 0.5 ? "" : "-"}20px); opacity: 0.8; }
+                }
+            `;
+        document.head.appendChild(style);
+      })();
+
+      // ============================================================
+      // CLOCK
+      // ============================================================
+      function updateClock() {
+        const d = new Date();
+        topClock.textContent = d.toTimeString().slice(0, 5);
+      }
+      setInterval(updateClock, 1000);
+      updateClock();
+
+      // ============================================================
+      // LOGIN
+      // ============================================================
+      loginBtn.addEventListener("click", doLogin);
+      loginIP.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doLogin();
+      });
+      loginHandle.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doLogin();
+      });
+
+      function doLogin() {
+        const ip = loginIP.value.trim() || "127.0.0.1";
+        const handle = loginHandle.value.trim() || "sh4d0w";
+        STATE.handle = handle;
+        STATE.port = 8001 + Math.floor(Math.random() * 999);
+
+        // Simulate connection
+        loginBtn.textContent = "HANDSHAKING...";
+        loginBtn.disabled = true;
+        loginBtn.style.opacity = "0.6";
+
+        setTimeout(
+          () => {
+            loginScreen.classList.add("hidden");
+            desktop.classList.add("active");
+            STATE.loggedIn = true;
+            // Init default windows
+            openApp("terminal", "Terminal");
+            openApp("feed", "System Feed");
+            // Populate feed
+            addFeed("FEED_INIT", "VNET BROADCAST HUB ONLINE");
+            addFeed("FEED", "MONITORING P2P EXPLOIT & CHAT...");
+            addCliLog("SYS_INIT", "VNET SYSTEM LOADED");
+            addCliLog("SYS_INIT", `PLAYER HANDLE: ${STATE.handle}`);
+            addCliLog("SYS_INIT", `ACTIVE PORT: ${STATE.port}`);
+            addCliLog("SYS_INIT", "CONNECTED TO vnet.dir");
+            addCliLog("", "--------------------------------------------------");
+            addCliLog("", "Type 'help' for available commands.");
+            // Load home page
+            loadPage("vnet.dir");
+            // Restore button
+            loginBtn.textContent = "INITIALIZE UPLINK";
+            loginBtn.disabled = false;
+            loginBtn.style.opacity = "1";
+          },
+          1200 + Math.random() * 800,
+        );
+      }
+
+      // ============================================================
+      // THEME APPLICATION
+      // ============================================================
+      function applyTheme(name) {
+        const t = THEMES[name];
+        if (!t) return;
+        currentTheme = name;
+        const root = document.documentElement;
+        root.style.setProperty("--color-black", t.bg);
+        root.style.setProperty("--color-dark-surface", t.panel);
+        root.style.setProperty("--color-gray-800", t.border);
+        root.style.setProperty("--color-cyber-pink", t.blood);
+        root.style.setProperty("--color-cyber-blue", t.cyan);
+        root.style.setProperty("--color-cyber-orange", t.amber);
+        root.style.setProperty("--color-cyber-green", t.toxic);
+        root.style.setProperty("--color-gray-300", t.ghost);
+        // Also update border color variable used in .window
+        document.querySelectorAll(".window").forEach((w) => {
+          w.style.borderColor = t.border;
+        });
+        // Update theme cards
+        document.querySelectorAll(".theme-card").forEach((el) => {
+          el.classList.toggle("active", el.dataset.theme === name);
+        });
+      }
+
+      // ============================================================
+      // LOGGING
+      // ============================================================
+      function addCliLog(tag, msg) {
+        const entry = tag ? `[${tag}] ${msg}` : msg;
+        STATE.cliLogs.push(entry);
+        if (STATE.cliLogs.length > 250) STATE.cliLogs.shift();
+        renderTerminal();
+      }
+
+      function addFeed(tag, msg) {
+        const entry = tag ? `[${tag}] ${msg}` : msg;
+        STATE.feedLogs.push(entry);
+        if (STATE.feedLogs.length > 100) STATE.feedLogs.shift();
+        renderFeed();
+      }
+
+      function addFeedRaw(msg) {
+        STATE.feedLogs.push(msg);
+        if (STATE.feedLogs.length > 100) STATE.feedLogs.shift();
+        renderFeed();
+      }
+
+      function addCliLogRaw(msg) {
+        STATE.cliLogs.push(msg);
+        if (STATE.cliLogs.length > 250) STATE.cliLogs.shift();
+        renderTerminal();
+      }
+
+      // ============================================================
+      // WINDOW MANAGEMENT
+      // ============================================================
+      function openApp(type, title) {
+        // Check if already open
+        const existing = STATE.windows.find(
+          (w) => w.type === type && !w.minimized,
+        );
+        if (existing) {
+          focusWindow(existing.id);
+          return existing.id;
+        }
+
+        const id = ++STATE.windowIdCounter;
+        const w = {
+          id,
+          type,
+          title: title || type.charAt(0).toUpperCase() + type.slice(1),
+          x: 60 + STATE.windows.length * 18,
+          y: 70 + STATE.windows.length * 18,
+          w: Math.min(680, window.innerWidth - 120),
+          h: Math.min(480, window.innerHeight - 160),
+          minimized: false,
+          focused: true,
+          dragging: false,
+          dragOffX: 0,
+          dragOffY: 0,
+          resizing: false,
+          resizeDir: "",
+        };
+        // Clamp
+        if (w.x + w.w > window.innerWidth - 20) w.x = 40;
+        if (w.y + w.h > window.innerHeight - 60) w.y = 50;
+        STATE.windows.push(w);
+        STATE.wsWindows[STATE.wsCurrent].push(id);
+        focusWindow(id);
+        renderWindows();
+        // Render content
+        renderWindowContent(id);
+        return id;
+      }
+
+      function closeWindow(id) {
+        const idx = STATE.windows.findIndex((w) => w.id === id);
+        if (idx === -1) return;
+        STATE.windows.splice(idx, 1);
+        // Remove from workspace
+        for (let ws of STATE.wsWindows) {
+          const i = ws.indexOf(id);
+          if (i !== -1) ws.splice(i, 1);
+        }
+        if (STATE.focusedWindowId === id) {
+          STATE.focusedWindowId =
+            STATE.windows.length > 0
+              ? STATE.windows[STATE.windows.length - 1].id
+              : null;
+        }
+        renderWindows();
+      }
+
+      function focusWindow(id) {
+        STATE.focusedWindowId = id;
+        STATE.windows.forEach((w) => (w.focused = w.id === id));
+        // Bring to front
+        const idx = STATE.windows.findIndex((w) => w.id === id);
+        if (idx !== -1 && idx < STATE.windows.length - 1) {
+          const win = STATE.windows.splice(idx, 1)[0];
+          STATE.windows.push(win);
+        }
+        renderWindows();
+        // Re-render content for focus styling
+        renderWindowContent(id);
+      }
+
+      function minimizeWindow(id) {
+        const w = STATE.windows.find((w) => w.id === id);
+        if (!w) return;
+        w.minimized = !w.minimized;
+        if (w.minimized && STATE.focusedWindowId === id) {
+          const visible = STATE.windows.filter((w) => !w.minimized);
+          STATE.focusedWindowId =
+            visible.length > 0 ? visible[visible.length - 1].id : null;
+        }
+        renderWindows();
+      }
+
+      function maximizeWindow(id) {
+        const w = STATE.windows.find((w) => w.id === id);
+        if (!w) return;
+        if (w.maximized) {
+          w.maximized = false;
+          w.w = Math.min(680, window.innerWidth - 120);
+          w.h = Math.min(480, window.innerHeight - 160);
+          w.x = 60 + ((STATE.windows.length * 18) % 120);
+          w.y = 70 + ((STATE.windows.length * 18) % 100);
+        } else {
+          w.maximized = true;
+          w.x = 0;
+          w.y = 0;
+          w.w = window.innerWidth;
+          w.h = window.innerHeight - 44;
+        }
+        renderWindows();
+      }
+
+      function renderWindows() {
+        // Only show windows in current workspace
+        const wsWindows = STATE.wsWindows[STATE.wsCurrent] || [];
+        const visible = STATE.windows.filter(
+          (w) => wsWindows.includes(w.id) && !w.minimized,
+        );
+
+        let html = "";
+        for (const w of visible) {
+          const isFocused = w.id === STATE.focusedWindowId;
+          const cls = `window${isFocused ? " focused" : ""}${w.maximized ? " maximized" : ""}`;
+          const style = w.maximized
+            ? `left:0;top:0;width:100%;height:calc(100vh - 44px);border-radius:0;`
+            : `left:${w.x}px;top:${w.y}px;width:${w.w}px;height:${w.h}px;`;
+
+          html += `
+                    <div class="${cls}" id="win-${w.id}" style="${style}" data-id="${w.id}">
+                        <div class="window-titlebar" data-winid="${w.id}">
+                            <div class="window-controls">
+                                <button class="ctrl ctrl-close" data-action="close" data-winid="${w.id}">✕</button>
+                                <button class="ctrl ctrl-min" data-action="minimize" data-winid="${w.id}">−</button>
+                                <button class="ctrl ctrl-max" data-action="maximize" data-winid="${w.id}">+</button>
+                            </div>
+                            <div class="win-title">${w.title}</div>
+                        </div>
+                        <div class="window-content" data-winid="${w.id}">
+                            <div class="win-inner" id="win-inner-${w.id}"></div>
+                        </div>
+                    </div>
+                `;
+        }
+        windowsContainer.innerHTML = html;
+
+        // Attach events
+        document.querySelectorAll(".window-titlebar").forEach((el) => {
+          const id = parseInt(el.dataset.winid);
+          el.addEventListener("mousedown", (e) => {
+            if (e.target.closest(".window-controls")) return;
+            const win = STATE.windows.find((w) => w.id === id);
+            if (!win) return;
+            focusWindow(id);
+            win.dragging = true;
+            win.dragOffX = e.clientX - win.x;
+            win.dragOffY = e.clientY - win.y;
+          });
+        });
+
+        document.querySelectorAll(".ctrl").forEach((el) => {
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const id = parseInt(el.dataset.winid);
+            const action = el.dataset.action;
+            if (action === "close") closeWindow(id);
+            else if (action === "minimize") minimizeWindow(id);
+            else if (action === "maximize") maximizeWindow(id);
+          });
+        });
+
+        // Global drag
+        document.removeEventListener("mousemove", onDragMove);
+        document.removeEventListener("mouseup", onDragEnd);
+        document.addEventListener("mousemove", onDragMove);
+        document.addEventListener("mouseup", onDragEnd);
+      }
+
+      function onDragMove(e) {
+        for (const win of STATE.windows) {
+          if (win.dragging) {
+            let nx = e.clientX - win.dragOffX;
+            let ny = e.clientY - win.dragOffY;
+            if (nx < 0) nx = 0;
+            if (ny < 44) ny = 44;
+            if (nx + win.w > window.innerWidth) nx = window.innerWidth - win.w;
+            if (ny + win.h > window.innerHeight)
+              ny = window.innerHeight - win.h;
+            win.x = nx;
+            win.y = ny;
+            renderWindows();
+          }
+        }
+      }
+
+      function onDragEnd(e) {
+        for (const win of STATE.windows) {
+          win.dragging = false;
+        }
+      }
+
+      // ============================================================
+      // RENDER WINDOW CONTENT
+      // ============================================================
+      function renderWindowContent(id) {
+        const win = STATE.windows.find((w) => w.id === id);
+        if (!win) return;
+        const container = document.getElementById(`win-inner-${id}`);
+        if (!container) return;
+
+        switch (win.type) {
+          case "terminal":
+            renderTerminalContent(container, id);
+            break;
+          case "feed":
+            renderFeedContent(container, id);
+            break;
+          case "profile":
+            renderProfileContent(container, id);
+            break;
+          case "settings":
+            renderSettingsContent(container, id);
+            break;
+          case "browser":
+            renderBrowserContent(container, id);
+            break;
+          default:
+            container.innerHTML = `<div style="color:var(--color-gray-500);padding:var(--space-4);">[${win.title}]</div>`;
+        }
+      }
+
+      // --- TERMINAL ---
+      function renderTerminal() {
+        // Update all terminal windows
+        STATE.windows.forEach((w) => {
+          if (w.type === "terminal") {
+            const container = document.getElementById(`win-inner-${w.id}`);
+            if (container) renderTerminalContent(container, w.id);
+          }
+        });
+      }
+
+      function renderTerminalContent(container, winId) {
+        const lines = STATE.cliLogs;
+        let html = '<div class="terminal-output">';
+        const start = Math.max(0, lines.length - 60);
+        for (let i = start; i < lines.length; i++) {
+          const line = lines[i];
+          const escaped = escapeHtml(line);
+          const colored = applyColorTags(escaped);
+          html += `<div class="log-line"><span class="lnum">${String(i + 1).padStart(3, "0")}</span><span class="msg">${colored}</span></div>`;
+        }
+        html += "</div>";
+
+        // Input
+        const inputId = `term-input-${winId}`;
+        html += `
+                <div class="terminal-input-row">
+                    <span class="prompt">❯</span>
+                    <input type="text" id="${inputId}" placeholder="Enter command..." autofocus />
+                </div>
+            `;
+        container.innerHTML = html;
+
+        const input = document.getElementById(inputId);
+        if (input) {
+          input.value = STATE.terminalInput || "";
+          input.focus();
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              const cmd = input.value.trim();
+              if (cmd) {
+                STATE.terminalInput = "";
+                input.value = "";
+                handleCommand(cmd);
+              }
+            }
+          });
+          input.addEventListener("input", () => {
+            STATE.terminalInput = input.value;
+          });
+          // Click to focus
+          container.addEventListener("click", () => input.focus());
+        }
+      }
+
+      // --- FEED ---
+      function renderFeed() {
+        STATE.windows.forEach((w) => {
+          if (w.type === "feed") {
+            const container = document.getElementById(`win-inner-${w.id}`);
+            if (container) renderFeedContent(container, w.id);
+          }
+        });
+      }
+
+      function renderFeedContent(container, winId) {
+        const logs = STATE.feedLogs;
+        let html = `
+                <div class="feed-container">
+                    <div class="feed-header">
+                        <span class="feed-title">◈ SYSTEM FEED</span>
+                        <span class="feed-count">MSG: ${logs.length}</span>
+                    </div>
+                    <div class="feed-body" id="feed-body-${winId}">
+            `;
+        const start = Math.max(0, logs.length - 50);
+        for (let i = start; i < logs.length; i++) {
+          const line = logs[i];
+          const escaped = escapeHtml(line);
+          const colored = applyColorTags(escaped);
+          // Try to extract tag
+          let tag = "",
+            msg = colored;
+          const tagMatch = line.match(/^\[([^\]]+)\]/);
+          if (tagMatch) {
+            tag = tagMatch[1];
+            msg = colored.slice(tagMatch[0].length);
+          }
+          html += `
+                    <div class="feed-item">
+                        <span class="ftag">${tag ? "[" + tag + "]" : ""}</span>
+                        <span class="fmsg">${msg}</span>
+                    </div>
+                `;
+        }
+        html += `
+                    </div>
+                </div>
+            `;
+        container.innerHTML = html;
+
+        // Auto-scroll
+        const body = document.getElementById(`feed-body-${winId}`);
+        if (body) body.scrollTop = body.scrollHeight;
+      }
+
+      // --- PROFILE ---
+      function renderProfileContent(container, winId) {
+        const p = STATE;
+        const tracePct = Math.min(100, p.traceLevel);
+        const icePct = (p.iceShields / 3) * 100;
+        const heatPct = Math.min(100, ((p.crtHeat - 35) / 65) * 100);
+        const paranoiaPct = Math.min(100, p.paranoia);
+        const sitePct = Math.min(100, (p.assignedSites.length / 20) * 100);
+
+        html = `
+                <div class="profile-grid">
+                    <div class="profile-col">
+                        <div class="profile-stat">
+                            <div class="label">Handle</div>
+                            <div class="value green">${p.handle}</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="label">Port</div>
+                            <div class="value cyan">${p.port}</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="label">VCOIN</div>
+                            <div class="value green">${p.vcoin.toFixed(2)}</div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="label">Trace Level</div>
+                            <div class="value ${tracePct > 70 ? "red" : tracePct > 40 ? "amber" : "green"}">${tracePct}%</div>
+                            <div class="bar-track"><div class="bar-fill ${tracePct > 70 ? "red" : tracePct > 40 ? "amber" : "green"}" style="width:${tracePct}%"></div></div>
+                        </div>
+                    </div>
+                    <div class="profile-col">
+                        <div class="profile-stat">
+                            <div class="label">ICE Shields</div>
+                            <div class="value cyan">${p.iceShields} / 3</div>
+                            <div class="bar-track"><div class="bar-fill cyan" style="width:${icePct}%"></div></div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="label">CRT Heat</div>
+                            <div class="value ${p.crtHeat > 75 ? "red" : "amber"}">${p.crtHeat.toFixed(0)}°C</div>
+                            <div class="bar-track"><div class="bar-fill ${p.crtHeat > 75 ? "red" : "amber"}" style="width:${Math.min(100, heatPct)}%"></div></div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="label">Neural Paranoia</div>
+                            <div class="value ${paranoiaPct > 60 ? "red" : "amber"}">${paranoiaPct.toFixed(0)}%</div>
+                            <div class="bar-track"><div class="bar-fill ${paranoiaPct > 60 ? "red" : "amber"}" style="width:${paranoiaPct}%"></div></div>
+                        </div>
+                        <div class="profile-stat">
+                            <div class="label">Discovered Sites</div>
+                            <div class="value cyan">${p.assignedSites.length} / 20</div>
+                            <div class="bar-track"><div class="bar-fill green" style="width:${sitePct}%"></div></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        container.innerHTML = html;
+      }
+
+      // --- SETTINGS ---
+      let settingsTab = "theme";
+
+      function renderSettingsContent(container, winId) {
+        const tabs = [
+          { id: "theme", label: "🎨 Theme" },
+          { id: "audio", label: "🔊 Audio" },
+          { id: "display", label: "🖥 Display" },
+          { id: "system", label: "📦 System" },
+        ];
+
+        let html = `
+                <div class="settings-layout">
+                    <div class="settings-sidebar">
+            `;
+        for (const tab of tabs) {
+          const active = tab.id === settingsTab ? "active" : "";
+          html += `<div class="s-item ${active}" data-stab="${tab.id}">${tab.label}</div>`;
+        }
+        html += `
+                    </div>
+                    <div class="settings-content" id="settings-content-${winId}">
+            `;
+
+        // Content based on tab
+        switch (settingsTab) {
+          case "theme":
+            html += renderThemeSettings();
+            break;
+          case "audio":
+            html += renderAudioSettings();
+            break;
+          case "display":
+            html += renderDisplaySettings();
+            break;
+          case "system":
+            html += renderSystemSettings();
+            break;
+          default:
+            html +=
+              '<div class="s-title">Settings</div><p style="color:var(--color-gray-500)">Select a category.</p>';
+        }
+
+        html += `
+                    </div>
+                </div>
+            `;
+        container.innerHTML = html;
+
+        // Sidebar clicks
+        container.querySelectorAll(".s-item").forEach((el) => {
+          el.addEventListener("click", () => {
+            settingsTab = el.dataset.stab;
+            renderSettingsContent(container, winId);
+          });
+        });
+
+        // Theme card clicks
+        container.querySelectorAll(".theme-card").forEach((el) => {
+          el.addEventListener("click", () => {
+            const name = el.dataset.theme;
+            if (name) {
+              applyTheme(name);
+              addCliLog("THEME", `Switched to '${name}'`);
+            }
+          });
+        });
+      }
+
+      function renderThemeSettings() {
+        let html = `<div class="s-title">🎨 Theme Configurator</div><div class="theme-grid">`;
+        for (const [key, t] of Object.entries(THEMES)) {
+          const active = key === currentTheme ? "active" : "";
+          const colors = [t.blood, t.cyan, t.amber, t.toxic];
+          html += `
+                    <div class="theme-card ${active}" data-theme="${key}">
+                        <div class="swatches">${colors.map((c) => `<span style="background:${c}"></span>`).join("")}</div>
+                        ${t.name}
+                    </div>
+                `;
+        }
+        html += `</div>`;
+        return html;
+      }
+
+      function renderAudioSettings() {
+        return `
+                <div class="s-title">🔊 Audio Configuration</div>
+                <div class="s-row"><span class="s-label">Master Volume</span><span class="s-value">78%</span></div>
+                <div class="s-row"><span class="s-label">Visualizer</span><span class="s-value">Enabled</span></div>
+                <div class="s-row"><span class="s-label">Now Playing</span><span class="s-value" style="color:var(--color-cyber-green)">VANISHED // Crystal Castles</span></div>
+            `;
+      }
+
+      function renderDisplaySettings() {
+        return `
+                <div class="s-title">🖥 Display Settings</div>
+                <div class="s-row"><span class="s-label">Resolution</span><span class="s-value">1920x1080</span></div>
+                <div class="s-row"><span class="s-label">Display Mode</span><span class="s-value">Fullscreen</span></div>
+                <div class="s-row"><span class="s-label">Scanlines</span><span class="s-value">Enabled</span></div>
+                <div class="s-row"><span class="s-label">Vignette</span><span class="s-value">Enabled</span></div>
+            `;
+      }
+
+      function renderSystemSettings() {
+        const p = STATE;
+        return `
+                <div class="s-title">📦 System Information</div>
+                <div class="s-row"><span class="s-label">Handle</span><span class="s-value" style="color:var(--color-cyber-green)">${p.handle}</span></div>
+                <div class="s-row"><span class="s-label">Port</span><span class="s-value" style="color:var(--color-cyber-blue)">${p.port}</span></div>
+                <div class="s-row"><span class="s-label">VCOIN</span><span class="s-value" style="color:var(--color-cyber-green)">${p.vcoin.toFixed(2)}</span></div>
+                <div class="s-row"><span class="s-label">Trace</span><span class="s-value" style="color:${p.traceLevel > 70 ? "var(--color-cyber-pink)" : "var(--color-cyber-orange)"}">${p.traceLevel}%</span></div>
+                <div class="s-row"><span class="s-label">ICE</span><span class="s-value" style="color:var(--color-cyber-blue)">${p.iceShields}/3</span></div>
+                <div class="s-row"><span class="s-label">Uptime</span><span class="s-value" style="color:var(--color-gray-300)">${formatUptime(p.runTime)}</span></div>
+            `;
+      }
+
+      function formatUptime(sec) {
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = Math.floor(sec % 60);
+        return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+      }
+
+      // --- BROWSER ---
+      function renderBrowserContent(container, winId) {
+        const url = STATE.currentURL;
+        const isConnecting = STATE.connecting;
+        let html = `
+                <div class="browser-toolbar">
+                    <button class="nav-btn" data-bnav="back">◄</button>
+                    <button class="nav-btn" data-bnav="forward">►</button>
+                    <button class="nav-btn" data-bnav="reload">⟳</button>
+                    <button class="nav-btn" data-bnav="home">⌂</button>
+                    <input class="url-bar" id="browser-url-${winId}" type="text" value="${isConnecting ? "vnet://" + STATE.pendingURL : "vnet://" + url}" spellcheck="false" />
+                </div>
+                <div class="browser-page" id="browser-page-${winId}">
+            `;
+
+        // Page content
+        if (isConnecting) {
+          html += `
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:var(--space-7);color:var(--color-gray-500);">
+                        <div style="font-size:2rem;margin-bottom:var(--space-4);color:var(--color-cyber-orange);">⟳</div>
+                        <div style="font-size:1.2rem;color:var(--color-cyber-blue);">CONNECTING TO ${STATE.pendingURL}...</div>
+                        <div style="width:60%;max-width:300px;height:4px;background:var(--color-gray-800);border-radius:2px;margin-top:var(--space-3);overflow:hidden;">
+                            <div style="width:${Math.min(100, (STATE.connectTimer / STATE.targetConnectTime) * 100)}%;height:100%;background:var(--color-cyber-green);transition:width 0.3s;"></div>
+                        </div>
+                    </div>
+                `;
+        } else {
+          const lines = STATE.pageLines;
+          for (const line of lines) {
+            const escaped = escapeHtml(line);
+            const colored = applyBrowserTags(escaped);
+            html += `<div class="bp-line">${colored}</div>`;
+          }
+        }
+
+        html += `
+                </div>
+            `;
+        container.innerHTML = html;
+
+        // URL bar events
+        const urlInput = document.getElementById(`browser-url-${winId}`);
+        if (urlInput) {
+          urlInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              let val = urlInput.value.trim();
+              if (!val) return;
+              if (val.startsWith("vnet://")) val = val.slice(7);
+              if (!val.includes(".vnet") && val !== "vnet.dir") val += ".vnet";
+              navigateTo(val);
+            }
+          });
+          urlInput.addEventListener("focus", () => {
+            urlInput.select();
+          });
+        }
+
+        // Nav buttons
+        container.querySelectorAll("[data-bnav]").forEach((el) => {
+          el.addEventListener("click", () => {
+            const action = el.dataset.bnav;
+            if (action === "back") navigateBack();
+            else if (action === "forward") navigateForward();
+            else if (action === "reload") loadPage(STATE.currentURL);
+            else if (action === "home") navigateTo("vnet.dir");
+          });
+        });
+
+        // Link clicks (delegated)
+        const page = document.getElementById(`browser-page-${winId}`);
+        if (page) {
+          page.querySelectorAll(".hl-link").forEach((el) => {
+            el.addEventListener("click", () => {
+              const target = el.dataset.url;
+              if (target) navigateTo(target);
+            });
+          });
+        }
+      }
+
+      // ============================================================
+      // BROWSER NAVIGATION
+      // ============================================================
+      function navigateTo(url) {
+        let clean = url.trim();
+        if (clean.startsWith("vnet://")) clean = clean.slice(7);
+        if (!clean.includes(".vnet") && clean !== "vnet.dir") clean += ".vnet";
+
+        // Simulate connection
+        STATE.connecting = true;
+        STATE.pendingURL = clean;
+        STATE.connectTimer = 0;
+        STATE.targetConnectTime = 0.8 + Math.random() * 0.6;
+
+        addCliLog("TOR_ROUTE", `CONNECTING TO ${clean}...`);
+
+        // Update browser windows
+        renderAllBrowsers();
+
+        const interval = setInterval(() => {
+          STATE.connectTimer += 0.05;
+          renderAllBrowsers();
+          if (STATE.connectTimer >= STATE.targetConnectTime) {
+            clearInterval(interval);
+            STATE.connecting = false;
+            // Add to history
+            const histIdx = STATE.browserHistoryIndex + 1;
+            STATE.browserHistory = STATE.browserHistory.slice(0, histIdx);
+            STATE.browserHistory.push(clean);
+            STATE.browserHistoryIndex = STATE.browserHistory.length - 1;
+            STATE.currentURL = clean;
+            loadPage(clean);
+            addCliLog("PAGE", `LOADED ${clean}`);
+            renderAllBrowsers();
+          }
+        }, 50);
+      }
+
+      function navigateBack() {
+        if (STATE.browserHistoryIndex > 0) {
+          STATE.browserHistoryIndex--;
+          const url = STATE.browserHistory[STATE.browserHistoryIndex];
+          if (url) {
+            STATE.currentURL = url;
+            loadPage(url);
+            renderAllBrowsers();
+          }
+        }
+      }
+
+      function navigateForward() {
+        if (STATE.browserHistoryIndex < STATE.browserHistory.length - 1) {
+          STATE.browserHistoryIndex++;
+          const url = STATE.browserHistory[STATE.browserHistoryIndex];
+          if (url) {
+            STATE.currentURL = url;
+            loadPage(url);
+            renderAllBrowsers();
+          }
+        }
+      }
+
+      function renderAllBrowsers() {
+        STATE.windows.forEach((w) => {
+          if (w.type === "browser") {
+            const container = document.getElementById(`win-inner-${w.id}`);
+            if (container) renderBrowserContent(container, w.id);
+          }
+        });
+      }
+
+      // ============================================================
+      // PAGE LOADING
+      // ============================================================
+      function loadPage(url) {
+        STATE.pageLines = generatePageContent(url);
+        // Update browser windows
+        renderAllBrowsers();
+        // Update top bar URL if needed
+      }
+
+      function generatePageContent(url) {
+        const lines = [];
+        const p = STATE;
+
+        if (url === "vnet.dir" || url === "vnet://vnet.dir") {
+          lines.push("[TITLE] VNET ANONYMOUS DIRECTORY v4.09 // ROOT GATEWAY");
+          lines.push("[HR]");
+          lines.push(
+            "[BADGE:ROOT NODE:BLOOD] [BADGE:GLOBAL ROUTING:AMBER] [BADGE:80% COVERAGE:TOXIC]",
+          );
+          lines.push("[TEXT] ");
+          lines.push(
+            "[GLITCH] [WARNING]: UNREGISTERED EYE CONTACT DETECTED THROUGH MONITOR GLASS.",
+          );
+          lines.push(
+            "[PULSE] ALL ROUTED PACKETS ARE MIRRORED TO RESTRICTED VFS MEMORY STACKS.",
+          );
+          lines.push("[TEXT] ");
+          lines.push(
+            "[BOX] +-----------------------------------------------------------+",
+          );
+          lines.push(
+            "[BOX] | STATUS: DISCOVERING HIDDEN GATEWAYS VIA UDP TRAFFIC       |",
+          );
+          lines.push(
+            "[BOX] | MISSION: SNOOP & NETSCAN TRAFFIC TO CARVE ROUTES INTO RAM |",
+          );
+          lines.push(
+            `[BOX] | ASSIGNED NODES : ${p.assignedSites.length}/20 DISCOVERED SITES               |`,
+          );
+          lines.push(
+            "[BOX] +-----------------------------------------------------------+",
+          );
+          lines.push("[TEXT] ");
+
+          // Site list
+          const core = [
+            "market.vnet",
+            "vault.vnet",
+            "terminal.vnet",
+            "crypto.vnet",
+            "hellroom.vnet",
+          ];
+          const mutual = p.assignedSites.filter((s) => core.includes(s));
+          const random = p.assignedSites.filter((s) => !core.includes(s));
+
+          if (mutual.length > 0) {
+            lines.push(`[SUBTITLE] █ MUTUAL CORE NODES [${mutual.length}/5]`);
+            lines.push("[TEXT] ");
+            for (const s of mutual) {
+              const isCore = core.includes(s);
+              lines.push(
+                `[LINK:${s}] >> ${isCore ? "[CORE] " : "[MUTUAL] "}${s}`,
+              );
+            }
+            lines.push("[TEXT] ");
+            lines.push("[HR]");
+          }
+
+          if (random.length > 0) {
+            lines.push(
+              `[SUBTITLE] █ RANDOM DISCOVERED NODES [${random.length}/15]`,
+            );
+            lines.push("[TEXT] ");
+            for (const s of random.slice(0, 10)) {
+              lines.push(`[LINK:${s}] >> [DISCOVERED] ${s}`);
+            }
+            if (random.length > 10)
+              lines.push(`[TEXT] ... and ${random.length - 10} more`);
+            lines.push("[TEXT] ");
+            lines.push("[HR]");
+          } else {
+            lines.push(
+              '[TEXT] No random sites discovered yet. Use "scan" to find more.',
+            );
+            lines.push("[TEXT] ");
+            lines.push("[HR]");
+          }
+
+          // Stats
+          lines.push("[SUBTITLE] █ OPERATOR STATUS & SYSTEM TELEMETRY");
+          lines.push("[TEXT] ");
+          lines.push(`[CODE] HANDLE    : ${p.handle}`);
+          lines.push(`[CODE] VCOIN     : ${p.vcoin.toFixed(2)} VCOIN`);
+          lines.push(`[CODE] TRACE     : ${p.traceLevel}%`);
+          lines.push(`[CODE] ICE       : ${p.iceShields}/3 LAYERS`);
+          lines.push(`[CODE] CRT HEAT  : ${p.crtHeat.toFixed(0)}°C`);
+          lines.push("[TEXT] ");
+          lines.push("[HR]");
+          lines.push(
+            "[PULSE] 'THEY CAN SEE THROUGH THE CRT SCREEN... DON'T LOOK BACK.'",
+          );
+          lines.push("[TEXT] ");
+          lines.push(
+            "[TEXT] Tip: Press [TAB] to toggle terminal overlay. Mine VCOIN at crypto.vnet.",
+          );
+          lines.push('[TEXT] Type "help" for available commands.');
+          lines.push("[HR]");
+          lines.push(
+            "[BLOOD] 'THE NETWORK IS ALIVE. IT IS DRINKING YOUR HEAT.'",
+          );
+          return lines;
+        }
+
+        // Try to find site in assigned
+        const site = p.assignedSites.find((s) => s === url);
+        if (site) {
+          // Generate a simple page for the site
+          const title = site.replace(".vnet", "").toUpperCase();
+          lines.push(`[TITLE] ${title} // VEKTRA NODE`);
+          lines.push("[HR]");
+          lines.push(`[BADGE:ACTIVE NODE:GREEN] [BADGE:PORT ${p.port}:CYAN]`);
+          lines.push("[TEXT] ");
+          lines.push(`[TEXT] Welcome to ${site}. This node is operational.`);
+          lines.push("[TEXT] ");
+          lines.push("[GAUGE:65:NODE_LOAD]");
+          lines.push("[TEXT] ");
+          lines.push(
+            "[BOX] +-----------------------------------------------------------+",
+          );
+          lines.push(
+            "[BOX] | CONNECTED PEERS: 3                                        |",
+          );
+          lines.push(
+            `[BOX] | HANDLE: ${p.handle}                                       |`,
+          );
+          lines.push(
+            "[BOX] | STATUS: ACTIVE                                            |",
+          );
+          lines.push(
+            "[BOX] +-----------------------------------------------------------+",
+          );
+          lines.push("[TEXT] ");
+          lines.push(`[LINK:vnet.dir] >> RETURN TO DIRECTORY`);
+          lines.push("[HR]");
+          lines.push("[TEXT] 'Silent watch. Advanced threat signals.'");
+          return lines;
+        }
+
+        // 404
+        lines.push("[TITLE] 404 // ROUTE_CORRUPTED - SECTOR NULL");
+        lines.push("[HR]");
+        lines.push("[BADGE:NODE VOID:BLOOD] [BADGE:SIGNAL LOST:AMBER]");
+        lines.push(
+          "[BOX] +-----------------------------------------------------------------+",
+        );
+        lines.push(
+          "[BOX] | ERROR CODE : 0x404_VFS_SEGFAULT_UNALLOCATED_ADDRESS_SPACE       |",
+        );
+        lines.push(`[BOX] | TARGET URL : vnet://${url}                     |`);
+        lines.push(
+          "[BOX] +-----------------------------------------------------------------+",
+        );
+        lines.push("[TEXT] ");
+        lines.push("[GAUGE:100:SIGNAL_ENTROPY_DECAY]");
+        lines.push("[TEXT] ");
+        lines.push("[SUBTITLE] DYNAMIC ROUTE RECOVERY & PACKET RE-INJECTION:");
+        lines.push("[BLOOD] [CRITICAL WARNING]: UNALLOCATED SOCKET DETECTED");
+        lines.push("[HR]");
+        lines.push("[LINK:vnet.dir] >> ESCAPE TO MAIN DIRECTORY");
+        lines.push("[HR]");
+        return lines;
+      }
+
+      // ============================================================
+      // MARKUP RENDERING HELPERS
+      // ============================================================
+      function applyColorTags(text) {
+        return text
+          .replace(/\|/g, "") // remove pipe separators
+          .replace(/\x1b\[32m/g, '<span class="hl-green">')
+          .replace(/\x1b\[36m/g, '<span class="hl-cyan">')
+          .replace(/\x1b\[33m/g, '<span class="hl-amber">')
+          .replace(/\x1b\[31m/g, '<span class="hl-red">')
+          .replace(/\x1b\[90m/g, '<span class="hl-ghost">')
+          .replace(/\x1b\[0m/g, "</span>");
+      }
+
+      function applyBrowserTags(text) {
+        // [TITLE] -> large
+        text = text.replace(
+          /\[TITLE\]\s*(.*)/g,
+          '<span class="hl-title">$1</span>',
+        );
+        // [SUBTITLE]
+        text = text.replace(
+          /\[SUBTITLE\]\s*(.*)/g,
+          '<span class="hl-sub">$1</span>',
+        );
+        // [HR]
+        text = text.replace(/\[HR\]/g, '<hr class="bp-divider" />');
+        // [BADGE:label:color]
+        text = text.replace(
+          /\[BADGE:([^:\]]+):([^\]]+)\]/g,
+          (m, label, color) => {
+            const cls = color.toLowerCase();
+            return `<span class="hl-badge b-${cls}">${label}</span>`;
+          },
+        );
+        // [LINK:url] >> label
+        text = text.replace(
+          /\[LINK:([^\]]+)\]\s*>>\s*([^\n]*)/g,
+          (m, url, label) => {
+            const display = label.trim() || url;
+            return `<span class="hl-link" data-url="${url}">${display}</span>`;
+          },
+        );
+        // [LINK:url] alone
+        text = text.replace(
+          /\[LINK:([^\]]+)\]/g,
+          (m, url) => `<span class="hl-link" data-url="${url}">${url}</span>`,
+        );
+        // [TEXT]
+        text = text.replace(/\[TEXT\]\s*(.*)/g, "$1");
+        // [CODE]
+        text = text.replace(
+          /\[CODE\]\s*(.*)/g,
+          '<span style="color:var(--color-cyber-green)">$1</span>',
+        );
+        // [BLOOD]
+        text = text.replace(
+          /\[BLOOD\]\s*(.*)/g,
+          '<span style="color:var(--color-cyber-pink)">$1</span>',
+        );
+        // [PULSE]
+        text = text.replace(
+          /\[PULSE\]\s*(.*)/g,
+          '<span style="color:var(--color-cyber-orange)">$1</span>',
+        );
+        // [GLITCH]
+        text = text.replace(
+          /\[GLITCH\]\s*(.*)/g,
+          '<span style="color:var(--color-cyber-green);text-shadow:0 0 8px var(--color-cyber-green)">$1</span>',
+        );
+        // [BOX]
+        text = text.replace(
+          /\[BOX\]\s*(.*)/g,
+          '<span style="color:var(--color-cyber-blue)">$1</span>',
+        );
+        // [GAUGE:pct:label]
+        text = text.replace(/\[GAUGE:([\d.]+):([^\]]+)\]/g, (m, pct, label) => {
+          const p = Math.min(100, parseFloat(pct) || 0);
+          const color =
+            p > 70
+              ? "var(--color-cyber-pink)"
+              : p > 40
+                ? "var(--color-cyber-orange)"
+                : "var(--color-cyber-green)";
+          return `<span style="display:inline-flex;align-items:center;gap:8px;background:var(--color-gray-900);padding:2px 8px;border-radius:4px;border:1px solid var(--color-gray-800);">
+                                <span style="width:120px;height:8px;background:var(--color-gray-800);border-radius:4px;overflow:hidden;">
+                                    <span style="display:block;height:100%;width:${p}%;background:${color};border-radius:4px;"></span>
+                                </span>
+                                <span style="color:var(--color-cyber-orange);font-size:0.85rem;">${label} [${p}%]</span>
+                            </span>`;
+        });
+        // [WARN]
+        text = text.replace(
+          /\[WARN\]\s*(.*)/g,
+          '<span style="color:var(--color-cyber-pink)">⚠ $1</span>',
+        );
+        return text;
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // ============================================================
+      // COMMAND HANDLER
+      // ============================================================
+      function handleCommand(cmd) {
+        addCliLogRaw(`> ${cmd}`);
+        const parts = cmd.trim().split(/\s+/);
+        const token = parts[0].toLowerCase();
+        const args = parts.slice(1).join(" ");
+
+        // Help
+        if (token === "help") {
+          addCliLog("", "========== VNET COMMAND REFERENCE ==========");
+          addCliLog("", "  NAVIGATION:");
+          addCliLog("", "  connect <url>  - Navigate to VNET site");
+          addCliLog("", "  home           - Return to vnet.dir");
+          addCliLog("", "  back           - Go to previous page");
+          addCliLog("", "  ECONOMY:");
+          addCliLog("", "  wallet         - Show balance & stats");
+          addCliLog("", "  buy ice        - Buy ICE shield (0.30 VCOIN)");
+          addCliLog("", "  UTILITY:");
+          addCliLog("", "  scan           - Deep subnet sweep");
+          addCliLog("", "  history        - Show discovered sites");
+          addCliLog("", "  clear          - Clear terminal");
+          addCliLog("", "  theme <name>   - Change color theme");
+          addCliLog("", "  status         - Show network status");
+          addCliLog("", "  info           - Show detailed system info");
+          addCliLog("", "  EXPLOITS:");
+          addCliLog("", "  dos <port>     - DOS attack (0.25 VCOIN)");
+          addCliLog("", "  spike <port>   - Trace spike (0.20 VCOIN)");
+          addCliLog("", "  overload <url> - Overload site (1.50 VCOIN)");
+          addCliLog("", "  VICTORY:");
+          addCliLog("", "  takeover       - Economic victory (25.0 VCOIN)");
+          addCliLog("", "============================================");
+          return;
+        }
+
+        // Connect / goto
+        if (token === "connect" || token === "goto") {
+          if (!args) {
+            addCliLog("ERROR", "Usage: connect <url>");
+          } else {
+            navigateTo(args);
+          }
+          return;
+        }
+
+        // Home
+        if (token === "home") {
+          navigateTo("vnet.dir");
+          return;
+        }
+
+        // Back
+        if (token === "back") {
+          navigateBack();
+          return;
+        }
+
+        // Wallet
+        if (token === "wallet") {
+          addCliLog("", "========== WALLET & DEFENSE ==========");
+          addCliLog("", `  VCOIN BALANCE  : ${STATE.vcoin.toFixed(2)} VCOIN`);
+          addCliLog("", `  TRACE THREAT   : ${STATE.traceLevel}%`);
+          addCliLog("", `  ICE SHIELDS    : [${STATE.iceShields}/3] LAYERS`);
+          addCliLog("", `  CRT HEAT       : ${STATE.crtHeat.toFixed(0)} C`);
+          addCliLog("", `  NEURAL PARANOIA: ${STATE.paranoia.toFixed(0)}%`);
+          addCliLog("", "====================================");
+          return;
+        }
+
+        // Buy ice
+        if (token === "buy" && args === "ice") {
+          if (STATE.iceShields >= 3) {
+            addCliLog("ERROR", "MAX ICE SHIELDS REACHED (3/3)");
+          } else if (STATE.vcoin < 0.3) {
+            addCliLog(
+              "ERROR",
+              `INSUFFICIENT VCOIN (NEEDS 0.30 VCOIN, HAVE ${STATE.vcoin.toFixed(2)})`,
+            );
+          } else {
+            STATE.vcoin -= 0.3;
+            STATE.iceShields++;
+            addCliLog(
+              "ICE",
+              `ICE SHIELD PURCHASED! ACTIVE: ${STATE.iceShields}/3`,
+            );
+            addFeed("ICE", "Player purchased ICE shield");
+            updateTopBar();
+          }
+          return;
+        }
+
+        // Scan
+        if (token === "scan") {
+          addCliLog("SCAN", "INITIATING DEEP SUBNET FREQUENCY SWEEP...");
+          // Simulate discovery
+          const newSites = Math.floor(Math.random() * 3) + 1;
+          const possible = [
+            "forum.vnet",
+            "bounty.vnet",
+            "vektrapay.vnet",
+            "hashbeat.vnet",
+            "watchtower.vnet",
+            "orbital.vnet",
+            "morgue.vnet",
+            "cult.vnet",
+            "void.vnet",
+            "ghost.vnet",
+            "silence.vnet",
+            "blackbank.vnet",
+          ];
+          let found = 0;
+          for (const s of possible) {
+            if (!STATE.assignedSites.includes(s) && found < newSites) {
+              STATE.assignedSites.push(s);
+              addCliLog("SCAN", `DISCOVERED ${s}`);
+              found++;
+            }
+          }
+          if (found === 0) addCliLog("SCAN", "NO NEW SITES FOUND");
+          // Reload page if browser open
+          if (STATE.currentURL === "vnet.dir") loadPage("vnet.dir");
+          renderAllBrowsers();
+          return;
+        }
+
+        // History
+        if (token === "history") {
+          addCliLog("", "========== DISCOVERED SUBNET DIRECTORY ==========");
+          if (STATE.assignedSites.length > 0) {
+            for (const s of STATE.assignedSites) {
+              addCliLog("", `  -> vnet://${s}`);
+            }
+            addCliLog("", `  Total: ${STATE.assignedSites.length} sites`);
+          } else {
+            addCliLog("", "  [NO SITES DISCOVERED YET]");
+          }
+          addCliLog("", "==================================================");
+          return;
+        }
+
+        // Clear
+        if (token === "clear") {
+          STATE.cliLogs = [];
+          renderTerminal();
+          return;
+        }
+
+        // Theme
+        if (token === "theme") {
+          if (!args) {
+            addCliLog("THEME", `Current theme: ${currentTheme}`);
+            addCliLog("THEME", "Available: " + Object.keys(THEMES).join(", "));
+          } else if (THEMES[args]) {
+            applyTheme(args);
+            addCliLog("THEME", `Switched to '${args}'`);
+          } else {
+            addCliLog("ERROR", `Unknown theme '${args}'`);
+          }
+          return;
+        }
+
+        // Status
+        if (token === "status") {
+          addCliLog("", "========== NETWORK STATUS ==========");
+          addCliLog("", `  Current URL  : vnet://${STATE.currentURL}`);
+          addCliLog("", `  Active Port  : ${STATE.port}`);
+          addCliLog("", `  VCOIN        : ${STATE.vcoin.toFixed(2)}`);
+          addCliLog("", `  Trace Level  : ${STATE.traceLevel}%`);
+          addCliLog("", `  ICE Shields  : ${STATE.iceShields}/3`);
+          addCliLog("", `  CRT Heat     : ${STATE.crtHeat.toFixed(0)}°C`);
+          addCliLog("", "====================================");
+          return;
+        }
+
+        // Info
+        if (token === "info") {
+          addCliLog("", "========== SYSTEM INFO ==========");
+          addCliLog("", `  HANDLE    : ${STATE.handle}`);
+          addCliLog("", `  PORT      : ${STATE.port}`);
+          addCliLog("", `  URL       : vnet://${STATE.currentURL}`);
+          addCliLog("", `  VCOIN     : ${STATE.vcoin.toFixed(2)}`);
+          addCliLog("", `  TRACE     : ${STATE.traceLevel}%`);
+          addCliLog("", `  ICE       : ${STATE.iceShields}/3`);
+          addCliLog("", `  CRT HEAT  : ${STATE.crtHeat.toFixed(0)}°C`);
+          addCliLog("", `  PARANOIA  : ${STATE.paranoia.toFixed(0)}%`);
+          addCliLog(
+            "",
+            `  SITES     : ${STATE.assignedSites.length} discovered`,
+          );
+          addCliLog("", "================================");
+          return;
+        }
+
+        // DOS
+        if (token === "dos") {
+          if (!args) {
+            addCliLog("ERROR", "Usage: dos <port>");
+          } else if (STATE.vcoin < 0.25) {
+            addCliLog(
+              "ERROR",
+              `NEED 0.25 VCOIN (CURRENT: ${STATE.vcoin.toFixed(2)})`,
+            );
+          } else {
+            STATE.vcoin -= 0.25;
+            addCliLog("DOS", `DOS ATTACK SENT TO PORT ${args}`);
+            addFeed("DOS ATTACK", `Player froze port ${args}`);
+            STATE.glitchIntensity = 0.6;
+            updateTopBar();
+          }
+          return;
+        }
+
+        // Spike
+        if (token === "spike") {
+          if (!args) {
+            addCliLog("ERROR", "Usage: spike <port>");
+          } else if (STATE.vcoin < 0.2) {
+            addCliLog(
+              "ERROR",
+              `NEED 0.20 VCOIN (CURRENT: ${STATE.vcoin.toFixed(2)})`,
+            );
+          } else {
+            STATE.vcoin -= 0.2;
+            addCliLog("TRACE SPIKE", `SENT TO PORT ${args}`);
+            addFeed("TRACE SPIKE", `Player spiked port ${args}`);
+            STATE.glitchIntensity = 0.4;
+            updateTopBar();
+          }
+          return;
+        }
+
+        // Overload
+        if (token === "overload") {
+          if (!args) {
+            addCliLog("ERROR", "Usage: overload <url>");
+          } else if (STATE.vcoin < 1.5) {
+            addCliLog(
+              "ERROR",
+              `NEED 1.50 VCOIN (CURRENT: ${STATE.vcoin.toFixed(2)})`,
+            );
+          } else {
+            STATE.vcoin -= 1.5;
+            STATE.crtHeat += 15;
+            addCliLog("OVERLOAD", `DISPATCHED CASCADE TO ${args}`);
+            addFeed("OVERLOAD", `Player fried ${args}`);
+            STATE.glitchIntensity = 0.8;
+            updateTopBar();
+          }
+          return;
+        }
+
+        // Takeover
+        if (token === "takeover") {
+          if (STATE.vcoin >= 25.0) {
+            addCliLog(
+              "",
+              "╔════════════════════════════════════════════════════╗",
+            );
+            addCliLog(
+              "",
+              "║  🏆 ECONOMIC TAKEOVER: VICTORY!                    ║",
+            );
+            addCliLog(
+              "",
+              "║  YOU OWN VNET!                                     ║",
+            );
+            addCliLog(
+              "",
+              "╚════════════════════════════════════════════════════╝",
+            );
+            addFeed("ECONOMIC TAKEOVER", "PLAYER HAS BOUGHT OUT VNET!");
+          } else {
+            addCliLog(
+              "ERROR",
+              `NEED 25.0 VCOIN (CURRENT: ${STATE.vcoin.toFixed(2)})`,
+            );
+          }
+          return;
+        }
+
+        // Unknown
+        addCliLog("ERR", `UNKNOWN COMMAND '${token}' (type 'help')`);
+      }
+
+      // ============================================================
+      // TOP BAR UPDATE
+      // ============================================================
+      function updateTopBar() {
+        topVcoin.textContent = STATE.vcoin.toFixed(2) + " VCOIN";
+      }
+
+      // ============================================================
+      // DESKTOP ICON CLICKS
+      // ============================================================
+      document.querySelectorAll("#desktop-icons .d-icon").forEach((el) => {
+        el.addEventListener("click", () => {
+          const app = el.dataset.app;
+          const titles = {
+            browser: "VNET Browser",
+            terminal: "Terminal",
+            profile: "User Profile",
+            settings: "Settings",
+            feed: "System Feed",
+          };
+          openApp(app, titles[app] || app);
+        });
+      });
+
+      // ============================================================
+      // WORKSPACE SWITCHING
+      // ============================================================
+      wsIndicator.querySelectorAll(".ws-dot").forEach((el) => {
+        el.addEventListener("click", () => {
+          const idx = parseInt(el.dataset.ws);
+          STATE.wsCurrent = idx;
+          wsIndicator
+            .querySelectorAll(".ws-dot")
+            .forEach((d) => d.classList.remove("active"));
+          el.classList.add("active");
+          renderWindows();
+        });
+      });
+
+      // ============================================================
+      // KEYBOARD SHORTCUTS
+      // ============================================================
+      document.addEventListener("keydown", (e) => {
+        // Ctrl+1,2,3 for workspaces
+        if (e.ctrlKey && ["1", "2", "3"].includes(e.key)) {
+          const idx = parseInt(e.key) - 1;
+          if (idx < 3) {
+            STATE.wsCurrent = idx;
+            wsIndicator.querySelectorAll(".ws-dot").forEach((d, i) => {
+              d.classList.toggle("active", i === idx);
+            });
+            renderWindows();
+            e.preventDefault();
+          }
+        }
+        // Escape to blur terminal inputs
+        if (e.key === "Escape") {
+          document.activeElement?.blur();
+        }
+      });
+
+      // ============================================================
+      // WINDOW RESIZE HANDLING
+      // ============================================================
+      window.addEventListener("resize", () => {
+        // Clamp windows
+        for (const w of STATE.windows) {
+          if (w.maximized) continue;
+          if (w.x + w.w > window.innerWidth - 10)
+            w.x = window.innerWidth - w.w - 10;
+          if (w.y + w.h > window.innerHeight - 50)
+            w.y = window.innerHeight - w.h - 50;
+          if (w.x < 0) w.x = 0;
+          if (w.y < 44) w.y = 44;
+          if (w.w < 240) w.w = 240;
+          if (w.h < 140) w.h = 140;
+        }
+        renderWindows();
+      });
+
+      // ============================================================
+      // GAME LOOP (simulate updates)
+      // ============================================================
+      let lastTime = 0;
+
+      function gameLoop(time) {
+        const dt = Math.min(0.05, (time - lastTime) / 1000);
+        lastTime = time;
+
+        // Update runtime
+        STATE.runTime += dt;
+
+        // Cooldowns
+        if (STATE.miningCooldown > 0) STATE.miningCooldown -= dt;
+        if (STATE.raidCooldown > 0) STATE.raidCooldown -= dt;
+
+        // CRT heat decay
+        STATE.crtHeat -= dt * 0.5;
+        if (STATE.crtHeat < 35) STATE.crtHeat = 35;
+
+        // Glitch decay
+        if (STATE.glitchIntensity > 0) {
+          STATE.glitchIntensity -= dt * 2;
+          if (STATE.glitchIntensity < 0) STATE.glitchIntensity = 0;
+        }
+
+        // Update top bar
+        if (Math.floor(STATE.runTime) % 2 === 0) {
+          updateTopBar();
+        }
+
+        // Simulate mining block generation
+        if (Math.floor(STATE.runTime) % 15 === 0 && STATE.runTime > 2) {
+          const blockId =
+            "BLK" + String(Math.floor(Math.random() * 9000 + 1000));
+          const reward = 0.15 + Math.random() * 0.35;
+          if (!STATE.minedBlocks.some((b) => b.startsWith(blockId))) {
+            STATE.minedBlocks.push(`${blockId}:${reward.toFixed(2)}`);
+            if (STATE.minedBlocks.length > 20) STATE.minedBlocks.shift();
+            // Notify if on crypto
+            if (STATE.currentURL === "crypto.vnet") {
+              addFeed(
+                "MINER",
+                `New block available: ${blockId} (${reward.toFixed(2)} VCOIN)`,
+              );
+            }
+          }
+        }
+
+        // Glitch effect on page
+        if (STATE.glitchIntensity > 0.1) {
+          document.querySelectorAll(".window-content").forEach((el) => {
+            const intensity = STATE.glitchIntensity;
+            const dx = (Math.random() - 0.5) * intensity * 4;
+            const dy = (Math.random() - 0.5) * intensity * 3;
+            el.style.transform = `translate(${dx}px, ${dy}px)`;
+            el.style.transition = "none";
+          });
+          setTimeout(() => {
+            document.querySelectorAll(".window-content").forEach((el) => {
+              el.style.transform = "";
+              el.style.transition = "";
+            });
+          }, 50);
+        }
+
+        requestAnimationFrame(gameLoop);
+      }
+
+      // ============================================================
+      // INIT
+      // ============================================================
+      // Pre-populate some feed logs
+      addFeed("FEED_INIT", "VNET BROADCAST HUB ONLINE");
+      addFeed("FEED", "MONITORING P2P EXPLOIT & CHAT...");
+
+      // Start game loop
+      requestAnimationFrame(gameLoop);
+
+      console.log("VEKTRAOS v9.5 // COLD SIGNAL");
+      console.log('Type "help" for commands.');
+      console.log("Click desktop icons to open apps.");
+    </script>
+  </body>
+</html>
