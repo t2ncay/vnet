@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 // ============================================================
-// MUSIC PLAYER WIDGET
+// MUSIC PLAYER WIDGET - VEKTRA OS EDITION
 // ============================================================
 
 struct MusicTrack {
@@ -14,7 +14,7 @@ struct MusicTrack {
     std::string artist;
     std::string filePath;
     Color accentColor;
-    float duration;  // In seconds (auto-detected)
+    float duration;
 };
 
 struct Playlist {
@@ -40,7 +40,6 @@ public:
     void Update(float dt);
     void Draw(float x, float y, float width, float height);
 
-    // Controls
     void Play();
     void Pause();
     void TogglePlay();
@@ -56,10 +55,8 @@ public:
     int GetCurrentTrackIndex() const { return m_playlist.currentIndex; }
     const MusicTrack* GetCurrentTrack() const;
 
-    // Load tracks
     void LoadTracks(const std::vector<MusicTrack>& tracks);
 
-    // Icon management
     void LoadIcons();
     void UnloadIcons();
     Texture2D GetIcon(const std::string& key);
@@ -81,8 +78,8 @@ private:
     bool m_musicLoaded = false;
     float m_visualizerTime = 0.0f;
     float m_visualizerSamples[64];
+    float m_glowPulse = 0.0f;
 
-    // Icon textures
     std::unordered_map<std::string, Texture2D> m_iconTextures;
 };
 

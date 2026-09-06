@@ -24,37 +24,31 @@ void InitLoginScreen(LoginScreen& login) {
     login.glitchTimer = 0.0f;
     login.scanlineOffset = 0.0f;
     
+    // Loading state
+    login.isLoading = false;
+    login.loadingProgress = 0.0f;
+    login.loadingTimer = 0.0f;
+    login.loadingComplete = false;
+    strcpy(login.loadingStatus, "INITIALIZING UPLINK...");
+    
     strcpy(login.ipInputBuffer, "127.0.0.1");
     strcpy(login.handleBuffer, g_player.handle);
 }
 
 // ============================================================
-// UPDATE
+// START LOADING
 // ============================================================
 
-void UpdateLoginScreen(LoginScreen& login, float dt) {
-    login.animTime += dt;
-    login.cursorBlinkTimer += dt;
-    login.scanlineOffset += dt * 2.0f;
-    
-    // Cursor blink
-    if (login.cursorBlinkTimer >= 0.5f) {
-        login.cursorBlinkTimer = 0.0f;
-        login.showCursor = !login.showCursor;
-    }
-    
-    // Random glitch
-    login.glitchTimer += dt;
-    if (login.glitchTimer > 2.0f + (rand() % 100) / 50.0f) {
-        login.glitchTimer = 0.0f;
-        if ((rand() % 100) < 15) {
-            TriggerGlitch(0.3f + (rand() % 100) / 200.0f);
-        }
-    }
+void StartLoading(LoginScreen& login) {
+    login.isLoading = true;
+    login.loadingProgress = 0.0f;
+    login.loadingTimer = 0.0f;
+    login.loadingComplete = false;
+    strcpy(login.loadingStatus, "INITIALIZING UPLINK...");
 }
 
 // ============================================================
-// DRAWING
+// HELPER DRAW FUNCTIONS - MOVED BEFORE THEY'RE USED!
 // ============================================================
 
 static void DrawAnimatedGrid(float time) {
@@ -208,10 +202,231 @@ static void DrawCRTScanlines(float x, float y, float w, float h, float offset) {
 }
 
 // ============================================================
+// DRAW LOADING SCREEN
+// ============================================================
+
+static void DrawLoadingScreen(const LoginScreen& login) {
+    float t = login.animTime;
+    float cx = REF_WIDTH / 2.0f;
+    float cy = REF_HEIGHT / 2.0f;
+    float progress = login.loadingProgress;
+    float pulse = sinf(t * 3.0f) * 0.3f + 0.7f;
+    
+    // ---- BACKGROUND ----
+    DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, Color{4, 6, 10, 255});
+    
+    // ---- ANIMATED GRID ----
+    DrawAnimatedGrid(t);
+    
+    // ---- CRT VIGNETTE ----
+    for (int i = 0; i < 8; i++) {
+        float size = i * 20.0f;
+        DrawScaledRect(size, size, REF_WIDTH - size * 2, REF_HEIGHT - size * 2, 
+                       {0, 0, 0, (unsigned char)(4 - i * 0.3f)});
+    }
+    
+    // ---- MAIN CONTAINER ----
+    float boxX = 200.0f;
+    float boxY = 80.0f;
+    float boxW = 500.0f;
+    float boxH = 500.0f;
+    
+    DrawScaledRect(boxX, boxY, boxW, boxH, Color{8, 10, 16, 230});
+    DrawScaledRectLines(boxX, boxY, boxW, boxH, {0, 220, 240, 60});
+    
+    // ---- CORNER RETICLES ----
+    Color retCol = {0, 220, 240, (unsigned char)(sinf(t * 0.5f) * 50 + 100)};
+    float retSize = 25.0f;
+    
+    DrawScaledRect(boxX - 2, boxY - 2, retSize, 2, retCol);
+    DrawScaledRect(boxX - 2, boxY - 2, 2, retSize, retCol);
+    DrawScaledRect(boxX + boxW - retSize, boxY - 2, retSize, 2, retCol);
+    DrawScaledRect(boxX + boxW, boxY - 2, 2, retSize, retCol);
+    DrawScaledRect(boxX - 2, boxY + boxH, retSize, 2, retCol);
+    DrawScaledRect(boxX - 2, boxY + boxH - retSize, 2, retSize, retCol);
+    DrawScaledRect(boxX + boxW - retSize, boxY + boxH, retSize, 2, retCol);
+    DrawScaledRect(boxX + boxW, boxY + boxH - retSize, 2, retSize, retCol);
+    
+    // ---- LOGO (smaller) ----
+    DrawVektraLogo(cx, boxY + 60, 0.5f, t);
+    
+    // ---- DECORATIVE LINE ----
+    float lineY = boxY + 115;
+    DrawScaledLine(boxX + 30, lineY, boxX + boxW - 30, lineY, {0, 220, 240, 40});
+    
+    // ---- LOADING ICON / ANIMATION ----
+    float iconY = boxY + 160;
+    
+    // Rotating hexagon / gear animation
+    float rotOff = t * 2.0f;
+    float hexRadius = 40.0f;
+    float hexX = cx;
+    float hexY = iconY + 20;
+    
+    for (int i = 0; i < 6; i++) {
+        float angle = rotOff + (float)i * 1.0472f;
+        float nextAngle = rotOff + (float)(i + 1) * 1.0472f;
+        float x1 = hexX + cosf(angle) * hexRadius;
+        float y1 = hexY + sinf(angle) * hexRadius;
+        float x2 = hexX + cosf(nextAngle) * hexRadius;
+        float y2 = hexY + sinf(nextAngle) * hexRadius;
+        
+        Color hexCol = {0, 220, 240, (unsigned char)(pulse * 150 + 50)};
+        DrawScaledLine(x1, y1, x2, y2, hexCol);
+    }
+    
+    // Inner rotating ring
+    float ringRadius = 25.0f;
+    for (int i = 0; i < 8; i++) {
+        float angle = -rotOff * 0.7f + (float)i * 0.7854f;
+        float rx = hexX + cosf(angle) * ringRadius;
+        float ry = hexY + sinf(angle) * ringRadius;
+        float size = 4.0f + sinf(t * 4.0f + i) * 2.0f;
+        DrawScaledRect(rx - size/2, ry - size/2, size, size, 
+                       {0, 220, 240, (unsigned char)(pulse * 200 + 55)});
+    }
+    
+    // ---- STATUS TEXT ----
+    float statusY = hexY + 65;
+    float statusW = MeasureScaledTextWidth(login.loadingStatus, 14);
+    DrawScaledText(login.loadingStatus, cx - statusW / 2, statusY, 14, 
+                   (pulse > 0.5f) ? COLOR_CYAN : COLOR_AMBER);
+    
+    // ---- PROGRESS BAR ----
+    float barX = boxX + 50;
+    float barY = statusY + 40;
+    float barW = boxW - 100;
+    float barH = 8.0f;
+    
+    // Background
+    DrawScaledRect(barX, barY, barW, barH, Color{12, 15, 20, 255});
+    DrawScaledRectLines(barX, barY, barW, barH, {30, 35, 50, 100});
+    
+    // Progress fill with gradient
+    float fillW = barW * progress;
+    if (fillW < 2.0f) fillW = 2.0f;
+    
+    for (int x = 0; x < (int)fillW; x += 2) {
+        float prog = (float)x / barW;
+        unsigned char r = (unsigned char)(0 + prog * 220);
+        unsigned char g = (unsigned char)(220 - prog * 20);
+        unsigned char b = (unsigned char)(240 - prog * 40);
+        DrawScaledRect(barX + x, barY, 2, barH, {r, g, b, 255});
+    }
+    
+    // Glow at leading edge
+    if (fillW > 5.0f) {
+        DrawScaledRect(barX + fillW - 6.0f, barY - 3, 6, barH + 6, {0, 220, 240, 40});
+    }
+    
+    // ---- PERCENTAGE ----
+    char pctStr[16];
+    snprintf(pctStr, sizeof(pctStr), "%d%%", (int)(progress * 100.0f));
+    float pctW = MeasureScaledTextWidth(pctStr, 12);
+    DrawScaledText(pctStr, cx - pctW / 2, barY + 18, 12, COLOR_TOXIC);
+    
+    // ---- HEX STREAM ANIMATION ----
+    float hexY2 = barY + 50;
+    int hexTick = (int)fmodf(t * 30.0f, 99.0f);
+    char hexStr[128];
+    snprintf(hexStr, sizeof(hexStr), "0x%04X_HANDSHAKE_SEQUENCE_%02d", 
+             (int)(t * 100.0f) % 65535, hexTick);
+    float hexW2 = MeasureScaledTextWidth(hexStr, 9);
+    DrawScaledText(hexStr, cx - hexW2 / 2, hexY2, 9, COLOR_AMBER);
+    
+    // ---- GLITCHING FOOTER ----
+    float glitchOffset = sinf(t * 40.0f) * 2.0f;
+    const char* footerMsg = "VEKTRAOS v9.5 // COLD SIGNAL // SECURE HANDSHAKE IN PROGRESS";
+    float footW = MeasureScaledTextWidth(footerMsg, 9);
+    DrawScaledText(footerMsg, cx - footW / 2 + glitchOffset, boxY + boxH - 30, 9, {60, 80, 100, 150});
+    
+    // ---- CRT SCANLINES ----
+    DrawCRTScanlines(0, 0, REF_WIDTH, REF_HEIGHT, login.scanlineOffset);
+    
+    // ---- GLITCH EFFECT ----
+    if (IsJittering()) {
+        float jx = GetJitterX();
+        float jy = GetJitterY();
+        if (fabsf(jx) > 1.0f || fabsf(jy) > 1.0f) {
+            DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, {0, 0, 0, 30});
+        }
+    }
+    
+    // ---- VIGNETTE BORDER ----
+    DrawScaledRect(0, 0, REF_WIDTH, 2, {0, 0, 0, 200});
+    DrawScaledRect(0, REF_HEIGHT - 2, REF_WIDTH, 2, {0, 0, 0, 200});
+    DrawScaledRect(0, 0, 2, REF_HEIGHT, {0, 0, 0, 200});
+    DrawScaledRect(REF_WIDTH - 2, 0, 2, REF_HEIGHT, {0, 0, 0, 200});
+}
+
+// ============================================================
+// UPDATE
+// ============================================================
+
+void UpdateLoginScreen(LoginScreen& login, float dt) {
+    login.animTime += dt;
+    login.cursorBlinkTimer += dt;
+    login.scanlineOffset += dt * 2.0f;
+    
+    // Cursor blink
+    if (login.cursorBlinkTimer >= 0.5f) {
+        login.cursorBlinkTimer = 0.0f;
+        login.showCursor = !login.showCursor;
+    }
+    
+    // Random glitch
+    login.glitchTimer += dt;
+    if (login.glitchTimer > 2.0f + (rand() % 100) / 50.0f) {
+        login.glitchTimer = 0.0f;
+        if ((rand() % 100) < 15) {
+            TriggerGlitch(0.3f + (rand() % 100) / 200.0f);
+        }
+    }
+    
+    // ============================================================
+    // LOADING UPDATE
+    // ============================================================
+    if (login.isLoading && !login.loadingComplete) {
+        login.loadingTimer += dt;
+        login.loadingProgress += dt * 0.15f;
+        
+        if (login.loadingProgress > 1.0f) {
+            login.loadingProgress = 1.0f;
+            login.loadingComplete = true;
+        }
+        
+        // Update status messages based on progress
+        if (login.loadingProgress < 0.15f) {
+            strcpy(login.loadingStatus, "INITIALIZING UPLINK...");
+        } else if (login.loadingProgress < 0.30f) {
+            strcpy(login.loadingStatus, "NEGOTIATING HANDSHAKE...");
+        } else if (login.loadingProgress < 0.45f) {
+            strcpy(login.loadingStatus, "ESTABLISHING SECURE CHANNEL...");
+        } else if (login.loadingProgress < 0.60f) {
+            strcpy(login.loadingStatus, "EXCHANGING CRYPTOGRAPHIC KEYS...");
+        } else if (login.loadingProgress < 0.75f) {
+            strcpy(login.loadingStatus, "AUTHENTICATING OPERATOR...");
+        } else if (login.loadingProgress < 0.90f) {
+            strcpy(login.loadingStatus, "SYNCHRONIZING VFS MEMORY STACKS...");
+        } else {
+            strcpy(login.loadingStatus, "ESTABLISHING P2P SOCKET...");
+        }
+    }
+}
+
+// ============================================================
 // MAIN DRAW FUNCTION
 // ============================================================
 
 void DrawLoginScreen(const LoginScreen& login) {
+    // ============================================================
+    // SHOW LOADING SCREEN IF LOADING
+    // ============================================================
+    if (login.isLoading) {
+        DrawLoadingScreen(login);
+        return;
+    }
+    
     float t = login.animTime;
     float cx = REF_WIDTH / 2.0f;
     float cy = REF_HEIGHT / 2.0f;
@@ -321,14 +536,6 @@ void DrawLoginScreen(const LoginScreen& login) {
     Color btnTextCol = btnHover ? COLOR_BLACK : COLOR_TOXIC;
     DrawScaledText(btnText, btnX + (btnW - btnTextW) / 2, btnY + 15, 14, btnTextCol);
     
-    // Loading animation on button
-    if (g_player.isConnecting) {
-        float progress = g_player.connectTimer / g_player.targetConnectTime;
-        if (progress > 0.0f) {
-            DrawScaledRect(btnX, btnY + btnH - 3, btnW * (progress > 1.0f ? 1.0f : progress), 3, COLOR_TOXIC);
-        }
-    }
-    
     // ---- FOOTER ----
     DrawLoginFooter(cx, boxY + boxH - 20, t);
     
@@ -356,6 +563,13 @@ void DrawLoginScreen(const LoginScreen& login) {
 // ============================================================
 
 bool HandleLoginInput(LoginScreen& login) {
+    // ============================================================
+    // DON'T PROCESS INPUT DURING LOADING
+    // ============================================================
+    if (login.isLoading) {
+        return false;
+    }
+    
     Vector2 refMouse = GetRefMousePos();
     bool clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
     
@@ -389,7 +603,8 @@ bool HandleLoginInput(LoginScreen& login) {
                 
                 if (RefRectHover(btnX, btnY, btnW, btnH, refMouse)) {
                     if (strlen(login.ipInputBuffer) > 0) {
-                        return true; // Connect
+                        StartLoading(login);
+                        return true;
                     }
                 }
             }
@@ -447,7 +662,8 @@ bool HandleLoginInput(LoginScreen& login) {
         
         if (IsKeyPressed(KEY_ENTER)) {
             if (strlen(login.ipInputBuffer) > 0) {
-                return true; // Connect
+                StartLoading(login);
+                return true;
             }
         }
     }

@@ -3,36 +3,63 @@
 #include <cmath>
 #include <ctime>
 
+// ============================================================
+// HELPER: Draw crisp, scaled text with proper size
+// ============================================================
+static void DrawCrispText(const char* text, float x, float y, float fontSize, Color color) {
+    // Use DrawScaledText which handles the scaling properly
+    DrawScaledText(text, x, y, fontSize, color);
+}
+
 void DrawVektraWallpaper(float width, float height) {
     float t = (float)GetTime();
     
+    // ============================================================
+    // BACKGROUND
+    // ============================================================
     Color baseBg = {18, 20, 24, 255};
-    
     DrawScaledRect(0, 0, width, height, baseBg);
+    
+    // Subtle gradient overlay (dark to slightly lighter)
+    for (int y = 0; y < height; y += 2) {
+        float prog = (float)y / height;
+        unsigned char alpha = (unsigned char)(prog * 15);
+        DrawScaledRect(0, y, width, 2, {30, 35, 45, alpha});
+    }
     
     // ============================================================
     // SUBTLE GRID
     // ============================================================
     for (int x = 0; x < width; x += 60) {
-        DrawScaledLine(x, 0, x, height, {40, 42, 50, 40});
+        DrawScaledLine(x, 0, x, height, {40, 42, 50, 30});
     }
     for (int y = 0; y < height; y += 60) {
-        DrawScaledLine(0, y, width, y, {40, 42, 50, 40});
+        DrawScaledLine(0, y, width, y, {40, 42, 50, 30});
     }
     
     // ============================================================
-    // TOP DECORATIVE BANNER - REDUCED WIDTH
+    // AMBIENT PARTICLES (floating dots)
+    // ============================================================
+    for (int i = 0; i < 50; i++) {
+        float px = fmodf(i * 137.5f + t * 8.0f, width);
+        float py = fmodf(i * 97.3f + sinf(t * 0.3f + i * 0.7f) * 40.0f, height);
+        unsigned char alpha = (unsigned char)(30 + sinf(t * 0.5f + i * 1.2f) * 20 + 20);
+        DrawScaledRect(px, py, 2, 2, {60, 65, 80, alpha});
+    }
+    
+    // ============================================================
+    // TOP DECORATIVE BANNER - UNCHANGED
     // ============================================================
     float bannerY = 0;
-    float bannerH = 70;  // Slightly smaller
-    float bannerX = 20;   // Added margin from left
-    float bannerW = width - 40;  // Reduced width with margins
+    float bannerH = 70;
+    float bannerX = 20;
+    float bannerW = width - 40;
     
     DrawScaledRect(bannerX, bannerY, bannerW, bannerH, {22, 24, 30, 220});
     DrawScaledLine(bannerX, bannerY + bannerH, bannerX + bannerW, bannerY + bannerH, {60, 65, 80, 150});
     
     // Agency seal placeholder
-    float sealX = bannerX + 20, sealY = 8, sealSize = 50;  // Slightly smaller
+    float sealX = bannerX + 20, sealY = 8, sealSize = 50;
     DrawScaledRect(sealX, sealY, sealSize, sealSize, {35, 38, 45, 255});
     DrawScaledRectLines(sealX, sealY, sealSize, sealSize, {80, 85, 100, 200});
     
@@ -48,11 +75,10 @@ void DrawVektraWallpaper(float width, float height) {
         DrawScaledLine(x2, y2, cx + cosf(angle + 2.0944f) * 16, cy + sinf(angle + 2.0944f) * 16, {140, 145, 160, 200});
     }
     
-    // Agency name - adjusted positions
     DrawScaledText("VEKTRA INTELLIGENCE DIVISION", sealX + sealSize + 16, sealY + 14, 14, {160, 165, 180, 255});
     DrawScaledText("CLASSIFIED // EYES ONLY", sealX + sealSize + 16, sealY + 34, 9, {100, 105, 115, 200});
     
-    // Top right - classification badge (moved left)
+    // Top right - classification badge
     float badgeX = bannerX + bannerW - 160;
     DrawScaledRect(badgeX, 8, 140, 50, {40, 20, 25, 220});
     DrawScaledRectLines(badgeX, 8, 140, 50, {160, 30, 40, 180});
@@ -60,45 +86,130 @@ void DrawVektraWallpaper(float width, float height) {
     DrawScaledText("COMSEC // NOFORN", badgeX + 20, 38, 9, {160, 100, 110, 200});
 
     // ============================================================
-    // CENTRAL VEKTRA LOGO / EAGLE
+    // CENTRAL VEKTRA LOGO / EAGLE - IMPROVED
     // ============================================================
-    float logoX = width / 2 - 120;
-    float logoY = height / 2 - 120;
+    float centerX = width / 2.0f;
+    float centerY = height / 2.0f;
+    float baseSize = 1.0f;
     
-    // Eagle silhouette (simplified)
-    DrawScaledRect(logoX + 40, logoY, 40, 120, {40, 42, 50, 100});
-    DrawScaledRect(logoX + 80, logoY + 20, 40, 100, {40, 42, 50, 100});
-    DrawScaledRect(logoX + 120, logoY + 40, 40, 80, {40, 42, 50, 100});
-    DrawScaledRect(logoX + 160, logoY + 60, 40, 60, {40, 42, 50, 100});
-    DrawScaledRect(logoX + 200, logoY + 80, 40, 40, {40, 42, 50, 100});
+    // ---- EAGLE SILHOUETTE (more detailed) ----
+    float eagleX = centerX - 80;
+    float eagleY = centerY - 60;
+    float eagleScale = 1.2f;
     
-    // Wings spread
-    for (int i = 0; i < 12; i++) {
-        float angle = -2.0f + i * 0.35f;
-        float wingX = logoX + 120 + i * 25;
-        float wingY = logoY + 40 + sinf(angle) * 60;
-        DrawScaledRect(wingX, wingY, 15, 3, {60, 65, 80, 100});
+    // Body
+    DrawScaledRect(eagleX + 60 * eagleScale, eagleY + 10 * eagleScale, 
+                   40 * eagleScale, 100 * eagleScale, {45, 48, 55, 120});
+    DrawScaledRect(eagleX + 100 * eagleScale, eagleY + 30 * eagleScale, 
+                   30 * eagleScale, 80 * eagleScale, {45, 48, 55, 120});
+    
+    // Head
+    DrawScaledRect(eagleX + 70 * eagleScale, eagleY, 
+                   25 * eagleScale, 20 * eagleScale, {45, 48, 55, 140});
+    // Beak
+    DrawScaledRect(eagleX + 95 * eagleScale, eagleY + 5 * eagleScale, 
+                   15 * eagleScale, 8 * eagleScale, {55, 58, 65, 150});
+    
+    // Left wing (spread)
+    for (int i = 0; i < 15; i++) {
+        float wingAngle = -1.8f + i * 0.25f;
+        float wingX = eagleX + 80 * eagleScale - i * 12 * eagleScale;
+        float wingY = eagleY + 40 * eagleScale + sinf(wingAngle) * 50 * eagleScale;
+        float wingW = 8 * eagleScale + (15 - i) * 1.5f * eagleScale;
+        
+        int alphaVal = 100 - i * 3;
+        if (alphaVal < 0) alphaVal = 0;
+        if (alphaVal > 255) alphaVal = 255;
+        DrawScaledRect(wingX, wingY, wingW, 2 * eagleScale, {55, 58, 68, (unsigned char)alphaVal});
     }
     
-    // Large VEKTRA text
-    DrawScaledText("VEKTRA", width/2 - 180, height/2 - 40, 60, {120, 125, 140, 180});
+    // Right wing (spread)
+    for (int i = 0; i < 15; i++) {
+        float wingAngle = -1.8f + i * 0.25f;
+        float wingX = eagleX + 120 * eagleScale + i * 12 * eagleScale;
+        float wingY = eagleY + 40 * eagleScale + sinf(wingAngle) * 50 * eagleScale;
+        float wingW = 8 * eagleScale + (15 - i) * 1.5f * eagleScale;
+
+        int alphaVal = 100 - i * 3;
+        if (alphaVal < 0) alphaVal = 0;
+        if (alphaVal > 255) alphaVal = 255;
+        DrawScaledRect(wingX, wingY, wingW, 2 * eagleScale, {55, 58, 68, (unsigned char)alphaVal});
+    }
     
-    // Subtitle
-    DrawScaledText("SILENT WATCH // COLD SIGNAL", width/2 - 130, height/2 + 30, 16, {80, 85, 100, 180});
+    // Tail
+    for (int i = 0; i < 8; i++) {
+        float tailX = eagleX + 65 * eagleScale + i * 8 * eagleScale;
+        float tailY = eagleY + 100 * eagleScale;
+        DrawScaledRect(tailX, tailY, 4 * eagleScale, 20 * eagleScale, {45, 48, 55, 80});
+    }
     
     // ============================================================
-    // DECORATIVE LINES
+    // VEKTRA TEXT - FIXED PIXELATION
     // ============================================================
-    float lineY = height/2 + 60;
-    DrawScaledLine(width/2 - 200, lineY, width/2 - 60, lineY, {60, 65, 80, 120});
-    DrawScaledLine(width/2 + 60, lineY, width/2 + 200, lineY, {60, 65, 80, 120});
+    float textY = eagleY + 130 * eagleScale;
+    
+    // Glow behind text
+    float glowSize = 140.0f;
+    DrawScaledRect(centerX - glowSize, textY - 30, glowSize * 2, 80, 
+                   {0, 180, 200, 15});
+    
+    // Main VEKTRA text - using proper scaled font
+    // The font size is larger but DrawScaledText handles scaling properly
+    float mainFontSize = 52.0f;
+    float textWidth = MeasureScaledTextWidth("VEKTRA", mainFontSize);
+    DrawScaledText("VEKTRA", centerX - textWidth / 2, textY, mainFontSize, 
+                   {140, 145, 160, 230});
+    
+    // Glow outline effect (subtle)
+    for (int i = 1; i <= 3; i++) {
+        float offset = i * 1.0f;
+        Color glowColor = {0, 180, 200, (unsigned char)(15 / i)};
+        DrawScaledText("VEKTRA", centerX - textWidth / 2 + offset, textY + offset, 
+                       mainFontSize, glowColor);
+        DrawScaledText("VEKTRA", centerX - textWidth / 2 - offset, textY - offset, 
+                       mainFontSize, glowColor);
+    }
+    
+    // Redraw main text on top (crisp)
+    DrawScaledText("VEKTRA", centerX - textWidth / 2, textY, mainFontSize, 
+                   {160, 165, 180, 255});
+    
+    // ============================================================
+    // SUBTITLE - FIXED PIXELATION
+    // ============================================================
+    float subY = textY + mainFontSize + 20;
+    float subFontSize = 16.0f;
+    
+    const char* subtitle = "SILENT WATCH // COLD SIGNAL";
+    float subWidth = MeasureScaledTextWidth(subtitle, subFontSize);
+    DrawScaledText(subtitle, centerX - subWidth / 2, subY, subFontSize, 
+                   {100, 105, 115, 200});
+    
+    // Decorative line under subtitle
+    float lineY2 = subY + subFontSize + 12;
+    float lineW2 = 280.0f;
+    DrawScaledLine(centerX - lineW2 / 2, lineY2, centerX - 40, lineY2, 
+                   {60, 65, 80, 80});
+    DrawScaledLine(centerX + 40, lineY2, centerX + lineW2 / 2, lineY2, 
+                   {60, 65, 80, 80});
     
     // Diamond accent
-    DrawScaledRect(width/2 - 8, lineY - 8, 16, 16, {60, 65, 80, 150});
-    DrawScaledRect(width/2 - 3, lineY - 3, 6, 6, {120, 125, 140, 200});
+    float diamondSize = 8.0f;
+    DrawScaledRect(centerX - diamondSize, lineY2 - diamondSize, 
+                   diamondSize * 2, diamondSize * 2, {60, 65, 80, 120});
+    DrawScaledRect(centerX - diamondSize / 2, lineY2 - diamondSize / 2, 
+                   diamondSize, diamondSize, {140, 145, 160, 180});
     
     // ============================================================
-    // BOTTOM STATUS BAR - REDUCED WIDTH
+    // DEPARTMENT TAGLINE
+    // ============================================================
+    float tagY = lineY2 + 30;
+    const char* tagline = "VEKTRA INTELLIGENCE DIVISION // CYBER OPERATIONS";
+    float tagW = MeasureScaledTextWidth(tagline, 10);
+    DrawScaledText(tagline, centerX - tagW / 2, tagY, 10, {80, 85, 95, 150});
+    
+    // ============================================================
+    // BOTTOM STATUS BAR - UNCHANGED
     // ============================================================
     float footerY = height - 55;
     float footerH = 55;
@@ -130,7 +241,7 @@ void DrawVektraWallpaper(float width, float height) {
     // SCANLINE OVERLAY (subtle)
     // ============================================================
     for (int y = 0; y < height; y += 4) {
-        float alpha = 4.0f + sinf(t * 0.5f + y * 0.1f) * 2.0f;
+        float alpha = 3.0f + sinf(t * 0.5f + y * 0.1f) * 1.5f;
         DrawScaledRect(0, y, width, 1, {0, 0, 0, (unsigned char)alpha});
     }
     
@@ -140,6 +251,16 @@ void DrawVektraWallpaper(float width, float height) {
     if (fmodf(t * 0.3f, 1.0f) > 0.97f) {
         float glitchX = rand() % (int)width;
         float glitchW = 20 + rand() % 80;
-        DrawScaledRect(glitchX, 0, glitchW, height, {20, 22, 30, 15});
+        DrawScaledRect(glitchX, 0, glitchW, height, {20, 22, 30, 12});
+    }
+    
+    // ============================================================
+    // VIGNETTE (subtle darkening at edges)
+    // ============================================================
+    for (int i = 0; i < 6; i++) {
+        float size = i * 40.0f;
+        unsigned char alpha = (unsigned char)(6 - i * 0.8f);
+        DrawScaledRect(size, size, width - size * 2, height - size * 2, 
+                       {0, 0, 0, alpha});
     }
 }

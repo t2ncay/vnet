@@ -16,6 +16,12 @@ extern Player g_player;
 LoginScreen g_loginScreen;
 
 // ============================================================
+// NEW: Loading completion timer
+// ============================================================
+static float g_loadingCompletionTimer = 0.0f;
+static bool g_loadingWaitingToFinish = false;
+
+// ============================================================
 // SCALE / LETTERBOX CALCULATION
 // ============================================================
 static void RecalcScale(void) {
@@ -46,6 +52,10 @@ bool InitGame(void) {
     g_game.runTime   = 0.0f;
     g_game.showFPS   = true;
     g_game.showDebug = false;
+    
+    // Initialize loading timer
+    g_loadingCompletionTimer = 0.0f;
+    g_loadingWaitingToFinish = false;
 
     RecalcScale();
 
@@ -90,6 +100,18 @@ void UpdateGame(float dt) {
         g_game.currentFPS = GetFPS();
         g_game.fpsTimer = 0.0f;
     }
+    
+    // ============================================================
+    // NEW: Handle loading completion delay
+    // ============================================================
+    if (g_loadingWaitingToFinish) {
+        g_loadingCompletionTimer += dt;
+        if (g_loadingCompletionTimer >= 1.5f) {  // Show loading for 1.5 seconds
+            g_loadingWaitingToFinish = false;
+            g_loginScreen.isActive = false;
+            g_loginScreen.isLoading = false;
+        }
+    }
 }
 
 void DrawGame(void) {
@@ -118,15 +140,26 @@ void ShutdownGame(void) {
 }
 
 void HandleInput(void) {
-        // ============================================================
-    // LOGIN SCREEN INPUT - REPLACES OLD CONNECTION MENU
+    // ============================================================
+    // LOGIN SCREEN INPUT
     // ============================================================
     if (g_loginScreen.isActive) {
         bool shouldConnect = HandleLoginInput(g_loginScreen);
         
         if (shouldConnect) {
+            // Try to connect (loading animation already started)
             if (InitVNetClient(GetLoginIP(g_loginScreen), 8000)) {
-                g_loginScreen.isActive = false;
+                // ============================================================
+                // FIXED: Don't hide loading screen instantly!
+                // ============================================================
+                
+                // Connection successful - let the loading animation complete
+                // The loading screen will stay visible for ~1.5 seconds
+                g_loginScreen.loadingProgress = 1.0f;
+                g_loginScreen.loadingComplete = true;
+                strcpy(g_loginScreen.loadingStatus, "CONNECTED! INITIALIZING...");
+                
+                // Store the handle and IP for later use
                 strcpy(g_player.handle, GetLoginHandle(g_loginScreen));
                 PushCliLog("[CONNECT]: Connected to %s as %s", 
                           GetLoginIP(g_loginScreen), g_player.handle);
@@ -135,8 +168,20 @@ void HandleInput(void) {
                 std::string pingMsg = std::string(VNetCmd::PING) + ":" + 
                                      g_player.handle + ":" + g_player.currentURL;
                 VNetSendRaw(pingMsg);
+                
+                // ============================================================
+                // START THE DELAY TIMER - DON'T HIDE YET!
+                // ============================================================
+                g_loadingCompletionTimer = 0.0f;
+                g_loadingWaitingToFinish = true;
+                // g_loginScreen.isActive stays TRUE - loading screen remains visible
+                
             } else {
+                // Connection failed - show error and reset
                 PushCliLog("[ERROR]: Failed to connect to %s", GetLoginIP(g_loginScreen));
+                g_loginScreen.isLoading = false;
+                g_loginScreen.loadingProgress = 0.0f;
+                strcpy(g_loginScreen.loadingStatus, "CONNECTION FAILED - RETRY");
             }
         }
         return;

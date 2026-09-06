@@ -21,12 +21,22 @@ struct LoginScreen {
     // Glitch effects
     float glitchTimer;
     float scanlineOffset;
+    
+    // ============================================================
+    // LOADING STATE - NEW!
+    // ============================================================
+    bool isLoading;              // true when connecting
+    float loadingProgress;       // 0.0 - 1.0
+    float loadingTimer;
+    char loadingStatus[64];      // Current status text
+    bool loadingComplete;        // true when connected
 };
 
 void InitLoginScreen(LoginScreen& login);
 void UpdateLoginScreen(LoginScreen& login, float dt);
 void DrawLoginScreen(const LoginScreen& login);
 bool HandleLoginInput(LoginScreen& login);
+void StartLoading(LoginScreen& login);  // NEW!
 
 // Getter for IP
 const char* GetLoginIP(const LoginScreen& login);
