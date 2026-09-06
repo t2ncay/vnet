@@ -23,6 +23,17 @@ enum RaidStage {
     RAID_STAGE_COMPLETE = 4    // Cleanup
 };
 
+enum RaidSeqStage {
+    RAID_SEQ_IDLE = 0,
+    RAID_SEQ_GLITCH,
+    RAID_SEQ_FLASH,
+    RAID_SEQ_HEX,
+    RAID_SEQ_BLACKOUT,
+    RAID_SEQ_ACTIVE,      // operator face + interactive
+    RAID_SEQ_SUCCESS,
+    RAID_SEQ_FAILURE
+};
+
 // ============================================================
 // FUNCTION PROTOTYPES
 // ============================================================
@@ -41,9 +52,11 @@ void ApplyRaidFailure(void);
 
 // UI
 void DrawRaidOverlay(void);
+void DrawRaidSequenceOverlay(void);
 void DrawIntruderDetector(float x, float y, float w, float h);
 bool IsRaidActive(void);
 float GetRaidRemainingTime(void);
+void HandleRaidCLIInput(char* buffer);
 
 // Commands
 void ProcessRaidCommand(const char* token, const char* args, const char* cmd);

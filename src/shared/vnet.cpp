@@ -1443,6 +1443,15 @@ void ProcessCommand(const char* cmd) {
             // Implement based on LOT code
         }
     }
+
+    else if (strcmp(token, "1") == 0 || strcmp(token, "2") == 0 || strcmp(token, "3") == 0) {
+        if (g_player.raidActive && g_player.raidStage == RAID_STAGE_CHOICE) {
+            HandleRaidChoice(token);
+            return;
+        } else {
+            PushCliLog("[ERR]: Not in raid choice stage. Type 'raid' for status.");
+        }
+    }
     
     // ============================================================
     // UNKNOWN COMMAND

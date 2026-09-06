@@ -456,7 +456,7 @@ void LoadAssets(void) {
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
         "abcdefghijklmnopqrstuvwxyz{|}~"
         "°"                     // degree sign (CRT HEAT display)
-        "◈▶★✓✗║▓▒░⚙⚡📡";        // decorative symbols used across apps/*.cpp
+        "◈▶★✓✗║▓▒░⚙⚡📡💀❌";        // decorative symbols used across apps/*.cpp
 
     int codepointCount = 0;
     int* codepoints = LoadCodepoints(kExtraGlyphSample, &codepointCount);
@@ -1484,6 +1484,9 @@ void DrawUI(void) {
 
     // raid overlay
     DrawRaidOverlay();
+
+    // raid sequence overlay
+    DrawRaidSequenceOverlay();
     
     // Draw FPS overlay if enabled (on top of desktop)
     if (g_game.showFPS) {

@@ -3,6 +3,7 @@
 #include "player.h"
 #include "render.h"
 #include "./desktop/widgets/music_player.h"
+#include "./raid/raid.h"
 #include "vnet_client.h"
 #include "vnet_protocol.h" 
 #include "desktop.h"
@@ -261,8 +262,17 @@ void HandleInput(void) {
 
         if (IsKeyPressed(KEY_ENTER)) {
             if (strlen(g_player.inputBuffer) > 0) {
-                ProcessCommand(g_player.inputBuffer);
-                g_player.inputBuffer[0] = '\0';
+                // ============================================================
+                // HANDLE RAID CLI INPUT FIRST
+                // ============================================================
+                HandleRaidCLIInput(g_player.inputBuffer);
+                
+                // If raid handled it, it cleared the buffer
+                // If not, process normally
+                if (g_player.inputBuffer[0] != '\0') {
+                    ProcessCommand(g_player.inputBuffer);
+                    g_player.inputBuffer[0] = '\0';
+                }
             }
         }
     }

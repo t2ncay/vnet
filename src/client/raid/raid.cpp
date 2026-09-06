@@ -4,12 +4,16 @@
 #include "../render.h"
 #include "../vnet_client.h"
 #include "../game.h"
+#include "../desktop/desktop.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
 #include <cstring>
 #include <ctime>
 
+// fwd decls
+void DrawNetworkVisualization(float x, float y, float w, float h);
+void UpdateRaidSequence(float dt);
 extern Player g_player;
 
 // ============================================================
@@ -71,8 +75,21 @@ void TriggerFederalRaid(void) {
     if (g_player.raidActive) return;
     if (g_player.raidCooldown > 0.0f) return;
     if (g_player.isConnecting) return;
+
+    // ============================================================
+    // START THE SEQUENCE
+    // ============================================================
+    g_player.raidSeqStage = RAID_SEQ_GLITCH;
+    g_player.raidSeqTimer = 0.0f;
+    g_player.raidSeqStageDuration = 6.0f;   // 6 seconds of glitch
+    g_player.raidSeqLockDesktop = false;
+    g_player.raidSeqShowOperator = false;
+    strcpy(g_player.raidSeqOperatorDialogue, "INTRUSION DETECTED. IDENTIFY YOURSELF.");
+    g_player.raidIntruderVisible = false;
     
-    // Random timing
+    // ============================================================
+    // SET RAID ACTIVE
+    // ============================================================
     g_player.raidActive = true;
     g_player.raidTimer = 0.0f;
     g_player.raidResponseTime = 15.0f;
@@ -123,6 +140,9 @@ void UpdateRaid(float dt) {
     // ============================================================
     // RAID TRIGGER CHECK
     // ============================================================
+
+    UpdateRaidSequence(dt);
+
     if (!g_player.raidActive) {
         // Cooldown
         if (g_player.raidCooldown > 0.0f) {
@@ -157,6 +177,13 @@ void UpdateRaid(float dt) {
         }
         return;
     }
+
+    if (g_player.raidSeqStage == RAID_SEQ_GLITCH || 
+        g_player.raidSeqStage == RAID_SEQ_FLASH || 
+        g_player.raidSeqStage == RAID_SEQ_HEX || 
+        g_player.raidSeqStage == RAID_SEQ_BLACKOUT) {
+        return;
+    }
     
     // ============================================================
     // ACTIVE RAID UPDATE
@@ -170,7 +197,7 @@ void UpdateRaid(float dt) {
         if (g_player.raidAlertTimer > 3.0f) {
             g_player.raidStage = RAID_STAGE_CHOICE;
             g_player.raidTimer = 0.0f;
-            g_player.raidResponseTime = 8.0f + ((float)(rand() % 40) / 10.0f); // 8-11s for minigame
+            g_player.raidResponseTime = 15.0f; // 8-11s for minigame
             
             const char* typeNames[] = {"EVADE", "ESCAPE", "BURN"};
             PushCliLog("[FEDERAL RAID]: STRATEGY SUGGESTION: %s", typeNames[g_player.raidType]);
@@ -429,6 +456,9 @@ void ApplyRaidSuccess(void) {
     PushCliLog("================================================");
     
     TriggerGlitch(0.3f);
+
+    g_player.raidSeqStage = RAID_SEQ_SUCCESS;
+    g_player.raidSeqTimer = 0.0f;
 }
 
 void ApplyRaidFailure(void) {
@@ -462,7 +492,7 @@ void ApplyRaidFailure(void) {
     g_player.raidTimer = 0.0f;
     
     PushCliLog("╔════════════════════════════════════════════════════╗");
-    PushCliLog("║  💀 FEDERAL RAID BREACH SUCCESSFUL!               ║");
+    PushCliLog("║  💀 FEDERAL RAID BREACH SUCCESSFUL!                ║");
     PushCliLog("║                                                    ║");
     PushCliLog("║  ❌ PORT: %d LOCKED", g_player.port);
     PushCliLog("║  ❌ ICE SHIELDS: 0/3");
@@ -476,6 +506,9 @@ void ApplyRaidFailure(void) {
     
     TriggerGlitch(1.5f);
     TriggerJitter(1.0f, 2.0f);
+
+    g_player.raidSeqStage = RAID_SEQ_FAILURE;
+    g_player.raidSeqTimer = 0.0f;
 }
 
 // ============================================================
@@ -492,4 +525,408 @@ float GetRaidRemainingTime(void) {
         return g_player.raidResponseTime - g_player.raidTimer;
     }
     return 0.0f;
+}
+
+void HandleRaidCLIInput(char* buffer) {
+    if (!g_player.raidActive) return;
+    if (g_player.raidSeqStage != RAID_SEQ_ACTIVE) return;
+    
+    if (buffer[0] == '\0') return;
+    
+    // Process the command
+    ProcessCommand(buffer);
+    
+    // Clear input
+    buffer[0] = '\0';
+}
+
+void UpdateRaidSequence(float dt) {
+if (!g_player.raidActive) return;
+
+g_player.raidSeqTimer += dt;
+
+switch (g_player.raidSeqStage) {
+    case RAID_SEQ_GLITCH:
+        if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
+            g_player.raidSeqStage = RAID_SEQ_FLASH;
+            g_player.raidSeqTimer = 0.0f;
+            g_player.raidSeqStageDuration = 0.5f;  // 0.5s flash
+        }
+        break;
+
+    case RAID_SEQ_FLASH:
+        if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
+            g_player.raidSeqStage = RAID_SEQ_HEX;
+            g_player.raidSeqTimer = 0.0f;
+            g_player.raidSeqStageDuration = 2.0f;  // 2s hex flood
+        }
+        break;
+
+    case RAID_SEQ_HEX:
+        if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
+            g_player.raidSeqStage = RAID_SEQ_BLACKOUT;
+            g_player.raidSeqTimer = 0.0f;
+            g_player.raidSeqStageDuration = 0.8f;  // 0.8s blackout
+        }
+        break;
+
+    case RAID_SEQ_BLACKOUT:
+        if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
+            g_player.raidSeqStage = RAID_SEQ_ACTIVE;
+            g_player.raidSeqTimer = 0.0f;
+            g_player.raidSeqLockDesktop = true;
+            g_player.raidSeqShowOperator = true;
+            g_player.raidIntruderVisible = true;
+            
+            // ============================================================
+            // FORCE TERMINAL OPEN AND FOCUSED - FIXED
+            // ============================================================
+            Desktop& desktop = GetDesktop();
+            
+            // Close any existing terminal first to avoid duplication
+            // (we'll just open a new one)
+            int termIdx = desktop.OpenApp(AppType::Terminal, "Terminal");
+            
+            // If terminal was already open, focus it
+            if (termIdx >= 0) {
+                desktop.FocusWindow(termIdx);
+            }
+            
+            // Also ensure CLI is open
+            g_player.cliOpen = true;
+            
+            strcpy(g_player.raidSeqOperatorDialogue, "FEDERAL E-RAID IN PROGRESS. RESPOND OR PERISH.");
+        }
+        break;
+
+        case RAID_SEQ_ACTIVE:
+            g_player.raidSeqDialogueTimer += dt;
+            if (g_player.raidSeqDialogueTimer > 3.0f) {
+                g_player.raidSeqDialogueTimer = 0.0f;
+                const char* messages[] = {
+                    "FEDERAL E-RAID IN PROGRESS. RESPOND OR PERISH.",
+                    "I SEE YOUR CRT GLARE. YOU CAN'T HIDE.",
+                    "PORT 8001 IS COMPROMISED. MAKE YOUR MOVE.",
+                    "THE NETWORK IS ALIVE. IT IS DRINKING YOUR HEAT."
+                };
+                int idx = rand() % 4;
+                strcpy(g_player.raidSeqOperatorDialogue, messages[idx]);
+            }
+            break;
+
+        case RAID_SEQ_SUCCESS:
+            // Display success for 2 seconds then reset
+            if (g_player.raidSeqTimer >= 2.0f) {
+                ResetRaidState();
+                g_player.raidSeqStage = RAID_SEQ_IDLE;
+                g_player.raidSeqLockDesktop = false;
+                g_player.raidSeqShowOperator = false;
+                g_player.raidActive = false;
+                g_player.raidIntruderVisible = false;
+                g_player.cliOpen = false; // maybe close terminal
+            }
+            break;
+
+        case RAID_SEQ_FAILURE:
+            if (g_player.raidSeqTimer >= 2.0f) {
+                ResetRaidState();
+                g_player.raidSeqStage = RAID_SEQ_IDLE;
+                g_player.raidSeqLockDesktop = false;
+                g_player.raidSeqShowOperator = false;
+                g_player.raidActive = false;
+                g_player.raidIntruderVisible = false;
+                g_player.cliOpen = false;
+            }
+            break;
+    }
+}
+
+void DrawRaidSequenceOverlay() {
+    if (!g_player.raidActive) return;
+
+    float t = g_player.raidSeqTimer;
+    float pulse = sinf(GetTime() * 8.0f) * 0.5f + 0.5f;
+
+    switch (g_player.raidSeqStage) {
+        case RAID_SEQ_GLITCH:
+            // Draw scanline jitter, random horizontal bars, subtle noise
+            {
+                int intensity = (int)(t / g_player.raidSeqStageDuration * 10.0f);
+                for (int i = 0; i < intensity; i++) {
+                    float x = rand() % REF_WIDTH;
+                    float w = 10 + rand() % 60;
+                    float y = rand() % REF_HEIGHT;
+                    float h = 2 + rand() % 8;
+                    DrawScaledRect(x, y, w, h, Fade(COLOR_BLOOD, 0.1f + 0.2f * pulse));
+                }
+                DrawScanlineOverlay(0, 0, REF_WIDTH, REF_HEIGHT, Fade(COLOR_BLOOD, 0.3f * pulse), 120.0f, 2.0f);
+                // Jitter effect is handled by global jitter; we can also add extra offset
+                float jx = sinf(GetTime() * 40.0f) * 2.0f * pulse;
+                float jy = cosf(GetTime() * 35.0f) * 1.5f * pulse;
+                // This jitter will be applied in DrawUI by adding offset.
+                // We'll set a global jitter offset.
+                TriggerJitter(0.3f * pulse, 0.1f); // temporary
+            }
+            break;
+
+        case RAID_SEQ_FLASH:
+            // Full white flash with extreme jitter
+            {
+                float flashAlpha = 1.0f - (t / g_player.raidSeqStageDuration);
+                DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, Fade(WHITE, flashAlpha));
+                TriggerJitter(1.0f, 0.05f);
+                // Add chromatic aberration: offset red/blue channels?
+                // For simplicity, we'll just use a bright flash.
+            }
+            break;
+
+        case RAID_SEQ_HEX:
+            // Falling hex characters (data stream)
+            {
+                DrawDataStream(0, 0, REF_WIDTH, REF_HEIGHT, COLOR_TOXIC, 20, 280.0f);
+                // Optionally add a darkening overlay to make hex stand out
+                DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, Fade(BLACK, 0.3f));
+            }
+            break;
+
+        case RAID_SEQ_BLACKOUT:
+            // Pure black
+            DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, BLACK);
+            break;
+
+        case RAID_SEQ_ACTIVE:
+            // Desktop is locked, background is black
+            DrawNetworkVisualization(REF_WIDTH - 320, REF_HEIGHT - 280, 300, 260);
+            DrawScaledText(g_player.raidSeqOperatorDialogue, 40, REF_HEIGHT - 120, 18, COLOR_TOXIC);
+            DrawScanlineOverlay(0, 0, REF_WIDTH, REF_HEIGHT, Fade(COLOR_BLOOD, 0.1f), 60.0f, 4.0f);
+            
+            // ============================================================
+            // DRAW FULL TERMINAL WINDOW
+            // ============================================================
+            {
+                float winX = 40;
+                float winY = 80;
+                float winW = REF_WIDTH - 80;
+                float winH = REF_HEIGHT - 220;
+                
+                // ---- TERMINAL WINDOW FRAME ----
+                // Shadow
+                DrawScaledRect(winX + 6, winY + 6, winW, winH, Color{0, 0, 0, 100});
+                
+                // Background
+                DrawScaledRect(winX, winY, winW, winH, COLOR_PANEL);
+                DrawScaledRectLines(winX, winY, winW, winH, Fade(COLOR_CYAN, 0.3f));
+                
+                // ---- TITLE BAR ----
+                float titleH = 30.0f;
+                DrawScaledRect(winX, winY, winW, titleH, Color{20, 22, 35, 220});
+                DrawScaledLine(winX, winY + titleH, winX + winW, winY + titleH, Fade(COLOR_CYAN, 0.2f));
+                
+                // Title
+                DrawScaledText("█ TERMINAL // RAID INTERFACE", winX + 14, winY + 7, 11, COLOR_TOXIC);
+                
+                // ---- WINDOW CONTROLS (right side) ----
+                float btnX = winX + winW - 80;
+                float btnY = winY + 6;
+                DrawScaledCircle(btnX + 8, btnY + 8, 8, Color{255, 95, 87, 200});      // Close (red)
+                DrawScaledCircle(btnX + 28, btnY + 8, 8, Color{255, 200, 60, 200});    // Min (yellow)
+                DrawScaledCircle(btnX + 48, btnY + 8, 8, Color{100, 210, 80, 200});    // Max (green)
+                
+                // ---- TERMINAL CONTENT ----
+                float contentX = winX + 8;
+                float contentY = winY + titleH + 8;
+                float contentW = winW - 16;
+                float contentH = winH - titleH - 16;
+                
+                // Terminal background
+                DrawScaledRect(contentX, contentY, contentW, contentH, COLOR_CLI_BG);
+                DrawScaledRectLines(contentX, contentY, contentW, contentH, Fade(COLOR_CYAN, 0.1f));
+                
+                // ---- CLI LOGS ----
+                float lineY = contentY + 6;
+                int maxLines = (int)(contentH / 20) - 1;
+                int totalLines = g_cliLogCount;
+                int startLine = 0;
+                
+                if (totalLines > maxLines) {
+                    startLine = totalLines - maxLines;
+                }
+                
+                // Apply scroll
+                if (g_player.cliScroll > 0.0f) {
+                    int scrollLines = (int)(g_player.cliScroll / 20.0f);
+                    startLine = totalLines - maxLines - scrollLines;
+                    if (startLine < 0) startLine = 0;
+                }
+                
+                for (int i = startLine; i < g_cliLogCount && i < startLine + maxLines; i++) {
+                    if (i < 0) continue;
+                    const char* log = g_cliLogs[i];
+                    
+                    // Colorize based on content
+                    Color logColor = COLOR_GHOST;
+                    if (strstr(log, "[FEDERAL RAID]") || strstr(log, "[RAID]")) logColor = COLOR_BLOOD;
+                    else if (strstr(log, "[ERROR]") || strstr(log, "[ERR]")) logColor = COLOR_BLOOD;
+                    else if (strstr(log, "[WARNING]") || strstr(log, "[WARN]")) logColor = COLOR_AMBER;
+                    else if (strstr(log, "[SUCCESS]") || strstr(log, "[MINER]")) logColor = COLOR_TOXIC;
+                    else if (strstr(log, "[SCAN]") || strstr(log, "[PAGE]")) logColor = COLOR_CYAN;
+                    
+                    DrawScaledText(log, contentX + 8, lineY, 11, logColor);
+                    lineY += 20;
+                }
+                
+                // ---- INPUT LINE ----
+                float inputY = contentY + contentH - 30;
+                DrawScaledRect(contentX + 4, inputY, contentW - 8, 24, Color{8, 10, 14, 220});
+                DrawScaledRectLines(contentX + 4, inputY, contentW - 8, 24, Fade(COLOR_CYAN, 0.2f));
+                
+                DrawScaledText(">", contentX + 12, inputY + 5, 11, COLOR_TOXIC);
+                DrawScaledText(g_player.inputBuffer, contentX + 28, inputY + 5, 11, COLOR_GHOST);
+                
+                // Blinking cursor
+                if ((int)(GetTime() * 2.0f) % 2 == 0) {
+                    float cursorX = contentX + 28 + MeasureScaledTextWidth(g_player.inputBuffer, 11);
+                    DrawScaledRect(cursorX, inputY + 2, 6, 18, COLOR_TOXIC);
+                }
+                
+                // ---- SCROLLBAR (if needed) ----
+                if (totalLines > maxLines) {
+                    float scrollbarX = contentX + contentW - 8;
+                    float scrollbarH = contentH - 4;
+                    float visibleRatio = (float)maxLines / totalLines;
+                    float thumbH = scrollbarH * visibleRatio;
+                    if (thumbH < 16.0f) thumbH = 16.0f;
+                    
+                    float maxScrollPx = (totalLines - maxLines) * 20.0f;
+                    float scrollRatio = 0.0f;
+                    if (maxScrollPx > 0.0f) {
+                        scrollRatio = g_player.cliScroll / maxScrollPx;
+                        if (scrollRatio > 1.0f) scrollRatio = 1.0f;
+                    }
+                    float thumbY = contentY + 2 + (scrollbarH - thumbH) * scrollRatio;
+                    
+                    DrawScaledRect(scrollbarX, contentY + 2, 4, scrollbarH, Color{30, 35, 50, 100});
+                    DrawScaledRect(scrollbarX, thumbY, 4, thumbH, Fade(COLOR_CYAN, 0.3f));
+                }
+                
+                // ---- HELP TEXT (bottom) ----
+                DrawScaledText("[Press ENTER to send commands | TAB to toggle focus]", 
+                            contentX + 12, contentY + contentH - 52, 8, Fade(COLOR_GHOST, 0.4f));
+            }
+            break;
+
+        case RAID_SEQ_SUCCESS:
+            // Green flash with "RAID BYPASSED"
+            {
+                float alpha = 1.0f - (t / 2.0f);
+                DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, Fade(GREEN, alpha * 0.6f));
+                const char* msg = "⚡ RAID BYPASSED ⚡";
+                float w = MeasureScaledTextWidth(msg, 48);
+                // Shadow
+                DrawScaledText(msg, (REF_WIDTH - w) / 2 + 2, REF_HEIGHT / 2 - 18 + 2, 48, Fade(BLACK, alpha * 0.5f));
+                DrawScaledText(msg, (REF_WIDTH - w) / 2, REF_HEIGHT / 2 - 20, 48, Fade(COLOR_TOXIC, alpha));
+            }
+            break;
+
+        case RAID_SEQ_FAILURE:
+            // Red flash with "RAID SUCCESS"
+            {
+                float alpha = 1.0f - (t / 2.0f);
+                DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, Fade(RED, alpha * 0.6f));
+                const char* msg = "💀 RAID SUCCESS 💀";
+                float w = MeasureScaledTextWidth(msg, 48);
+                // Shadow
+                DrawScaledText(msg, (REF_WIDTH - w) / 2 + 2, REF_HEIGHT / 2 - 18 + 2, 48, Fade(BLACK, alpha * 0.5f));
+                DrawScaledText(msg, (REF_WIDTH - w) / 2, REF_HEIGHT / 2 - 20, 48, Fade(COLOR_BLOOD, alpha));
+            }
+            break;
+    }
+}
+
+// ============================================================
+// NETWORK VISUALIZATION - Replaces 3D Operator Face
+// ============================================================
+void DrawNetworkVisualization(float x, float y, float w, float h) {
+    float t = (float)GetTime();
+    float pulse = sinf(t * 3.0f) * 0.3f + 0.7f;
+    
+    // ---- BACKGROUND PANEL ----
+    DrawScaledRect(x, y, w, h, Color{6, 8, 14, 230});
+    DrawScaledRectLines(x, y, w, h, Fade(COLOR_CYAN, 0.3f));
+    
+    // ---- HEADER ----
+    DrawScaledText("█ PORT PROBE // NODE SWAP", x + 12, y + 8, 11, COLOR_TOXIC);
+    DrawScaledLine(x + 10, y + 26, x + w - 10, y + 26, Fade(COLOR_CYAN, 0.2f));
+    
+    // ---- NETWORK NODES ----
+    float centerX = x + w / 2.0f;
+    float centerY = y + h / 2.0f + 10.0f;
+    float radius = 60.0f;
+    int nodeCount = 6;
+    
+    // Draw connection lines between nodes
+    for (int i = 0; i < nodeCount; i++) {
+        float angle1 = t * 0.3f + (i / (float)nodeCount) * 6.28318f;
+        float angle2 = t * 0.3f + ((i + 1) / (float)nodeCount) * 6.28318f;
+        float x1 = centerX + cosf(angle1) * radius;
+        float y1 = centerY + sinf(angle1) * radius;
+        float x2 = centerX + cosf(angle2) * radius;
+        float y2 = centerY + sinf(angle2) * radius;
+        
+        // Data flow along the line (moving dots)
+        float flowPos = fmodf(t * 0.8f + i * 0.2f, 1.0f);
+        float fx = x1 + (x2 - x1) * flowPos;
+        float fy = y1 + (y2 - y1) * flowPos;
+        
+        // Glowing connection
+        DrawScaledLine(x1, y1, x2, y2, Fade(COLOR_CYAN, 0.15f + 0.1f * pulse));
+        // Data packet
+        DrawScaledRect(fx - 2, fy - 2, 4, 4, Fade(COLOR_TOXIC, 0.6f + 0.3f * pulse));
+    }
+    
+    // Draw nodes with port numbers
+    for (int i = 0; i < nodeCount; i++) {
+        float angle = t * 0.3f + (i / (float)nodeCount) * 6.28318f;
+        float nx = centerX + cosf(angle) * radius;
+        float ny = centerY + sinf(angle) * radius;
+        float nodePulse = sinf(t * 2.0f + i * 1.2f) * 0.3f + 0.7f;
+        
+        // Node glow
+        DrawScaledCircle(nx, ny, 12.0f * nodePulse, Fade(COLOR_BLOOD, 0.15f));
+        DrawScaledCircle(nx, ny, 8.0f, Fade(COLOR_CYAN, 0.25f));
+        
+        // Node core
+        Color nodeColor = (i % 2 == 0) ? COLOR_CYAN : COLOR_TOXIC;
+        DrawScaledRect(nx - 4, ny - 4, 8, 8, Fade(nodeColor, 0.8f));
+        
+        // Port label
+        char portStr[8];
+        int port = 8000 + i * 37 + (int)(t * 1.5f) % 100;
+        snprintf(portStr, sizeof(portStr), ":%d", port % 1000 + 8000);
+        DrawScaledText(portStr, nx - 12, ny + 14, 7, Fade(COLOR_GHOST, 0.6f));
+    }
+    
+    // ---- SCANNING PULSE ----
+    float scanAngle = t * 0.5f;
+    float scanX = centerX + cosf(scanAngle) * (radius + 25.0f);
+    float scanY = centerY + sinf(scanAngle) * (radius + 25.0f);
+    DrawScaledCircle(scanX, scanY, 6.0f, Fade(COLOR_AMBER, 0.8f));
+    DrawScaledCircle(scanX, scanY, 18.0f, Fade(COLOR_AMBER, 0.15f));
+    
+    // ---- STATS BAR ----
+    float statsY = y + h - 28;
+    DrawScaledLine(x + 10, statsY, x + w - 10, statsY, Fade(COLOR_CYAN, 0.15f));
+    
+    char stats[128];
+    int packets = (int)(t * 12.3f) % 999 + 100;
+    int hops = (int)(t * 0.7f) % 5 + 3;
+    snprintf(stats, sizeof(stats), "PACKETS: %04d  |  HOPS: %d  |  TRACE: %d%%  |  PORT: %d",
+             packets, hops, g_player.traceLevel, g_player.port);
+    DrawScaledText(stats, x + 12, statsY + 6, 8, Fade(COLOR_GHOST, 0.7f));
+    
+    // ---- GLITCH BORDER ----
+    if (pulse > 0.85f) {
+        float glitchX = x + rand() % (int)w;
+        DrawScaledRect(glitchX, y, 2 + rand() % 8, h, Fade(COLOR_BLOOD, 0.1f));
+    }
 }

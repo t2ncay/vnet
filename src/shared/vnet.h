@@ -115,6 +115,13 @@ struct Player {
     float raidCooldown;        // time until next raid can occur
     float raidAlertTimer;      // timer for alert phase
     bool raidIntruderVisible;  // show IntruderDetector window
+    int raidSeqStage;                // 0=idle, 1=glitch, 2=flash, 3=hex, 4=blackout, 5=active, 6=success, 7=failure
+    float raidSeqTimer;              // elapsed time in current stage
+    float raidSeqStageDuration;      // how long current stage lasts
+    bool raidSeqLockDesktop;         // true when desktop is locked (stages 5+)
+    bool raidSeqShowOperator;        // true when operator face should be drawn
+    char raidSeqOperatorDialogue[256]; // current operator line
+    float raidSeqDialogueTimer;      // for auto‑advancing dialogue (optional)
     
     bool isInConnectionMenu;  // true when showing connection screen
     bool ipBoxFocused;        // true when IP input box is focused

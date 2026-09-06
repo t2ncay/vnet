@@ -164,25 +164,47 @@ void Desktop::Shutdown() {
 int Desktop::OpenApp(AppType type, const char* title) {
     if (m_windows.size() >= 8) return -1;
     
-    for (int i = 0; i < (int)m_windows.size(); i++) {
-        if (m_windows[i].type == type && !m_windows[i].minimized) {
-            FocusWindow(i);
-            return i;
+    // ============================================================
+    // FIX: Always create a new terminal if terminal is requested
+    // ============================================================
+    if (type == AppType::Terminal) {
+        // Check if terminal exists but is minimized - restore it
+        for (int i = 0; i < (int)m_windows.size(); i++) {
+            if (m_windows[i].type == AppType::Terminal) {
+                if (m_windows[i].minimized) {
+                    m_windows[i].minimized = false;
+                    FocusWindow(i);
+                    return i;
+                }
+                // Already open and visible - just focus it
+                FocusWindow(i);
+                return i;
+            }
         }
-        if (m_windows[i].type == type && m_windows[i].minimized) {
-            m_windows[i].minimized = false;
-            FocusWindow(i);
-            return i;
+        // No terminal exists - create one
+    } else {
+        // For other apps, check if already open
+        for (int i = 0; i < (int)m_windows.size(); i++) {
+            if (m_windows[i].type == type && !m_windows[i].minimized) {
+                FocusWindow(i);
+                return i;
+            }
+            if (m_windows[i].type == type && m_windows[i].minimized) {
+                m_windows[i].minimized = false;
+                FocusWindow(i);
+                return i;
+            }
         }
     }
     
+    // Create new window
     AppWindow win;
     win.type = type;
     win.title = title ? title : "Window";
     win.x = 40 + (int)m_windows.size() * 20;
     win.y = 60 + (int)m_windows.size() * 20;
-    win.w = 1000;  // Was 850
-    win.h = 720;   // Was 600
+    win.w = 1000;
+    win.h = 720;
     win.minimized = false;
     win.maximized = false;
     win.focused = true;
@@ -190,9 +212,9 @@ int Desktop::OpenApp(AppType type, const char* title) {
     win.dragX = 0;
     win.dragY = 0;
     
+    // Clamp position
     if (win.x > 200) win.x = 80;
     if (win.y > 200) win.y = 80;
-    
     if (win.x + win.w > REF_WIDTH) win.x = REF_WIDTH - win.w - 20;
     if (win.y + win.h > REF_HEIGHT - m_topBarHeight - 20) {
         win.y = (int)(REF_HEIGHT - m_topBarHeight - win.h - 20);
@@ -532,48 +554,53 @@ void Desktop::Update(float dt) {
 
 void Desktop::Draw() {
     if (!m_active) return;
-    DrawVektraWallpaper(REF_WIDTH, REF_HEIGHT);
-    
-    for (int x = 0; x < REF_WIDTH; x += 40) {
-        DrawScaledLine(x, 0, x, REF_HEIGHT, Color{25, 28, 38, 30});  // Reduced alpha
-    }
-    for (int y = 0; y < REF_HEIGHT; y += 40) {
-        DrawScaledLine(0, y, REF_WIDTH, y, Color{25, 28, 38, 30});  // Reduced alpha
-    }
-    
-    DrawDesktopIcons();
 
-    if (m_musicWidgetVisible) {
-        m_musicWidgetX = REF_WIDTH - m_musicWidgetW - 20.0f;
-        m_musicWidgetY = REF_HEIGHT - m_musicWidgetH - 60.0f;
+    if (g_player.raidSeqLockDesktop) {
+        DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, BLACK);
+    } else {
+        DrawVektraWallpaper(REF_WIDTH, REF_HEIGHT);
         
-        GetMusicPlayer().Draw(m_musicWidgetX, m_musicWidgetY, 
-                              m_musicWidgetW, m_musicWidgetH);
-    }
-    
-    std::vector<int> visibleWindows;
-    for (int i = 0; i < (int)m_windows.size(); i++) {
-        bool inWorkspace = false;
-        for (int w : m_workspaces[m_currentWorkspace].windows) {
-            if (w == i) { inWorkspace = true; break; }
+        for (int x = 0; x < REF_WIDTH; x += 40) {
+            DrawScaledLine(x, 0, x, REF_HEIGHT, Color{25, 28, 38, 30});  // Reduced alpha
         }
-        if (inWorkspace && !m_windows[i].minimized) {
-            visibleWindows.push_back(i);
+        for (int y = 0; y < REF_HEIGHT; y += 40) {
+            DrawScaledLine(0, y, REF_WIDTH, y, Color{25, 28, 38, 30});  // Reduced alpha
         }
+        
+        DrawDesktopIcons();
+
+        if (m_musicWidgetVisible) {
+            m_musicWidgetX = REF_WIDTH - m_musicWidgetW - 20.0f;
+            m_musicWidgetY = REF_HEIGHT - m_musicWidgetH - 60.0f;
+            
+            GetMusicPlayer().Draw(m_musicWidgetX, m_musicWidgetY, 
+                                m_musicWidgetW, m_musicWidgetH);
+        }
+        
+        std::vector<int> visibleWindows;
+        for (int i = 0; i < (int)m_windows.size(); i++) {
+            bool inWorkspace = false;
+            for (int w : m_workspaces[m_currentWorkspace].windows) {
+                if (w == i) { inWorkspace = true; break; }
+            }
+            if (inWorkspace && !m_windows[i].minimized) {
+                visibleWindows.push_back(i);
+            }
+        }
+        
+        std::sort(visibleWindows.begin(), visibleWindows.end(), [this](int a, int b) {
+            bool focusedA = m_windows[a].focused;
+            bool focusedB = m_windows[b].focused;
+            return focusedA < focusedB;
+        });
+        
+        for (int idx : visibleWindows) {
+            DrawWindow(idx);
+        }
+        
+        // DEPRECATED DrawTopBar();
+        if (m_appGridVisible) DrawAppGrid();
     }
-    
-    std::sort(visibleWindows.begin(), visibleWindows.end(), [this](int a, int b) {
-        bool focusedA = m_windows[a].focused;
-        bool focusedB = m_windows[b].focused;
-        return focusedA < focusedB;
-    });
-    
-    for (int idx : visibleWindows) {
-        DrawWindow(idx);
-    }
-    
-    // DEPRECATED DrawTopBar();
-    if (m_appGridVisible) DrawAppGrid();
 }
 
 // ============================================================
