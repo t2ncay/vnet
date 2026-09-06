@@ -681,22 +681,42 @@ void Desktop::DrawWindow(int idx) {
     
     DrawScaledRect(win.x, win.y, win.w, m_windowTitleHeight, titleCol);
     DrawScaledLine(win.x, win.y + m_windowTitleHeight, win.x + win.w, win.y + m_windowTitleHeight, borderCol);
-    DrawScaledText(win.title.c_str(), win.x + 10, win.y + 8, 11, focused ? COLOR_BLACK : COLOR_GHOST);
     
-    // Close button (X)
-    DrawScaledRect(win.x + win.w - 25, win.y + 5, 20, 20, COLOR_BLOOD);
-    DrawScaledRectLines(win.x + win.w - 25, win.y + 5, 20, 20, COLOR_BORDER);
-    DrawScaledText("✕", win.x + win.w - 20, win.y + 7, 14, COLOR_BLACK);
+    // Window title - left aligned
+    DrawScaledText(win.title.c_str(), win.x + 14, win.y + 8, 11, focused ? COLOR_BLACK : COLOR_GHOST);
     
-    // Minimize button (-)
-    DrawScaledRect(win.x + win.w - 50, win.y + 5, 20, 20, Color{35, 40, 55, 255});
-    DrawScaledRectLines(win.x + win.w - 50, win.y + 5, 20, 20, COLOR_BORDER);
-    DrawScaledText("─", win.x + win.w - 45, win.y + 6, 14, COLOR_GHOST);
+    // ============================================================
+    // macOS-STYLE WINDOW CONTROLS (Circles on the RIGHT)
+    // Order: GREEN (left) → YELLOW (middle) → RED (right)
+    // ============================================================
+    float btnSize = 14.0f;
+    float spacing = 8.0f;
+    float startX = win.x + win.w - 14.0f - btnSize - (btnSize + spacing) * 2;
+    float startY = win.y + 7.5f;
     
-    // Maximize button (□)
-    DrawScaledRect(win.x + win.w - 75, win.y + 5, 20, 20, Color{35, 40, 55, 255});
-    DrawScaledRectLines(win.x + win.w - 75, win.y + 5, 20, 20, COLOR_BORDER);
-    DrawScaledText("□", win.x + win.w - 70, win.y + 6, 14, COLOR_GHOST);
+    // ---- MAXIMIZE BUTTON (Green) - LEFT ----
+    float maxX = startX;
+    Color maxColor = focused ? Color{100, 210, 80, 255} : Color{80, 80, 85, 150};
+    DrawScaledCircle(maxX + btnSize/2, startY + btnSize/2, btnSize/2, maxColor);
+    if (focused) {
+        DrawScaledCircleLines(maxX + btnSize/2, startY + btnSize/2, btnSize/2, Color{60, 170, 40, 180});
+    }
+    
+    // ---- MINIMIZE BUTTON (Yellow) - MIDDLE ----
+    float minX = startX + btnSize + spacing;
+    Color minColor = focused ? Color{255, 200, 60, 255} : Color{80, 80, 85, 150};
+    DrawScaledCircle(minX + btnSize/2, startY + btnSize/2, btnSize/2, minColor);
+    if (focused) {
+        DrawScaledCircleLines(minX + btnSize/2, startY + btnSize/2, btnSize/2, Color{200, 160, 30, 180});
+    }
+    
+    // ---- CLOSE BUTTON (Red) - RIGHT ----
+    float closeX = minX + btnSize + spacing;
+    Color closeColor = focused ? Color{255, 95, 87, 255} : Color{80, 80, 85, 150};
+    DrawScaledCircle(closeX + btnSize/2, startY + btnSize/2, btnSize/2, closeColor);
+    if (focused) {
+        DrawScaledCircleLines(closeX + btnSize/2, startY + btnSize/2, btnSize/2, Color{200, 60, 50, 180});
+    }
     
     DrawWindowContent(win);
 }

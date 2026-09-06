@@ -302,6 +302,24 @@ void DrawScaledLine(float x1, float y1, float x2, float y2, Color color) {
     DrawLine((int)SX(x1), (int)SY(y1), (int)SX(x2), (int)SY(y2), color);
 }
 
+void DrawScaledCircle(float centerX, float centerY, float radius, Color color) {
+    DrawCircle(
+        (int)(SX(centerX)),
+        (int)(SY(centerY)),
+        radius * g_uiScale,
+        color
+    );
+}
+
+void DrawScaledCircleLines(float centerX, float centerY, float radius, Color color) {
+    DrawCircleLines(
+        (int)(SX(centerX)),
+        (int)(SY(centerY)),
+        radius * g_uiScale,
+        color
+    );
+}
+
 Vector2 GetRefMousePos(void) {
     Vector2 m = GetMousePosition();
     Vector2 ref;

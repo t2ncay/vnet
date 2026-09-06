@@ -116,7 +116,7 @@ void DrawVektraWallpaper(float width, float height) {
         float wingX = eagleX + 80 * eagleScale - i * 12 * eagleScale;
         float wingY = eagleY + 40 * eagleScale + sinf(wingAngle) * 50 * eagleScale;
         float wingW = 8 * eagleScale + (15 - i) * 1.5f * eagleScale;
-        
+
         int alphaVal = 100 - i * 3;
         if (alphaVal < 0) alphaVal = 0;
         if (alphaVal > 255) alphaVal = 255;
@@ -231,11 +231,6 @@ void DrawVektraWallpaper(float width, float height) {
     // Right: classification
     DrawScaledText("CLASSIFICATION: TOP SECRET // NOFORN", footerX + footerW - 330, footerY + 20, 9, {160, 30, 40, 180});
 
-    // Pulsing dot
-    float pulse = sinf(t * 2.0f) * 0.3f + 0.7f;
-    Color dotColor = {40, 200, 60, (unsigned char)(pulse * 200 + 55)};
-    DrawScaledRect(footerX + footerW - 110, footerY + 18, 8, 8, dotColor);
-    DrawScaledText("LIVE", footerX + footerW - 95, footerY + 17, 8, {160, 165, 180, 200});
     
     // ============================================================
     // SCANLINE OVERLAY (subtle)
