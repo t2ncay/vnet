@@ -563,6 +563,326 @@
       }
 
       /* ============================================================
+   AMBIENT NETWORK GRID — a very quiet background presence.
+   Kept low-opacity and slow so it never competes with the one
+   orchestrated hero moment; it's texture, not a second animation.
+   ============================================================ */
+      .net-grid {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(var(--border) 1px, transparent 1px),
+          linear-gradient(90deg, var(--border) 1px, transparent 1px);
+        background-size: 64px 64px;
+        opacity: 0.05;
+        animation: gridDrift 40s linear infinite;
+      }
+      @keyframes gridDrift {
+        from {
+          background-position:
+            0 0,
+            0 0;
+        }
+        to {
+          background-position:
+            0 640px,
+            640px 0;
+        }
+      }
+      section,
+      footer,
+      .hero {
+        position: relative;
+        z-index: 1;
+      }
+
+      /* ============================================================
+   GALLERY — thumbnails are drawn, not photographed: small live
+   recreations of real screens (browser, raid, hellroom, theme
+   swap) so the gallery stays honest about being a mockup site.
+   ============================================================ */
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+      }
+      .gallery-item {
+        cursor: pointer;
+      }
+      .gallery-frame {
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        position: relative;
+        border-bottom: none;
+        filter: saturate(0.8) brightness(0.92);
+        transition: filter 0.45s ease;
+      }
+      .gallery-frame .win-body {
+        padding: 16px;
+        height: 100%;
+        transform: scale(1);
+        transition:
+          transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+          filter 0.45s ease;
+      }
+      .gallery-item:hover .gallery-frame .win-body {
+        transform: scale(1.07);
+      }
+      .gallery-item:hover .gallery-frame {
+        filter: none;
+      }
+      .gallery-frame::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.55),
+          transparent 55%
+        );
+        pointer-events: none;
+      }
+      .gallery-caption {
+        padding: 12px 4px 0;
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        color: var(--ghost);
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .gallery-caption b {
+        color: #eef2f6;
+        font-weight: 500;
+      }
+      .gallery-caption span {
+        color: var(--toxic);
+        white-space: nowrap;
+      }
+
+      /* mini scene dressing reused across gallery frames */
+      .mini-mono {
+        font-family: var(--font-mono);
+        font-size: 11px;
+      }
+      .mini-badge {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        padding: 2px 7px;
+        background: var(--blood);
+        color: #020204;
+      }
+      .mini-chat {
+        font-size: 11px;
+        margin: 3px 0;
+      }
+      .mini-bar-track {
+        height: 5px;
+        background: #000;
+        border: 1px solid var(--border);
+        margin: 4px 0;
+      }
+      .mini-bar-fill {
+        height: 100%;
+        background: var(--toxic);
+      }
+
+      /* ============================================================
+   COMMUNITY — logged like intercepted chatter, not star ratings.
+   A "trust score" bar stands in for the generic 5-star widget.
+   ============================================================ */
+      .review-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 18px;
+      }
+      .review {
+        border-left: 2px solid var(--border);
+        padding: 2px 0 2px 18px;
+      }
+      .review-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        margin-bottom: 8px;
+      }
+      .review-head .handle {
+        color: var(--cyan);
+      }
+      .review-head .trust {
+        color: var(--toxic);
+        font-size: 11px;
+      }
+      .review p {
+        font-size: 14px;
+        margin: 0;
+        color: #c9d1de;
+        max-width: 44ch;
+      }
+      .trust-track {
+        display: flex;
+        gap: 3px;
+        margin-top: 8px;
+      }
+      .trust-track span {
+        width: 16px;
+        height: 4px;
+        background: var(--border);
+      }
+      .trust-track span.on {
+        background: var(--toxic);
+      }
+
+      /* ============================================================
+   INSTALL — the final CTA. A real terminal block with a
+   copy button, then the primary path out: your GitHub repo.
+   ============================================================ */
+      .install-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+      @media (min-width: 860px) {
+        .install-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .install-steps {
+        display: grid;
+        gap: 22px;
+      }
+      .install-step {
+        display: flex;
+        gap: 14px;
+      }
+      .install-step .num {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--toxic);
+        border: 1px solid var(--border);
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .install-step p {
+        margin: 0;
+        font-size: 14px;
+      }
+      .term-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        padding: 3px 0;
+      }
+      .term-line .prompt {
+        color: var(--toxic);
+      }
+      .copy-btn {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--ghost);
+        padding: 3px 8px;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition:
+          border-color 0.15s ease,
+          color 0.15s ease;
+      }
+      .copy-btn:hover {
+        border-color: var(--toxic);
+        color: var(--toxic);
+      }
+      .copy-btn.copied {
+        border-color: var(--toxic);
+        color: var(--toxic);
+      }
+      .install-cta {
+        margin-top: 26px;
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .install-note {
+        font-size: 12.5px;
+        color: var(--ghost);
+        margin-top: 14px;
+      }
+
+      /* ============================================================
+   FOOTER — expanded into a real sitemap, still terminal-flavored.
+   ============================================================ */
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 0;
+      }
+      .foot-grid {
+        display: grid;
+        grid-template-columns: 1.3fr repeat(3, 1fr);
+        gap: 32px;
+        padding: 56px 0 32px;
+      }
+      @media (max-width: 700px) {
+        .foot-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .foot-brand h3 {
+        color: #eef2f6;
+        margin-bottom: 10px;
+      }
+      .foot-brand p {
+        font-size: 13px;
+        color: var(--ghost);
+        max-width: 34ch;
+      }
+      .foot-col-title {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--toxic);
+        margin-bottom: 12px;
+        opacity: 0.9;
+      }
+      .foot-links {
+        display: grid;
+        gap: 8px;
+      }
+      .foot-links a {
+        font-size: 13.5px;
+        color: var(--ghost);
+      }
+      .foot-links a:hover {
+        color: var(--cyan);
+        text-decoration: none;
+      }
+      .foot-bottom {
+        border-top: 1px solid var(--border);
+        padding: 20px 0 40px;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--border);
+      }
+      .foot-bottom span.tagline {
+        color: var(--ghost);
+      }
+
+      /* ============================================================
    SPEC TABLE
    ============================================================ */
       .spec-table {
@@ -614,6 +934,7 @@
   </head>
   <body>
     <div class="scanlines" aria-hidden="true"></div>
+    <div class="net-grid" aria-hidden="true"></div>
 
     <!-- ============================================================
      HERO
@@ -889,6 +1210,124 @@
     </section>
 
     <!-- ============================================================
+     GALLERY
+     ============================================================ -->
+    <section id="gallery">
+      <div class="wrap">
+        <p class="eyebrow">// gallery</p>
+        <h2>Four screens, one operating system</h2>
+        <p style="margin-bottom: 34px">
+          No screenshots here are photographs of a build — they're small live
+          recreations of real screens, running the same CSS as everything else
+          on this page. What you see is close to what you'd get.
+        </p>
+
+        <div class="gallery-grid">
+          <div class="gallery-item">
+            <div class="win gallery-frame">
+              <div class="win-body page-mock" style="height: 100%">
+                <div class="dir">&gt; vnet.dir/coldwire_market</div>
+                <hr class="rule" />
+                <span class="link">[ buy: burner keys x3 ]</span><br />
+                <span class="link">[ trade: vcoin/xmr ]</span><br />
+                <span class="link">[ read: route.db ]</span>
+                <div class="mini-bar-track" style="margin-top: 16px">
+                  <div class="mini-bar-fill" style="width: 38%"></div>
+                </div>
+                <span class="mini-mono" style="color: var(--ghost)"
+                  >trace 38%</span
+                >
+              </div>
+            </div>
+            <div class="gallery-caption">
+              <b>Browsing a page</b><span>vnet.dir</span>
+            </div>
+          </div>
+
+          <div class="gallery-item">
+            <div class="win gallery-frame" style="border-color: var(--blood)">
+              <div class="win-body" style="height: 100%">
+                <div class="mini-badge">⚡ RAID DETECTED</div>
+                <div
+                  class="mini-mono"
+                  style="color: var(--blood); margin-top: 10px"
+                >
+                  RESPONSE WINDOW: 4.2s
+                </div>
+                <div class="mini-bar-track">
+                  <div
+                    class="mini-bar-fill"
+                    style="width: 28%; background: var(--blood)"
+                  ></div>
+                </div>
+                <div
+                  class="mini-mono"
+                  style="color: var(--toxic); margin-top: 12px"
+                >
+                  &gt; purge access.log_
+                </div>
+              </div>
+            </div>
+            <div class="gallery-caption">
+              <b>Mid-raid, BURN strategy</b><span>intruder_detector.sys</span>
+            </div>
+          </div>
+
+          <div class="gallery-item">
+            <div class="win gallery-frame">
+              <div class="win-body" style="height: 100%">
+                <div class="mini-chat">
+                  <span style="color: var(--amber)">coldwire:</span> anyone else
+                  seeing sweeps on 8080
+                </div>
+                <div class="mini-chat">
+                  <span style="color: var(--toxic)">you:</span> just patched off
+                  it
+                </div>
+                <div
+                  class="mini-chat"
+                  style="color: var(--cyan); font-style: italic"
+                >
+                  [whisper to nullsix]: watch your trace
+                </div>
+                <div class="mini-chat">
+                  <span style="color: var(--amber)">nullsix:</span> copy that
+                </div>
+              </div>
+            </div>
+            <div class="gallery-caption">
+              <b>Hellroom, mid-conversation</b><span>hellroom.vnet</span>
+            </div>
+          </div>
+
+          <div class="gallery-item">
+            <div class="win gallery-frame">
+              <div class="win-body" style="height: 100%">
+                <div class="mini-mono" style="color: var(--ghost)">
+                  01 — cold_signal.wav
+                </div>
+                <div class="mini-mono" style="color: var(--toxic)">
+                  02 — static_bloom.wav ▶
+                </div>
+                <div
+                  class="viz"
+                  style="height: 24px; margin-top: 10px"
+                  aria-hidden="true"
+                >
+                  <span></span><span></span><span></span><span></span
+                  ><span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+            </div>
+            <div class="gallery-caption">
+              <b>Music player + visualizer</b><span>music_player.exe</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
      UNDER THE HOOD
      ============================================================ -->
     <section id="specs">
@@ -970,13 +1409,237 @@
       </div>
     </section>
 
+    <!-- ============================================================
+     COMMUNITY
+     ============================================================ -->
+    <section id="community">
+      <div class="wrap">
+        <p class="eyebrow">// intercepted chatter</p>
+        <h2>What operators are saying</h2>
+        <p style="margin-bottom: 34px">
+          Logged straight off Hellroom. Trust score is the community's own
+          metric — five bars, read left to right, same visual language as every
+          other meter in the game.
+        </p>
+
+        <div class="review-grid">
+          <div class="review">
+            <div class="review-head">
+              <span class="handle">coldwire</span
+              ><span class="trust">TRUST 5/5</span>
+            </div>
+            <div class="trust-track">
+              <span class="on"></span><span class="on"></span
+              ><span class="on"></span><span class="on"></span
+              ><span class="on"></span>
+            </div>
+            <p style="margin-top: 10px">
+              Survived my first BURN by four seconds. Heart rate has not
+              recovered. Ten out of ten, would get raided again.
+            </p>
+          </div>
+
+          <div class="review">
+            <div class="review-head">
+              <span class="handle">nullsix</span
+              ><span class="trust">TRUST 5/5</span>
+            </div>
+            <div class="trust-track">
+              <span class="on"></span><span class="on"></span
+              ><span class="on"></span><span class="on"></span
+              ><span class="on"></span>
+            </div>
+            <p style="margin-top: 10px">
+              The jitter system is the real MVP. The screen starts breathing
+              wrong right before a raid lands and I still fall for it every
+              time.
+            </p>
+          </div>
+
+          <div class="review">
+            <div class="review-head">
+              <span class="handle">f3rhd</span
+              ><span class="trust">TRUST 4/5</span>
+            </div>
+            <div class="trust-track">
+              <span class="on"></span><span class="on"></span
+              ><span class="on"></span><span class="on"></span><span></span>
+            </div>
+            <p style="margin-top: 10px">
+              Switched to the abyss theme and haven't looked back. Wish there
+              were sixteen. Building one myself now, actually.
+            </p>
+          </div>
+
+          <div class="review">
+            <div class="review-head">
+              <span class="handle">patchbay</span
+              ><span class="trust">TRUST 5/5</span>
+            </div>
+            <div class="trust-track">
+              <span class="on"></span><span class="on"></span
+              ><span class="on"></span><span class="on"></span
+              ><span class="on"></span>
+            </div>
+            <p style="margin-top: 10px">
+              Nobody warns you that ESCAPE has a shorter window than EVADE.
+              Learned that the expensive way. Still the best fifteen seconds in
+              any game I own.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+     INSTALL
+     ============================================================ -->
+    <section id="install">
+      <div class="wrap install-grid">
+        <div>
+          <p class="eyebrow">// get in</p>
+          <h2>Three steps to your own darknet</h2>
+
+          <div class="install-steps">
+            <div class="install-step">
+              <div class="num">1</div>
+              <p>
+                Clone the repository and pull in raylib as a dependency — the
+                project scaffolds against any standard raylib setup (CMake,
+                Make, or your IDE's raylib template).
+              </p>
+            </div>
+            <div class="install-step">
+              <div class="num">2</div>
+              <p>
+                Build with a C++17-capable compiler, pointing your entry point
+                at
+                <code style="font-family: var(--font-mono); color: var(--cyan)"
+                  >main.cpp</code
+                >.
+              </p>
+            </div>
+            <div class="install-step">
+              <div class="num">3</div>
+              <p>
+                Launch. VEKTRAOS opens fullscreen at your monitor's native
+                resolution — <kbd>F11</kbd> for windowed, <kbd>Tab</kbd> for the
+                CLI.
+              </p>
+            </div>
+          </div>
+
+          <p class="install-note">
+            Full build notes, dependencies, and theme contribution guidelines
+            live in the repo's README.
+          </p>
+        </div>
+
+        <div class="win">
+          <div class="win-bar">
+            <div class="win-dots"><span></span><span></span><span></span></div>
+            <div class="win-path">~/install.sh</div>
+          </div>
+          <div class="win-body">
+            <div class="term-line">
+              <span
+                ><span class="prompt">$</span> git clone
+                https://github.com/YOUR-USERNAME/vektraos.git</span
+              >
+              <button
+                class="copy-btn"
+                data-copy="git clone https://github.com/YOUR-USERNAME/vektraos.git"
+              >
+                copy
+              </button>
+            </div>
+            <div class="term-line">
+              <span
+                ><span class="prompt">$</span> cd vektraos && cmake -B
+                build</span
+              >
+              <button
+                class="copy-btn"
+                data-copy="cd vektraos && cmake -B build"
+              >
+                copy
+              </button>
+            </div>
+            <div class="term-line">
+              <span
+                ><span class="prompt">$</span> cmake --build build --target
+                vektraos</span
+              >
+              <button
+                class="copy-btn"
+                data-copy="cmake --build build --target vektraos"
+              >
+                copy
+              </button>
+            </div>
+            <div class="install-cta">
+              <a
+                class="btn primary"
+                href="https://github.com/YOUR-USERNAME/vektraos"
+                target="_blank"
+                rel="noopener"
+                >→ View on GitHub</a
+              >
+              <a class="btn" href="#specs">Read the specs</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <footer>
       <div class="wrap">
-        <div class="foot-line">
-          VNET // VEKTRAOS — a desktop simulation built in C++ and raylib.
+        <div class="foot-grid">
+          <div class="foot-brand">
+            <h3>VNET // VEKTRAOS</h3>
+            <p>
+              A desktop simulation built in C++ and raylib. Stay off the trace.
+              Burn what you have to. Don't trust the whisper.
+            </p>
+          </div>
+          <div>
+            <div class="foot-col-title">SYSTEM</div>
+            <div class="foot-links">
+              <a href="#premise">Premise</a>
+              <a href="#raid">Raid system</a>
+              <a href="#desktop">Desktop</a>
+              <a href="#gallery">Gallery</a>
+            </div>
+          </div>
+          <div>
+            <div class="foot-col-title">PROJECT</div>
+            <div class="foot-links">
+              <a href="#themes">Themes</a>
+              <a href="#community">Community</a>
+              <a href="#specs">Specs</a>
+              <a href="#install">Install</a>
+            </div>
+          </div>
+          <div>
+            <div class="foot-col-title">ELSEWHERE</div>
+            <div class="foot-links">
+              <a
+                href="https://github.com/YOUR-USERNAME/vektraos"
+                target="_blank"
+                rel="noopener"
+                >GitHub</a
+              >
+              <a href="#install">Report a bug</a>
+              <a href="#install">Submit a theme</a>
+            </div>
+          </div>
         </div>
-        <div>
-          stay off the trace. burn what you have to. don't trust the whisper.
+        <div class="foot-bottom">
+          <span class="tagline">VEKTRAOS v9.5 // COLD SIGNAL</span>
+          <span
+            >© <span id="year"></span> — built with raylib, not sold to the
+            feds</span
+          >
         </div>
       </div>
     </footer>
@@ -1234,7 +1897,32 @@
             .forEach((s) => s.classList.remove("active"));
           btn.classList.add("active");
         }
-      })();
+        // ============================================================
+        // FOOTER YEAR + INSTALL COPY BUTTONS
+        // ============================================================
+        (function () {
+          const yearEl = document.getElementById("year");
+          if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+          document.querySelectorAll(".copy-btn").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const text = btn.getAttribute("data-copy");
+              try {
+                await navigator.clipboard.writeText(text);
+              } catch (e) {
+                /* clipboard API unavailable — button still gives visual feedback */
+              }
+              const original = btn.textContent;
+              btn.textContent = "copied";
+              btn.classList.add("copied");
+              setTimeout(() => {
+                btn.textContent = original;
+                btn.classList.remove("copied");
+              }, 1400);
+            });
+          });
+        })();
+      });
     </script>
   </body>
 </html>
