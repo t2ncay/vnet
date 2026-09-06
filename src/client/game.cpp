@@ -226,9 +226,37 @@ void HandleInput(void) {
             key = GetCharPressed();
         }
 
+        static float backspaceTimer = 0.0f;
+        static bool backspaceHeld = false;
+
         if (IsKeyPressed(KEY_BACKSPACE)) {
             int len = (int)strlen(g_player.inputBuffer);
-            if (len > 0) g_player.inputBuffer[len - 1] = '\0';
+            if (len > 0) {
+                g_player.inputBuffer[len - 1] = '\0';
+            }
+            backspaceTimer = 0.0f;
+            backspaceHeld = true;
+        }
+        
+        if (IsKeyDown(KEY_BACKSPACE) && backspaceHeld) {
+            backspaceTimer += GetFrameTime();
+            if (backspaceTimer > 0.5f) {
+                float repeatInterval = 0.08f;
+                while (backspaceTimer > 0.5f + repeatInterval) {
+                    int len = (int)strlen(g_player.inputBuffer);
+                    if (len > 0) {
+                        g_player.inputBuffer[len - 1] = '\0';
+                    } else {
+                        break;
+                    }
+                    backspaceTimer -= repeatInterval;
+                }
+            }
+        }
+        
+        if (IsKeyReleased(KEY_BACKSPACE)) {
+            backspaceHeld = false;
+            backspaceTimer = 0.0f;
         }
 
         if (IsKeyPressed(KEY_ENTER)) {

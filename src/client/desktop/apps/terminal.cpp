@@ -1,4 +1,4 @@
-#include "../../desktop.h"
+#include "../desktop.h"
 #include "../../render.h"
 #include "../../../shared/vnet.h"
 #include "../../vnet_client.h"
@@ -146,7 +146,7 @@ void Desktop::DrawTerminal(const AppWindow& win) {
     // Animated prompt arrow
     float arrowPulse = sinf(t * 3.0f) * 0.3f + 0.7f;
     Color arrowCol = {40, 240, 100, (unsigned char)(arrowPulse * 255)};
-    DrawScaledText("➜", cx + 10, inputY + 5, 12, arrowCol);
+    DrawScaledText(">", cx + 10, inputY + 5, 12, arrowCol);
     
     // Input text
     char prompt[300];
