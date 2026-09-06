@@ -4,6 +4,7 @@
 #include "vnet_client.h"
 #include "vnet_protocol.h"
 #include "desktop.h"
+#include "raid/raid.h"
 
 #include <cstdio>
 #include <cmath>
@@ -1358,6 +1359,9 @@ void DrawUI(void) {
     // ============================================================
     // Desktop draws the entire UI including browser, terminal, etc.
     GetDesktop().Draw();
+
+    // raid overlay
+    DrawRaidOverlay();
     
     // Draw FPS overlay if enabled (on top of desktop)
     if (g_game.showFPS) {

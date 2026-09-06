@@ -5,6 +5,7 @@
 #include "render.h"
 #include "raylib.h"
 #include "desktop.h"
+#include "../client/raid/raid.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -544,6 +545,8 @@ void UpdateVNET(float dt) {
             }
         }
     }
+
+    UpdateRaid(dt);
 }
 
 // ============================================================
@@ -1163,7 +1166,11 @@ void ProcessCommand(const char* cmd) {
     }
 
     else if (strcmp(token, "patch") == 0) {
-        // Emergency port rebind
+        if (g_player.raidActive && g_player.raidStage == RAID_STAGE_MINIGAME && 
+            g_player.raidType == RAID_ESCAPE) {
+            ProcessRaidMinigameInput(cmd);
+            return;
+        }
         if (g_player.cdPatch > 0.0f) {
             PushCliLog("[ERROR]: PATCH COOLDOWN (%.0fs)", g_player.cdPatch);
         } else if (g_player.vcoin < 0.70f) {
@@ -1175,8 +1182,68 @@ void ProcessCommand(const char* cmd) {
         }
     }
 
+    else if (strcmp(token, "raid") == 0 || strcmp(token, "raidstatus") == 0) {
+        if (!g_player.raidActive) {
+            PushCliLog("[RAID]: No active federal raid detected.");
+            PushCliLog("[RAID]: Current trace: %d%% | Flagged: %s", 
+                    g_player.traceLevel, g_player.isFlagged ? "YES" : "NO");
+            PushCliLog("[RAID]: Raids survived: %d | Failed: %d", 
+                    g_player.raidCount, g_player.raidFailedCount);
+            if (g_player.raidCooldown > 0.0f) {
+                PushCliLog("[RAID]: Cooldown: %.0fs remaining", g_player.raidCooldown);
+            }
+            return;
+        }
+        
+        // Active raid - show status
+        const char* stageNames[] = {"ALERT", "CHOICE", "MINIGAME", "RESULT", "COMPLETE"};
+        const char* typeNames[] = {"EVADE", "ESCAPE", "BURN"};
+        
+        PushCliLog("[RAID]: ⚡ ACTIVE FEDERAL E-RAID!");
+        PushCliLog("[RAID]: Stage: %s", stageNames[g_player.raidStage + 1]);
+        PushCliLog("[RAID]: Type: %s", typeNames[g_player.raidType]);
+        PushCliLog("[RAID]: Time remaining: %.1fs", GetRaidRemainingTime());
+        
+        if (g_player.raidStage == RAID_STAGE_CHOICE) {
+            PushCliLog("[RAID]: SELECT EVASION STRATEGY:");
+            PushCliLog("  raid 1  - EVADE (deploy decoys)");
+            PushCliLog("  raid 2  - ESCAPE (port migration)");
+            PushCliLog("  raid 3  - BURN (scorched earth)");
+        } else if (g_player.raidStage == RAID_STAGE_MINIGAME) {
+            switch (g_player.raidType) {
+                case RAID_EVADE:
+                    PushCliLog("[RAID]: TYPE: decoy <node> <port>");
+                    break;
+                case RAID_ESCAPE:
+                    PushCliLog("[RAID]: TYPE: patch <port>");
+                    break;
+                case RAID_BURN:
+                    PushCliLog("[RAID]: TYPE: purge <target>");
+                    break;
+            }
+        }
+        return;
+    }
+
+    else if (strcmp(token, "raidchoice") == 0 || strcmp(token, "raid1") == 0) {
+        if (!g_player.raidActive) {
+            PushCliLog("[RAID]: No active raid.");
+            return;
+        }
+        if (g_player.raidStage != RAID_STAGE_CHOICE) {
+            PushCliLog("[RAID]: Not in choice stage.");
+            return;
+        }
+        HandleRaidChoice(args ? args : "1");
+        return;
+    }
+
     else if (strcmp(token, "decoy") == 0) {
-        // Deploy trap node
+        if (g_player.raidActive && g_player.raidStage == RAID_STAGE_MINIGAME && 
+            g_player.raidType == RAID_EVADE) {
+            ProcessRaidMinigameInput(cmd);
+            return;
+        }
         if (!args) {
             PushCliLog("[ERROR]: Usage: decoy <url> <dummy_port>");
         } else {

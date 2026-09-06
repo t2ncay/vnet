@@ -95,6 +95,26 @@ struct Player {
     float heartbeatTimer;
     float dosTimer;
     float glitchTrigger;
+
+        // ============================================================
+    // FEDERAL E-RAID STATE
+    // ============================================================
+    bool raidActive;           // true when raid is happening
+    float raidTimer;           // countdown timer since raid start
+    float raidResponseTime;    // time window to respond (12-15s)
+    int raidType;              // 0=EVADE, 1=ESCAPE, 2=BURN (player choice)
+    int raidStage;             // 0=alert, 1=choice, 2=minigame, 3=result
+    bool raidSuccess;
+    char raidInput[64];        // player's command input during minigame
+    float raidInputTimer;
+    
+    // Raid counters & state
+    int raidCount;             // total raids survived
+    int raidFailedCount;       // failed raids
+    bool isFlagged;            // federal flagged (harder raids)
+    float raidCooldown;        // time until next raid can occur
+    float raidAlertTimer;      // timer for alert phase
+    bool raidIntruderVisible;  // show IntruderDetector window
     
     bool isInConnectionMenu;  // true when showing connection screen
     bool ipBoxFocused;        // true when IP input box is focused

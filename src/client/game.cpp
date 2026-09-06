@@ -7,6 +7,7 @@
 #include "vnet_protocol.h" 
 #include "desktop.h"
 #include "connection/login_screen.h"
+#include "raid/raid.h"
 
 #include <cstdio>
 #include <cmath>
@@ -91,6 +92,7 @@ void UpdateGame(float dt) {
 
     UpdateVNET(dt);
     UpdatePlayer(dt);
+    UpdateRaid(dt);
 
     GetDesktop().Update(dt); 
     GetMusicPlayer().Update(dt); 

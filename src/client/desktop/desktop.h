@@ -23,7 +23,8 @@ enum class AppType {
     FileManager,
     About,
     Hellroom,
-    VDEC
+    VDEC,
+    IntruderDetector
 };
 
 struct AppWindow {
@@ -204,6 +205,7 @@ private:
     void DrawVDECHash(float x, float y, float w, float h);
     void DrawVDECMinigame(float x, float y, float w, float h);
     void DrawVDECKeyRing(float x, float y, float w, float h);
+    void DrawIntruderDetector(const AppWindow& win);
     
     // App content renderers
     void DrawBrowser(const AppWindow& win);

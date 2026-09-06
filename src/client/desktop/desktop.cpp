@@ -45,6 +45,10 @@ static void LaunchVDEC() {
     GetDesktop().OpenApp(AppType::VDEC, "VDEC - VNET Decryption Toolkit");
 }
 
+static void LaunchIntruderDetector() {
+    GetDesktop().OpenApp(AppType::IntruderDetector, "INTRUDER DETECTOR v3.2");
+}
+
 // icon functions
 
 void Desktop::LoadIcons() {
@@ -332,6 +336,32 @@ void Desktop::Update(float dt) {
         if (clicked && !RefRectHover(startXg - 20, startYg - 20, 640, 500, refMouse)) {
             m_appGridVisible = false;
         }
+    }
+
+    // ============================================================
+    // AUTO-OPEN INTRUDER DETECTOR ON RAID
+    // ============================================================
+    if (g_player.raidIntruderVisible) {
+        bool found = false;
+        for (const auto& win : m_windows) {
+            if (win.type == AppType::IntruderDetector && !win.minimized) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            // Open the IntruderDetector window
+            int idx = OpenApp(AppType::IntruderDetector, "🚨 INTRUDER DETECTOR");
+            if (idx >= 0) {
+                // Position it prominently on screen
+                m_windows[idx].x = REF_WIDTH / 2 - 300;
+                m_windows[idx].y = REF_HEIGHT / 2 - 200;
+                m_windows[idx].w = 600;
+                m_windows[idx].h = 420;
+                FocusWindow(idx);
+            }
+        }
+        g_player.raidIntruderVisible = false;  // Reset flag, window stays open
     }
     
     // ============================================================
@@ -738,6 +768,7 @@ void Desktop::DrawWindowContent(const AppWindow& win) {
         case AppType::Feed:     DrawFeed(win); break;
         case AppType::Hellroom: DrawHellroom(win); break;
         case AppType::VDEC:     DrawVDEC(win); break;
+        case AppType::IntruderDetector: DrawIntruderDetector(win); break;
         default: break;
     }
     
