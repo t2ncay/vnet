@@ -1452,6 +1452,39 @@ void ProcessCommand(const char* cmd) {
             PushCliLog("[ERR]: Not in raid choice stage. Type 'raid' for status.");
         }
     }
+
+    else if (strcmp(token, "activate") == 0) {
+        if (!args) {
+            PushCliLog("[DEBUG]: Usage: activate <event>");
+            PushCliLog("[DEBUG]: Available events: raid, glitch, jitter, trace");
+            return;
+        }
+        
+        if (strcmp(args, "raid") == 0) {
+            PushCliLog("[DEBUG]: Manually triggering federal raid...");
+            TriggerFederalRaid();
+        }
+        else if (strcmp(args, "glitch") == 0) {
+            PushCliLog("[DEBUG]: Triggering glitch effect...");
+            TriggerGlitch(2.0f);
+        }
+        else if (strcmp(args, "jitter") == 0) {
+            PushCliLog("[DEBUG]: Triggering jitter effect...");
+            TriggerJitter(1.0f, 2.0f);
+        }
+        else if (strcmp(args, "trace") == 0) {
+            g_player.traceLevel += 25;
+            if (g_player.traceLevel > 100) g_player.traceLevel = 100;
+            PushCliLog("[DEBUG]: Trace increased to %d%%", g_player.traceLevel);
+        }
+        else if (strcmp(args, "flag") == 0) {
+            g_player.isFlagged = !g_player.isFlagged;
+            PushCliLog("[DEBUG]: Player flagged: %s", g_player.isFlagged ? "YES" : "NO");
+        }
+        else {
+            PushCliLog("[DEBUG]: Unknown event '%s'", args);
+        }
+    }
     
     // ============================================================
     // UNKNOWN COMMAND

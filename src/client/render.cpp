@@ -456,7 +456,7 @@ void LoadAssets(void) {
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
         "abcdefghijklmnopqrstuvwxyz{|}~"
         "°"                     // degree sign (CRT HEAT display)
-        "◈▶★✓✗║▓▒░⚙⚡📡💀❌";        // decorative symbols used across apps/*.cpp
+        "◈▶★✓✗║▓▒░⚙⚡⚠⏱";        // decorative symbols used across apps/*.cpp
 
     int codepointCount = 0;
     int* codepoints = LoadCodepoints(kExtraGlyphSample, &codepointCount);

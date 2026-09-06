@@ -77,6 +77,20 @@ void TriggerFederalRaid(void) {
     if (g_player.isConnecting) return;
 
     // ============================================================
+    // CLEAR THE TERMINAL BEFORE RAID STARTS
+    // ============================================================
+    // Use the existing clear command to properly clear the terminal
+    g_cliLogCount = 0;                          // Reset log count
+    memset(g_cliLogs, 0, sizeof(g_cliLogs));    // Wipe log buffer
+    g_player.cliScroll = 0.0f;                  // Reset scroll offset
+    
+    // Then add the raid header
+    PushCliLog("========================================");
+    PushCliLog("  ⚡ FEDERAL E-RAID DETECTED!");
+    PushCliLog("  ⚠ SYSTEM LOCKDOWN INITIATED...");
+    PushCliLog("========================================");
+
+    // ============================================================
     // START THE SEQUENCE
     // ============================================================
     g_player.raidSeqStage = RAID_SEQ_GLITCH;
@@ -123,8 +137,6 @@ void TriggerFederalRaid(void) {
     
     // CLI logs
     const char* typeNames[] = {"EVADE", "ESCAPE", "BURN"};
-    PushCliLog("========================================");
-    PushCliLog("  ⚡ FEDERAL E-RAID DETECTED!");
     PushCliLog("  ⚠ ACTIVE UDP SWEEP ON PORT %d", g_player.port);
     PushCliLog("  ⏱ RESPONSE WINDOW: %.0fs", g_player.raidResponseTime);
     PushCliLog("========================================");
@@ -334,10 +346,21 @@ void ProcessRaidMinigameInput(const char* input) {
             // decoy <node> <port>
             char node[32] = {0}, port[16] = {0};
             if (sscanf(input, "decoy %31s %15s", node, port) == 2) {
+                // Strip .vnet from node if present
+                char cleanNode[32];
+                strcpy(cleanNode, node);
+                char* dot = strstr(cleanNode, ".vnet");
+                if (dot) *dot = '\0';
+                
                 // Check if node exists in assigned sites
                 bool nodeExists = false;
                 for (int i = 0; i < g_player.assignedCount; i++) {
-                    if (strcmp(g_player.assignedSites[i], node) == 0) {
+                    char siteCopy[64];
+                    strcpy(siteCopy, g_player.assignedSites[i]);
+                    char* dot2 = strstr(siteCopy, ".vnet");
+                    if (dot2) *dot2 = '\0';
+                    
+                    if (strcmp(siteCopy, cleanNode) == 0) {
                         nodeExists = true;
                         break;
                     }
@@ -694,67 +717,205 @@ void DrawRaidSequenceOverlay() {
             DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, BLACK);
             break;
 
-        case RAID_SEQ_ACTIVE:
+        case RAID_SEQ_ACTIVE: {
             // Desktop is locked, background is black
-            DrawNetworkVisualization(REF_WIDTH - 320, REF_HEIGHT - 280, 300, 260);
-            DrawScaledText(g_player.raidSeqOperatorDialogue, 40, REF_HEIGHT - 120, 18, COLOR_TOXIC);
-            DrawScanlineOverlay(0, 0, REF_WIDTH, REF_HEIGHT, Fade(COLOR_BLOOD, 0.1f), 60.0f, 4.0f);
+            float t = (float)GetTime();
+            float pulse = sinf(t * 3.0f) * 0.3f + 0.7f;
+            
+            // ---- SPLIT LAYOUT: LEFT = HEX STREAM, RIGHT = TERMINAL ----
+            float leftX = 0;
+            float leftW = REF_WIDTH * 0.55f;
+            float rightX = leftW;
+            float rightW = REF_WIDTH * 0.45f;
             
             // ============================================================
-            // DRAW FULL TERMINAL WINDOW
+            // LEFT PANEL: HEX STREAM + NETWORK SNIFFER
             // ============================================================
             {
-                float winX = 40;
-                float winY = 80;
-                float winW = REF_WIDTH - 80;
-                float winH = REF_HEIGHT - 220;
+                // Background with subtle grid
+                DrawScaledRect(leftX, 0, leftW, REF_HEIGHT, Color{4, 6, 10, 255});
                 
-                // ---- TERMINAL WINDOW FRAME ----
-                // Shadow
-                DrawScaledRect(winX + 6, winY + 6, winW, winH, Color{0, 0, 0, 100});
-                
-                // Background
-                DrawScaledRect(winX, winY, winW, winH, COLOR_PANEL);
-                DrawScaledRectLines(winX, winY, winW, winH, Fade(COLOR_CYAN, 0.3f));
-                
-                // ---- TITLE BAR ----
-                float titleH = 30.0f;
-                DrawScaledRect(winX, winY, winW, titleH, Color{20, 22, 35, 220});
-                DrawScaledLine(winX, winY + titleH, winX + winW, winY + titleH, Fade(COLOR_CYAN, 0.2f));
-                
-                // Title
-                DrawScaledText("█ TERMINAL // RAID INTERFACE", winX + 14, winY + 7, 11, COLOR_TOXIC);
-                
-                // ---- WINDOW CONTROLS (right side) ----
-                float btnX = winX + winW - 80;
-                float btnY = winY + 6;
-                DrawScaledCircle(btnX + 8, btnY + 8, 8, Color{255, 95, 87, 200});      // Close (red)
-                DrawScaledCircle(btnX + 28, btnY + 8, 8, Color{255, 200, 60, 200});    // Min (yellow)
-                DrawScaledCircle(btnX + 48, btnY + 8, 8, Color{100, 210, 80, 200});    // Max (green)
-                
-                // ---- TERMINAL CONTENT ----
-                float contentX = winX + 8;
-                float contentY = winY + titleH + 8;
-                float contentW = winW - 16;
-                float contentH = winH - titleH - 16;
-                
-                // Terminal background
-                DrawScaledRect(contentX, contentY, contentW, contentH, COLOR_CLI_BG);
-                DrawScaledRectLines(contentX, contentY, contentW, contentH, Fade(COLOR_CYAN, 0.1f));
-                
-                // ---- CLI LOGS ----
-                float lineY = contentY + 6;
-                int maxLines = (int)(contentH / 20) - 1;
-                int totalLines = g_cliLogCount;
-                int startLine = 0;
-                
-                if (totalLines > maxLines) {
-                    startLine = totalLines - maxLines;
+                // Animated grid lines
+                for (int i = 0; i < 40; i++) {
+                    float x = (i / 40.0f) * leftW;
+                    float alpha = 0.04f + 0.04f * sinf(t * 0.5f + i * 0.5f);
+                    DrawScaledLine(leftX + x, 0, leftX + x, REF_HEIGHT, Fade(COLOR_CYAN, alpha));
+                }
+                for (int i = 0; i < 20; i++) {
+                    float y = (i / 20.0f) * REF_HEIGHT;
+                    float alpha = 0.04f + 0.04f * sinf(t * 0.7f + i * 0.3f);
+                    DrawScaledLine(leftX, y, leftX + leftW, y, Fade(COLOR_CYAN, alpha));
                 }
                 
-                // Apply scroll
+                // ---- HEX STREAM (falling characters) ----
+                int hexCols = 30;
+                int hexRows = 40;
+                float hexW = leftW / hexCols;
+                float hexH = REF_HEIGHT / hexRows;
+                
+                for (int col = 0; col < hexCols; col++) {
+                    for (int row = 0; row < hexRows; row++) {
+                        // Random hex character
+                        char hexChars[] = "0123456789ABCDEF";
+                        char c = hexChars[rand() % 16];
+                        
+                        // Each column has a different speed and offset
+                        float speed = 0.5f + (col % 5) * 0.15f;
+                        float phase = col * 0.7f + row * 0.3f;
+                        float offset = fmodf(t * speed + phase, 2.0f);
+                        
+                        // Only show some characters (density effect)
+                        float density = 0.6f + 0.3f * sinf(t * 0.2f + col);
+                        if (offset < 1.0f && (rand() % 100) < density * 80) {
+                            float alpha = (1.0f - offset) * 0.5f + 0.2f;
+                            
+                            // Color variations
+                            Color colColor;
+                            if (col % 3 == 0) colColor = Fade(COLOR_TOXIC, alpha);
+                            else if (col % 3 == 1) colColor = Fade(COLOR_CYAN, alpha * 0.7f);
+                            else colColor = Fade(COLOR_GHOST, alpha * 0.5f);
+                            
+                            float xPos = leftX + col * hexW + hexW * 0.3f;
+                            float yPos = (row + 1) * hexH - offset * hexH * 2;
+                            if (yPos > 0 && yPos < REF_HEIGHT) {
+                                DrawScaledText(&c, xPos, yPos, hexH * 0.7f, colColor);
+                            }
+                        }
+                    }
+                }
+                
+                // ---- NETWORK SNIFFER VISUALIZATION (overlay) ----
+                float snifferX = leftX + 20;
+                float snifferY = 40;
+                float snifferW = leftW - 40;
+                float snifferH = REF_HEIGHT - 80;
+                
+                // Panel background (semi-transparent)
+                DrawScaledRect(snifferX, snifferY, snifferW, snifferH, Color{6, 8, 14, 180});
+                DrawScaledRectLines(snifferX, snifferY, snifferW, snifferH, Fade(COLOR_CYAN, 0.15f));
+                
+                // ---- SNIFFER HEADER ----
+                DrawScaledText("█ NETWORK SNIFFER // PACKET CAPTURE", snifferX + 12, snifferY + 8, 11, COLOR_TOXIC);
+                DrawScaledLine(snifferX + 10, snifferY + 26, snifferX + snifferW - 10, snifferY + 26, Fade(COLOR_CYAN, 0.15f));
+                
+                // ---- PACKET STREAM (scrolling lines) ----
+                float packetY = snifferY + 34;
+                int packetCount = 12;
+                float packetH = 28.0f;
+                
+                for (int i = 0; i < packetCount; i++) {
+                    float offset = fmodf(t * (0.3f + i * 0.02f) + i * 0.5f, 2.0f);
+                    if (offset > 1.0f) continue;
+                    
+                    float alpha = (1.0f - offset) * 0.6f + 0.2f;
+                    float yPos = snifferY + 34 + i * packetH;
+                    
+                    // Packet line
+                    char packetLine[128];
+                    int srcPort = 8000 + (rand() % 999);
+                    int dstPort = 80 + (rand() % 1000);
+                    int size = 64 + (rand() % 1400);
+                    int ttl = 64 + (rand() % 64);
+                    
+                    snprintf(packetLine, sizeof(packetLine), 
+                            "[%04d] 0x%04X  %d.%d.%d.%d:%d  >  %d.%d.%d.%d:%d  TCP  len=%d  TTL=%d",
+                            (int)(t * 10 + i) % 9999,
+                            rand() % 0xFFFF,
+                            rand() % 255, rand() % 255, rand() % 255, rand() % 255, srcPort,
+                            rand() % 255, rand() % 255, rand() % 255, rand() % 255, dstPort,
+                            size, ttl);
+                    
+                    // Color based on packet type
+                    Color pktColor = (i % 3 == 0) ? Fade(COLOR_TOXIC, alpha) : 
+                                    (i % 3 == 1) ? Fade(COLOR_CYAN, alpha * 0.8f) : 
+                                    Fade(COLOR_GHOST, alpha * 0.6f);
+                    
+                    DrawScaledText(packetLine, snifferX + 12, yPos, 9, pktColor);
+                }
+                
+                // ---- SNIFFER STATS ----
+                float statsY = snifferY + snifferH - 30;
+                DrawScaledLine(snifferX + 10, statsY, snifferX + snifferW - 10, statsY, Fade(COLOR_CYAN, 0.1f));
+                
+                int pps = (int)(t * 34.7f) % 1000 + 200;
+                int total = (int)(t * 128.3f) % 99999 + 10000;
+                char statsLine[128];
+                snprintf(statsLine, sizeof(statsLine), 
+                        "PACKETS: %d/s  |  TOTAL: %d  |  DROPS: %d  |  ACTIVE: %d",
+                        pps, total, (int)(t * 2.3f) % 50, (int)(t * 0.7f) % 6 + 1);
+                DrawScaledText(statsLine, snifferX + 12, statsY + 6, 8, Fade(COLOR_GHOST, 0.6f));
+                
+                // ---- SCANNING PULSE (radar effect) ----
+                float radarX = snifferX + snifferW - 60;
+                float radarY = snifferY + 60;
+                float radarR = 40.0f;
+                
+                // Radar background
+                DrawScaledCircle(radarX, radarY, radarR, Fade(COLOR_BLACK, 0.8f));
+                DrawScaledCircleLines(radarX, radarY, radarR, Fade(COLOR_CYAN, 0.2f));
+                DrawScaledCircleLines(radarX, radarY, radarR * 0.5f, Fade(COLOR_CYAN, 0.1f));
+                
+                // Scanning line
+                float angle = t * 1.5f;
+                float endX = radarX + cosf(angle) * radarR;
+                float endY = radarY + sinf(angle) * radarR;
+                DrawScaledLine(radarX, radarY, endX, endY, Fade(COLOR_TOXIC, 0.4f));
+                
+                // Blips
+                for (int i = 0; i < 4; i++) {
+                    float a = t * 0.7f + i * 1.57f;
+                    float r = radarR * (0.2f + 0.3f * sinf(t * 0.5f + i));
+                    float bx = radarX + cosf(a) * r;
+                    float by = radarY + sinf(a) * r;
+                    float blip = sinf(t * 2.0f + i * 1.2f) * 0.5f + 0.5f;
+                    DrawScaledCircle(bx, by, 2.0f + blip * 2.0f, Fade(COLOR_BLOOD, 0.3f + blip * 0.5f));
+                }
+                
+                // ---- OPERATOR DIALOGUE (bottom left) ----
+                DrawScaledText(g_player.raidSeqOperatorDialogue, snifferX + 12, snifferY + snifferH - 60, 13, Fade(COLOR_TOXIC, 0.9f));
+            }
+            
+            // ============================================================
+            // RIGHT PANEL: TERMINAL WINDOW
+            // ============================================================
+            {
+                float winX = rightX + 8;
+                float winY = 40;
+                float winW = rightW - 16;
+                float winH = REF_HEIGHT - 80;
+                
+                // ---- TERMINAL WINDOW FRAME ----
+                DrawScaledRect(winX + 4, winY + 4, winW, winH, Color{0, 0, 0, 80});
+                DrawScaledRect(winX, winY, winW, winH, COLOR_PANEL);
+                DrawScaledRectLines(winX, winY, winW, winH, Fade(COLOR_CYAN, 0.25f));
+                
+                // ---- TITLE BAR ----
+                float titleH = 28.0f;
+                DrawScaledRect(winX, winY, winW, titleH, Color{16, 18, 28, 220});
+                DrawScaledLine(winX, winY + titleH, winX + winW, winY + titleH, Fade(COLOR_CYAN, 0.15f));
+                
+                DrawScaledText("█ RAID TERMINAL", winX + 12, winY + 6, 10, COLOR_TOXIC);
+                
+                // ---- TERMINAL CONTENT ----
+                float contentX = winX + 6;
+                float contentY = winY + titleH + 6;
+                float contentW = winW - 12;
+                float contentH = winH - titleH - 12;
+                
+                DrawScaledRect(contentX, contentY, contentW, contentH, COLOR_CLI_BG);
+                DrawScaledRectLines(contentX, contentY, contentW, contentH, Fade(COLOR_CYAN, 0.05f));
+                
+                // ---- CLI LOGS (compact) ----
+                float lineY = contentY + 4;
+                float fontSize = 9.0f;
+                float lineHeight = 16.0f;
+                int maxLines = (int)(contentH / lineHeight) - 2;
+                int totalLines = g_cliLogCount;
+                int startLine = totalLines - maxLines;
+                if (startLine < 0) startLine = 0;
+                
                 if (g_player.cliScroll > 0.0f) {
-                    int scrollLines = (int)(g_player.cliScroll / 20.0f);
+                    int scrollLines = (int)(g_player.cliScroll / lineHeight);
                     startLine = totalLines - maxLines - scrollLines;
                     if (startLine < 0) startLine = 0;
                 }
@@ -763,7 +924,6 @@ void DrawRaidSequenceOverlay() {
                     if (i < 0) continue;
                     const char* log = g_cliLogs[i];
                     
-                    // Colorize based on content
                     Color logColor = COLOR_GHOST;
                     if (strstr(log, "[FEDERAL RAID]") || strstr(log, "[RAID]")) logColor = COLOR_BLOOD;
                     else if (strstr(log, "[ERROR]") || strstr(log, "[ERR]")) logColor = COLOR_BLOOD;
@@ -771,33 +931,32 @@ void DrawRaidSequenceOverlay() {
                     else if (strstr(log, "[SUCCESS]") || strstr(log, "[MINER]")) logColor = COLOR_TOXIC;
                     else if (strstr(log, "[SCAN]") || strstr(log, "[PAGE]")) logColor = COLOR_CYAN;
                     
-                    DrawScaledText(log, contentX + 8, lineY, 11, logColor);
-                    lineY += 20;
+                    DrawScaledText(log, contentX + 4, lineY, fontSize, logColor);
+                    lineY += lineHeight;
                 }
                 
                 // ---- INPUT LINE ----
-                float inputY = contentY + contentH - 30;
-                DrawScaledRect(contentX + 4, inputY, contentW - 8, 24, Color{8, 10, 14, 220});
-                DrawScaledRectLines(contentX + 4, inputY, contentW - 8, 24, Fade(COLOR_CYAN, 0.2f));
+                float inputY = contentY + contentH - 24;
+                DrawScaledRect(contentX + 2, inputY, contentW - 4, 20, Color{8, 10, 14, 220});
+                DrawScaledRectLines(contentX + 2, inputY, contentW - 4, 20, Fade(COLOR_CYAN, 0.15f));
                 
-                DrawScaledText(">", contentX + 12, inputY + 5, 11, COLOR_TOXIC);
-                DrawScaledText(g_player.inputBuffer, contentX + 28, inputY + 5, 11, COLOR_GHOST);
+                DrawScaledText(">", contentX + 8, inputY + 4, fontSize, COLOR_TOXIC);
+                DrawScaledText(g_player.inputBuffer, contentX + 20, inputY + 4, fontSize, COLOR_GHOST);
                 
-                // Blinking cursor
                 if ((int)(GetTime() * 2.0f) % 2 == 0) {
-                    float cursorX = contentX + 28 + MeasureScaledTextWidth(g_player.inputBuffer, 11);
-                    DrawScaledRect(cursorX, inputY + 2, 6, 18, COLOR_TOXIC);
+                    float cursorX = contentX + 20 + MeasureScaledTextWidth(g_player.inputBuffer, fontSize);
+                    DrawScaledRect(cursorX, inputY + 2, 5, 14, COLOR_TOXIC);
                 }
                 
-                // ---- SCROLLBAR (if needed) ----
+                // ---- SCROLLBAR ----
                 if (totalLines > maxLines) {
-                    float scrollbarX = contentX + contentW - 8;
+                    float scrollbarX = contentX + contentW - 6;
                     float scrollbarH = contentH - 4;
                     float visibleRatio = (float)maxLines / totalLines;
                     float thumbH = scrollbarH * visibleRatio;
-                    if (thumbH < 16.0f) thumbH = 16.0f;
+                    if (thumbH < 12.0f) thumbH = 12.0f;
                     
-                    float maxScrollPx = (totalLines - maxLines) * 20.0f;
+                    float maxScrollPx = (totalLines - maxLines) * lineHeight;
                     float scrollRatio = 0.0f;
                     if (maxScrollPx > 0.0f) {
                         scrollRatio = g_player.cliScroll / maxScrollPx;
@@ -805,16 +964,20 @@ void DrawRaidSequenceOverlay() {
                     }
                     float thumbY = contentY + 2 + (scrollbarH - thumbH) * scrollRatio;
                     
-                    DrawScaledRect(scrollbarX, contentY + 2, 4, scrollbarH, Color{30, 35, 50, 100});
+                    DrawScaledRect(scrollbarX, contentY + 2, 4, scrollbarH, Color{30, 35, 50, 80});
                     DrawScaledRect(scrollbarX, thumbY, 4, thumbH, Fade(COLOR_CYAN, 0.3f));
                 }
                 
-                // ---- HELP TEXT (bottom) ----
-                DrawScaledText("[Press ENTER to send commands | TAB to toggle focus]", 
-                            contentX + 12, contentY + contentH - 52, 8, Fade(COLOR_GHOST, 0.4f));
+                // ---- HELP TEXT ----
+                DrawScaledText("[ENTER] send  |  [TAB] focus  |  [↑↓] scroll", 
+                            contentX + 4, contentY + contentH - 46, 7, Fade(COLOR_GHOST, 0.3f));
             }
+            
+            // ---- DIVIDER LINE ----
+            DrawScaledLine(leftW, 0, leftW, REF_HEIGHT, Fade(COLOR_CYAN, 0.05f));
+            
             break;
-
+        }
         case RAID_SEQ_SUCCESS:
             // Green flash with "RAID BYPASSED"
             {
