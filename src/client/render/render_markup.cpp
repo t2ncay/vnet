@@ -508,7 +508,7 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
             DrawScaledRectLines(bx, by, bw, bh, COLOR_BLOOD);
             
             float textX = bx + (bw - MeasureScaledTextWidth(label.c_str(), 11)) / 2.0f;
-            float textY = by + (bh - 11.0f * 1.3f) / 2.0f + 2.0f;
+            float textY = by + (bh - 13.0f * 1.3f) / 2.0f + 2.0f;
             DrawScaledText(label.c_str(), textX, textY, 11, hover ? COLOR_BLACK : COLOR_TOXIC);
             
             if (hover && clicked) {
