@@ -1,9 +1,9 @@
 #pragma once
 #include "raylib.h"
-#include "vnet.h"
-#include "player.h"
+#include "../shared/vnet.h"
+#include "./player.h"
 #include "render.h"
-#include "utils.h"
+#include "../shared/utils.h"
 
 // ============================================================
 // REFERENCE CANVAS

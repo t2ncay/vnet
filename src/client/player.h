@@ -1,6 +1,6 @@
 #pragma once
 #include "raylib.h"
-#include "vnet.h"
+#include "../shared/vnet.h"
 
 // Player functions
 void InitPlayer(void);
