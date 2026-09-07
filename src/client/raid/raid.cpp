@@ -5,6 +5,7 @@
 #include "../vnet_client.h"
 #include "../game.h"
 #include "../desktop/desktop.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -80,6 +81,7 @@ void TriggerFederalRaid(void) {
     // CLEAR THE TERMINAL BEFORE RAID STARTS
     // ============================================================
     // Use the existing clear command to properly clear the terminal
+
     g_cliLogCount = 0;                          // Reset log count
     memset(g_cliLogs, 0, sizeof(g_cliLogs));    // Wipe log buffer
     g_player.cliScroll = 0.0f;                  // Reset scroll offset
@@ -564,63 +566,64 @@ void HandleRaidCLIInput(char* buffer) {
 }
 
 void UpdateRaidSequence(float dt) {
-if (!g_player.raidActive) return;
+    if (!g_player.raidActive) return;
 
-g_player.raidSeqTimer += dt;
+    g_player.raidSeqTimer += dt;
 
-switch (g_player.raidSeqStage) {
-    case RAID_SEQ_GLITCH:
-        if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
-            g_player.raidSeqStage = RAID_SEQ_FLASH;
-            g_player.raidSeqTimer = 0.0f;
-            g_player.raidSeqStageDuration = 0.5f;  // 0.5s flash
-        }
-        break;
-
-    case RAID_SEQ_FLASH:
-        if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
-            g_player.raidSeqStage = RAID_SEQ_HEX;
-            g_player.raidSeqTimer = 0.0f;
-            g_player.raidSeqStageDuration = 2.0f;  // 2s hex flood
-        }
-        break;
-
-    case RAID_SEQ_HEX:
-        if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
-            g_player.raidSeqStage = RAID_SEQ_BLACKOUT;
-            g_player.raidSeqTimer = 0.0f;
-            g_player.raidSeqStageDuration = 0.8f;  // 0.8s blackout
-        }
-        break;
-
-    case RAID_SEQ_BLACKOUT:
-        if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
-            g_player.raidSeqStage = RAID_SEQ_ACTIVE;
-            g_player.raidSeqTimer = 0.0f;
-            g_player.raidSeqLockDesktop = true;
-            g_player.raidSeqShowOperator = true;
-            g_player.raidIntruderVisible = true;
-            
-            // ============================================================
-            // FORCE TERMINAL OPEN AND FOCUSED - FIXED
-            // ============================================================
-            Desktop& desktop = GetDesktop();
-            
-            // Close any existing terminal first to avoid duplication
-            // (we'll just open a new one)
-            int termIdx = desktop.OpenApp(AppType::Terminal, "Terminal");
-            
-            // If terminal was already open, focus it
-            if (termIdx >= 0) {
-                desktop.FocusWindow(termIdx);
+    switch (g_player.raidSeqStage) {
+        case RAID_SEQ_GLITCH:
+            if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
+                g_player.raidSeqStage = RAID_SEQ_FLASH;
+                g_player.raidSeqTimer = 0.0f;
+                g_player.raidSeqStageDuration = 0.5f;  // 0.5s flash
+                
             }
-            
-            // Also ensure CLI is open
-            g_player.cliOpen = true;
-            
-            strcpy(g_player.raidSeqOperatorDialogue, "FEDERAL E-RAID IN PROGRESS. RESPOND OR PERISH.");
-        }
-        break;
+            break;
+
+        case RAID_SEQ_FLASH:
+            if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
+                g_player.raidSeqStage = RAID_SEQ_HEX;
+                g_player.raidSeqTimer = 0.0f;
+                g_player.raidSeqStageDuration = 2.0f;  // 2s hex flood
+            }
+            break;
+
+        case RAID_SEQ_HEX:
+            if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
+                g_player.raidSeqStage = RAID_SEQ_BLACKOUT;
+                g_player.raidSeqTimer = 0.0f;
+                g_player.raidSeqStageDuration = 0.8f;  // 0.8s blackout
+            }
+            break;
+
+        case RAID_SEQ_BLACKOUT:
+            if (g_player.raidSeqTimer >= g_player.raidSeqStageDuration) {
+                g_player.raidSeqStage = RAID_SEQ_ACTIVE;
+                g_player.raidSeqTimer = 0.0f;
+                g_player.raidSeqLockDesktop = true;
+                g_player.raidSeqShowOperator = true;
+                g_player.raidIntruderVisible = true;
+                
+                // ============================================================
+                // FORCE TERMINAL OPEN AND FOCUSED - FIXED
+                // ============================================================
+                Desktop& desktop = GetDesktop();
+                
+                // Close any existing terminal first to avoid duplication
+                // (we'll just open a new one)
+                int termIdx = desktop.OpenApp(AppType::Terminal, "Terminal");
+                
+                // If terminal was already open, focus it
+                if (termIdx >= 0) {
+                    desktop.FocusWindow(termIdx);
+                }
+                
+                // Also ensure CLI is open
+                g_player.cliOpen = true;
+                
+                strcpy(g_player.raidSeqOperatorDialogue, "FEDERAL E-RAID IN PROGRESS. RESPOND OR PERISH.");
+            }
+            break;
 
         case RAID_SEQ_ACTIVE:
             g_player.raidSeqDialogueTimer += dt;
@@ -664,6 +667,7 @@ switch (g_player.raidSeqStage) {
     }
 }
 
+
 void DrawRaidSequenceOverlay() {
     if (!g_player.raidActive) return;
 
@@ -672,25 +676,115 @@ void DrawRaidSequenceOverlay() {
 
     switch (g_player.raidSeqStage) {
         case RAID_SEQ_GLITCH:
-            // Draw scanline jitter, random horizontal bars, subtle noise
             {
-                int intensity = (int)(t / g_player.raidSeqStageDuration * 10.0f);
-                for (int i = 0; i < intensity; i++) {
-                    float x = rand() % REF_WIDTH;
-                    float w = 10 + rand() % 60;
-                    float y = rand() % REF_HEIGHT;
-                    float h = 2 + rand() % 8;
-                    DrawScaledRect(x, y, w, h, Fade(COLOR_BLOOD, 0.1f + 0.2f * pulse));
+                float t = g_player.raidSeqTimer;
+                float duration = g_player.raidSeqStageDuration;
+                float progress = t / duration;  // 0 → 1
+                float intensity = sinf(progress * 3.14159f) * 0.8f + 0.2f; // Peaks mid-way
+                
+                // ---- 1. SCREEN TEARING (horizontal displacement) ----
+                int tearCount = (int)(5 + intensity * 15);
+                for (int i = 0; i < tearCount; i++) {
+                    float tearY = rand() % REF_HEIGHT;
+                    float tearH = 2 + rand() % (int)(6 + intensity * 10);
+                    float tearX = (rand() % (int)(REF_WIDTH * 0.3f)) - REF_WIDTH * 0.15f;
+                    float tearW = REF_WIDTH + abs(tearX) * 2;
+                    
+                    Color tearColor = (i % 3 == 0) ? Fade(COLOR_BLOOD, 0.15f * intensity) :
+                                    (i % 3 == 1) ? Fade(COLOR_TOXIC, 0.1f * intensity) :
+                                    Fade(COLOR_CYAN, 0.08f * intensity);
+                    DrawScaledRect(tearX, tearY, tearW, tearH, tearColor);
                 }
-                DrawScanlineOverlay(0, 0, REF_WIDTH, REF_HEIGHT, Fade(COLOR_BLOOD, 0.3f * pulse), 120.0f, 2.0f);
-                // Jitter effect is handled by global jitter; we can also add extra offset
-                float jx = sinf(GetTime() * 40.0f) * 2.0f * pulse;
-                float jy = cosf(GetTime() * 35.0f) * 1.5f * pulse;
-                // This jitter will be applied in DrawUI by adding offset.
-                // We'll set a global jitter offset.
-                TriggerJitter(0.3f * pulse, 0.1f); // temporary
+                
+                // ---- 2. CHROMATIC ABERRATION (color channel offset) ----
+                if (intensity > 0.4f) {
+                    float offset = (intensity - 0.4f) * 4.0f; // max 2.4px
+                    float rOffset = (rand() % 100 / 100.0f) * offset;
+                    float bOffset = (rand() % 100 / 100.0f) * offset;
+                    // We'll apply via drawing red/blue overlay rectangles with blend
+                    // Simulate with semi-transparent colored bars
+                    for (int i = 0; i < (int)(5 + intensity * 20); i++) {
+                        float x = rand() % REF_WIDTH;
+                        float y = rand() % REF_HEIGHT;
+                        float w = 20 + rand() % 100;
+                        float h = 2 + rand() % 6;
+                        if (i % 2 == 0)
+                            DrawScaledRect(x + rOffset, y, w, h, Fade(COLOR_BLOOD, 0.08f * intensity));
+                        else
+                            DrawScaledRect(x - bOffset, y, w, h, Fade(COLOR_CYAN, 0.08f * intensity));
+                    }
+                }
+                
+                // ---- 3. DATA CORRUPTION BLOCKS (random hex characters) ----
+                int blockCount = (int)(3 + intensity * 12);
+                for (int i = 0; i < blockCount; i++) {
+                    float bx = rand() % REF_WIDTH;
+                    float by = rand() % REF_HEIGHT;
+                    float bw = 20 + rand() % 60;
+                    float bh = 12 + rand() % 24;
+                    
+                    // Background block
+                    Color bgColor = (i % 3 == 0) ? Fade(COLOR_BLOOD, 0.1f * intensity) :
+                                    (i % 3 == 1) ? Fade(COLOR_TOXIC, 0.08f * intensity) :
+                                    Fade(COLOR_BLACK, 0.2f * intensity);
+                    DrawScaledRect(bx, by, bw, bh, bgColor);
+                    
+                    // Hex characters inside block
+                    int hexCount = 3 + rand() % 6;
+                    for (int j = 0; j < hexCount; j++) {
+                        char hexChars[] = "0123456789ABCDEF";
+                        char c = hexChars[rand() % 16];
+                        float hx = bx + 4 + (rand() % (int)(bw - 8));
+                        float hy = by + 2 + (rand() % (int)(bh - 6));
+                        Color col = (i % 2 == 0) ? Fade(COLOR_BLOOD, 0.5f * intensity) :
+                                                Fade(COLOR_TOXIC, 0.4f * intensity);
+                        DrawScaledText(&c, hx, hy, 10 + rand() % 6, col);
+                    }
+                }
+                
+                // ---- 4. AGGRESSIVE JITTER & SCANLINES ----
+                float jitterIntensity = 0.5f + intensity * 1.5f;
+                TriggerJitter(jitterIntensity * 0.2f, 0.02f + intensity * 0.08f);
+                
+                // Enhanced scanlines with varying frequency
+                float scanlineFreq = 60.0f + intensity * 120.0f;
+                float scanlineAlpha = 0.1f + intensity * 0.4f;
+                DrawScanlineOverlay(0, 0, REF_WIDTH, REF_HEIGHT, 
+                                    Fade(COLOR_BLOOD, scanlineAlpha * 0.5f), 
+                                    scanlineFreq, 2.0f + intensity * 4.0f);
+                
+                // ---- 5. FLICKERING WHITE FLASHES (random) ----
+                if (rand() % 100 < (int)(intensity * 15)) {
+                    float flashAlpha = (rand() % 100 / 100.0f) * 0.2f * intensity;
+                    DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, Fade(WHITE, flashAlpha));
+                }
+                
+                // ---- 6. HORIZONTAL BARS (classic glitch) ----
+                int barCount = (int)(3 + intensity * 20);
+                for (int i = 0; i < barCount; i++) {
+                    float x = rand() % REF_WIDTH;
+                    float y = rand() % REF_HEIGHT;
+                    float w = 10 + rand() % (int)(40 + intensity * 60);
+                    float h = 2 + rand() % (int)(2 + intensity * 6);
+                    Color barColor = (i % 4 == 0) ? Fade(COLOR_BLOOD, 0.15f * intensity) :
+                                    (i % 4 == 1) ? Fade(COLOR_TOXIC, 0.1f * intensity) :
+                                    (i % 4 == 2) ? Fade(COLOR_CYAN, 0.1f * intensity) :
+                                    Fade(COLOR_GHOST, 0.1f * intensity);
+                    DrawScaledRect(x, y, w, h, barColor);
+                }
+                
+                // ---- 7. VERTICAL LINES (data corruption) ----
+                int vLineCount = (int)(2 + intensity * 8);
+                for (int i = 0; i < vLineCount; i++) {
+                    float x = rand() % REF_WIDTH;
+                    float y = rand() % REF_HEIGHT;
+                    float w = 1 + rand() % 3;
+                    float h = 10 + rand() % (int)(20 + intensity * 40);
+                    DrawScaledRect(x, y, w, h, Fade(COLOR_BLOOD, 0.1f * intensity));
+                }
+                
+                break;
             }
-            break;
 
         case RAID_SEQ_FLASH:
             // Full white flash with extreme jitter
@@ -704,13 +798,133 @@ void DrawRaidSequenceOverlay() {
             break;
 
         case RAID_SEQ_HEX:
-            // Falling hex characters (data stream)
             {
-                DrawDataStream(0, 0, REF_WIDTH, REF_HEIGHT, COLOR_TOXIC, 20, 280.0f);
-                // Optionally add a darkening overlay to make hex stand out
-                DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, Fade(BLACK, 0.3f));
+                float t = g_player.raidSeqTimer;
+                float duration = g_player.raidSeqStageDuration;
+                float progress = t / duration;  // 0 → 1
+                float intensity = sinf(progress * 3.14159f) * 0.8f + 0.2f;
+                
+                // ---- 1. MAIN DATA STREAM (multiple layers) ----
+                int streamCount = 25 + (int)(intensity * 20);
+                float baseSpeed = 120.0f + intensity * 200.0f;
+                
+                // Pre-compute stream data for consistency
+                static float streamOffsets[50] = {0};
+                static float streamSpeeds[50] = {0};
+                static int streamLengths[50] = {0};
+                static float streamX[50] = {0};
+                
+                // Initialize streams (only once per stage)
+                static bool initialized = false;
+                if (!initialized) {
+                    for (int i = 0; i < 50; i++) {
+                        streamOffsets[i] = (float)(rand() % 1000) / 1000.0f * 2.0f;
+                        streamSpeeds[i] = 0.3f + (rand() % 100 / 100.0f) * 0.7f;
+                        streamLengths[i] = 5 + rand() % 20;
+                        streamX[i] = (rand() % (int)(REF_WIDTH * 0.9f)) + REF_WIDTH * 0.05f;
+                    }
+                    initialized = true;
+                }
+                
+                // Update and draw streams
+                float hexW = 18.0f;
+                float hexH = 20.0f;
+                char hexChars[] = "0123456789ABCDEF";
+                
+                // Draw multiple streams
+                for (int s = 0; s < streamCount; s++) {
+                    float speed = streamSpeeds[s] * baseSpeed;
+                    float offset = streamOffsets[s];
+                    float progress2 = fmodf(t * speed + offset, 2.0f);
+                    if (progress2 > 1.0f) continue;
+                    
+                    float alpha = (1.0f - progress2) * 0.7f + 0.2f;
+                    float yPos = (1.0f - progress2) * REF_HEIGHT;
+                    float xPos = streamX[s];
+                    
+                    // Determine color
+                    Color col;
+                    int colorType = rand() % 3;
+                    if (colorType == 0) col = Fade(COLOR_TOXIC, alpha);
+                    else if (colorType == 1) col = Fade(COLOR_CYAN, alpha * 0.7f);
+                    else col = Fade(COLOR_GHOST, alpha * 0.5f);
+                    
+                    // Draw stream characters with varying size
+                    int len = streamLengths[s];
+                    for (int j = 0; j < len; j++) {
+                        char c = hexChars[(rand() % 16)];
+                        float yOffset = j * hexH;
+                        float yDraw = yPos + yOffset;
+                        if (yDraw < 0 || yDraw > REF_HEIGHT) continue;
+                        
+                        // Random size variation per character
+                        float size = 14.0f + (rand() % 12);
+                        if (j % 3 == 0) size *= 1.2f;  // Some characters larger
+                        
+                        // Random color variation per character
+                        Color charCol = col;
+                        if (rand() % 5 == 0) charCol = Fade(COLOR_BLOOD, alpha * 0.6f);
+                        
+                        DrawScaledText(&c, xPos, yDraw, size, charCol);
+                    }
+                }
+                
+                // ---- 2. GLITCHY HEX BLOCKS (overlay) ----
+                int blockCount = (int)(3 + intensity * 15);
+                for (int i = 0; i < blockCount; i++) {
+                    float bx = rand() % REF_WIDTH;
+                    float by = rand() % REF_HEIGHT;
+                    float bw = 30 + rand() % 80;
+                    float bh = 15 + rand() % 40;
+                    
+                    // Random semitransparent block
+                    Color bg = (i % 2 == 0) ? Fade(COLOR_BLOOD, 0.05f * intensity) :
+                                            Fade(COLOR_TOXIC, 0.04f * intensity);
+                    DrawScaledRect(bx, by, bw, bh, bg);
+                    
+                    // Random hex inside block
+                    int inner = 2 + rand() % 5;
+                    for (int j = 0; j < inner; j++) {
+                        char c = hexChars[rand() % 16];
+                        float hx = bx + 4 + (rand() % (int)(bw - 8));
+                        float hy = by + 2 + (rand() % (int)(bh - 6));
+                        DrawScaledText(&c, hx, hy, 12 + rand() % 8, 
+                                    Fade(COLOR_TOXIC, 0.6f * intensity));
+                    }
+                }
+                
+                // ---- 3. DATA STREAKS (fast moving lines) ----
+                int streakCount = (int)(2 + intensity * 6);
+                for (int i = 0; i < streakCount; i++) {
+                    float x = rand() % REF_WIDTH;
+                    float y = rand() % REF_HEIGHT;
+                    float w = 80 + rand() % 150;
+                    float h = 1 + rand() % 3;
+                    float speed = 0.2f + rand() % 100 / 100.0f;
+                    float pos = fmodf(t * speed * 200.0f + i * 50.0f, REF_HEIGHT + 100.0f) - 50.0f;
+                    DrawScaledRect(x, pos, w, h, Fade(COLOR_CYAN, 0.2f * intensity));
+                }
+                
+                // ---- 4. SCREEN FLICKER (random white/color flashes) ----
+                if (rand() % 100 < (int)(intensity * 20)) {
+                    float flashAlpha = (rand() % 100 / 100.0f) * 0.15f * intensity;
+                    Color flashColor = (rand() % 2 == 0) ? Fade(WHITE, flashAlpha) : Fade(COLOR_CYAN, flashAlpha * 0.8f);
+                    DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, flashColor);
+                }
+                
+                // ---- 5. SCANLINE OVERLAY (aggressive) ----
+                float scanFreq = 40.0f + intensity * 100.0f;
+                float scanAlpha = 0.1f + intensity * 0.3f;
+                DrawScanlineOverlay(0, 0, REF_WIDTH, REF_HEIGHT, 
+                                    Fade(COLOR_BLOOD, scanAlpha * 0.3f), 
+                                    scanFreq, 2.0f + intensity * 3.0f);
+                
+                // ---- 6. DARKENING OVERLAY (pulsing) ----
+                float darkAlpha = 0.2f + intensity * 0.2f;
+                DrawScaledRect(0, 0, REF_WIDTH, REF_HEIGHT, Fade(BLACK, darkAlpha));
+                
+                break;
             }
-            break;
 
         case RAID_SEQ_BLACKOUT:
             // Pure black
