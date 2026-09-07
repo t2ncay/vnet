@@ -1,5 +1,7 @@
 #include "render_core.h"
 #include "../game.h"
+#include "./render_themes.h"
+
 #include <cstdio>
 #include <cmath>
 #include <cstring>
@@ -102,5 +104,13 @@ void LoadAssets(void) {
 void UnloadAssets(void) {
     if (g_fontVCR.texture.id != 0) {
         UnloadFont(g_fontVCR);
+    }
+}
+
+void DrawGradientBackground(float x, float y, float w, float h, Color topColor, Color bottomColor) {
+    for (int i = 0; i < (int)h; i += 2) {
+        float t = (float)i / h;
+        Color col = BlendColor(topColor, bottomColor, t);
+        DrawScaledRect(x, y + i, w, 2, col);
     }
 }

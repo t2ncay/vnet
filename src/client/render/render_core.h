@@ -27,6 +27,11 @@ void LoadAssets(void);
 void UnloadAssets(void);
 
 // ============================================================
+// THEME MANAGEMENT
+// ============================================================
+void DrawGradientBackground(float x, float y, float w, float h, Color topColor, Color bottomColor);
+
+// ============================================================
 // GLOBALS
 // ============================================================
 extern Font g_fontVCR;
