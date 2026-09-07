@@ -1,12 +1,12 @@
 #include "game.h"
-#include "vnet.h"
+#include "../shared/vnet.h"
 #include "player.h"
 #include "render.h"
 #include "./desktop/widgets/music_player.h"
 #include "./raid/raid.h"
 #include "vnet_client.h"
-#include "vnet_protocol.h" 
-#include "desktop.h"
+#include "../shared/vnet_protocol.h" 
+#include "./desktop/desktop.h"
 #include "connection/login_screen.h"
 #include "raid/raid.h"
 
@@ -90,6 +90,8 @@ void UpdateGame(float dt) {
 
     HandleResize();
     HandleInput();
+
+    UpdateThemeTransition(dt);
 
     UpdateVNET(dt);
     UpdatePlayer(dt);

@@ -4,8 +4,18 @@
 // ============================================================
 // THEME SUPPORT
 // ============================================================
-void SetActiveTheme(const char* name);
+void SetActiveTheme(const char* name, bool instant = true);
+void UpdateThemeTransition(float dt);
 void InitColors(void);
+
+// ============================================================
+// THEME MOOD VALUES
+// ============================================================
+extern float THEME_JITTER_BASELINE;
+extern float THEME_SCANLINE_INTENSITY;
+extern float THEME_GLOW_STRENGTH;
+extern float THEME_DATA_RAIN_DENSITY;
+extern float THEME_WARMTH;          // 0.0 = cold (blue), 1.0 = warm (red/orange)
 
 // ============================================================
 // COLOR PALETTE

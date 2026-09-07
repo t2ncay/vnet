@@ -2,22 +2,6 @@
 #include "raylib.h"
 
 // ============================================================
-// WINDOW FRAME HELPERS
-// ============================================================
-struct WindowFrameOpts {
-    bool showTitleBar = true;
-    bool showCornerReticles = true;
-    bool showShadow = true;
-    float cornerSize = 25.0f;
-    Color borderColor = {0, 220, 240, 100};
-    Color titleColor = COLOR_BLOOD;
-};
-
-void DrawWindowFrame(float x, float y, float w, float h, 
-                     const char* title, 
-                     const WindowFrameOpts& opts = WindowFrameOpts());
-
-// ============================================================
 // JITTER / SHAKE SYSTEM
 // ============================================================
 void InitJitter(void);

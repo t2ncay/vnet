@@ -172,17 +172,22 @@ void DrawGlowRect(float x, float y, float w, float h, Color color, float glowSiz
 
 void DrawScanlineOverlay(float x, float y, float w, float h, Color tint, float speed, float spacing) {
     float t = (float)GetTime();
-    for (float i = 0; i < h; i += spacing) {
-        float scanY = y + i + fmodf(t * speed, spacing);
-        DrawScaledRect(x, scanY, w, 1.0f, tint);
+    float intensity = THEME_SCANLINE_INTENSITY;  // Use theme mood value
+    for (float i = 0; i < h; i += spacing / intensity) {
+        float scanY = y + i + fmodf(t * speed * intensity, spacing / intensity);
+        DrawScaledRect(x, scanY, w, 1.0f, Fade(tint, intensity * 0.8f));
     }
 }
 
 void DrawDataStream(float x, float y, float w, float h, Color color, int columns, float speed) {
     if (columns < 1) columns = 1;
+    float density = THEME_DATA_RAIN_DENSITY;  // Use theme mood value
+    int actualColumns = (int)(columns * density);
+    if (actualColumns < 1) actualColumns = 1;
+
     float t = (float)GetTime();
-    float colW = w / (float)columns;
-    for (int i = 0; i < columns; i++) {
+    float colW = w / (float)actualColumns;
+    for (int i = 0; i < actualColumns; i++) {
         unsigned int seed = (unsigned int)(i * 7919u + 13u);
         float colSpeed = speed * (0.6f + (float)(seed % 100) / 130.0f);
         float offset = (float)(seed % 1000) / 1000.0f * h;
@@ -196,65 +201,5 @@ void DrawDataStream(float x, float y, float w, float h, Color color, int columns
             float fade = 1.0f - (float)g / (float)glyphCount;
             DrawScaledRect(cx - 2.0f, gy, 3.0f, 8.0f, Fade(color, fade * 0.8f));
         }
-    }
-}
-
-// ============================================================
-// WINDOW FRAME
-// ============================================================
-void DrawWindowFrame(float x, float y, float w, float h, 
-                     const char* title, 
-                     const WindowFrameOpts& opts) {
-    float t = (float)GetTime();
-    
-    // ---- Shadow ----
-    if (opts.showShadow) {
-        DrawScaledRect(x + 6, y + 6, w, h, Color{0, 0, 0, 80});
-    }
-    
-    // ---- Background ----
-    DrawScaledRect(x, y, w, h, COLOR_PANEL);
-    DrawScaledRectLines(x, y, w, h, opts.borderColor);
-    
-    // ---- Title Bar ----
-    if (opts.showTitleBar) {
-        float titleH = 30.0f;
-        DrawScaledRect(x, y, w, titleH, opts.titleColor);
-        DrawScaledLine(x, y + titleH, x + w, y + titleH, opts.borderColor);
-        DrawScaledText(title, x + 14, y + 7, 11, COLOR_BLACK);
-        
-        // Window controls (macOS style dots)
-        float btnSize = 12.0f;
-        float spacing = 8.0f;
-        float startX = x + w - 14.0f - btnSize - (btnSize + spacing) * 2;
-        float startY = y + 9.0f;
-        
-        // Red (close)
-        DrawScaledCircle(startX + btnSize/2, startY + btnSize/2, btnSize/2, {255, 95, 87, 200});
-        // Yellow (minimize)
-        DrawScaledCircle(startX + btnSize + spacing + btnSize/2, startY + btnSize/2, btnSize/2, {255, 200, 60, 200});
-        // Green (maximize)
-        DrawScaledCircle(startX + (btnSize + spacing) * 2 + btnSize/2, startY + btnSize/2, btnSize/2, {100, 210, 80, 200});
-    }
-    
-    // ---- Corner Reticles ----
-    if (opts.showCornerReticles) {
-        float retSize = opts.cornerSize;
-        float glowPulse = sinf(t * 2.5f) * 0.3f + 0.7f;
-        Color retCol = opts.borderColor;
-        retCol.a = (unsigned char)(glowPulse * 200 + 55);
-        
-        // Top-left
-        DrawScaledRect(x - 2, y - 2, retSize, 2, retCol);
-        DrawScaledRect(x - 2, y - 2, 2, retSize, retCol);
-        // Top-right
-        DrawScaledRect(x + w - retSize, y - 2, retSize, 2, retCol);
-        DrawScaledRect(x + w, y - 2, 2, retSize, retCol);
-        // Bottom-left
-        DrawScaledRect(x - 2, y + h, retSize, 2, retCol);
-        DrawScaledRect(x - 2, y + h - retSize, 2, retSize, retCol);
-        // Bottom-right
-        DrawScaledRect(x + w - retSize, y + h, retSize, 2, retCol);
-        DrawScaledRect(x + w, y + h - retSize, 2, retSize, retCol);
     }
 }

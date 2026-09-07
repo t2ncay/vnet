@@ -9,6 +9,10 @@
 static Texture2D g_cursorTexture = {0};
 static bool g_cursorLoaded = false;
 
+static RenderTexture2D g_crtTarget = {0};
+static bool g_crtTargetInit = false;
+static Shader g_crtShader = {0};
+
 extern GameState g_game;
 extern LoginScreen g_loginScreen;
 
@@ -65,8 +69,6 @@ void DrawCustomCursor(void) {
 // ============================================================
 void DrawUI(void) {
     ClearBackground(COLOR_BLACK);
-    
-    // Update jitter
     UpdateJitter(GetFrameTime());
 
     // ============================================================
@@ -95,6 +97,4 @@ void DrawUI(void) {
         snprintf(fpsText, sizeof(fpsText), "FPS: %d", g_game.currentFPS);
         DrawText(fpsText, 10, 10, 18, COLOR_TOXIC);
     }
-
-    DrawCustomCursor();
 }
