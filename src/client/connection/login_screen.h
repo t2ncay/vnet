@@ -30,6 +30,14 @@ struct LoginScreen {
     float loadingTimer;
     char loadingStatus[64];      // Current status text
     bool loadingComplete;        // true when connected
+
+    // ============================================================
+    // COMPLETION / OUTRO TRANSITION - NEW!
+    // Drives the smoothed handoff to the desktop inside
+    // DrawLoadingScreen once loadingComplete goes true, instead of
+    // the screen just getting hard-cut away by the caller.
+    // ============================================================
+    float completionTimer;       // seconds elapsed since loadingComplete became true
 };
 
 void InitLoginScreen(LoginScreen& login);

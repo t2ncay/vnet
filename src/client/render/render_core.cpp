@@ -81,7 +81,7 @@ void LoadAssets(void) {
         " !\"#$%&'()*+,-./0123456789:;<=>?@"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
         "abcdefghijklmnopqrstuvwxyz{|}~"
-        "°◈▶★✓✗║▓▒░⚙⚡⚠⏱";
+        "°◈▶★✓✗║▓▒░⚙⚡⚠⏱◄►⟳⌂";
 
     int codepointCount = 0;
     int* codepoints = LoadCodepoints(kExtraGlyphSample, &codepointCount);

@@ -1,9 +1,9 @@
 #include "../desktop.h"
 #include "../../render.h"
-#include "vnet.h"
+#include "../../../shared/vnet.h"
 #include "../../../shared/vnet_sites.h"
-#include "vnet_protocol.h"
-#include "vnet_client.h"
+#include "../../../shared/vnet_protocol.h"
+#include "../../vnet_client.h"
 
 void Desktop::DrawBrowserConnectionOverlay(float contentX, float contentY, float contentW, float contentH) {
     float t = (float)GetTime();

@@ -518,7 +518,306 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
             y += bh + 10.0f;
         }
 
-        // [COMMENT] - Already handled above
+        else if (StartsWith(raw, "[ANIMATE:")) {
+            std::string body, rest;
+            ParseTaggedField(raw, "[ANIMATE:", body, rest);
+            std::string type, speedStr;
+            SplitOnce(body, ':', type, speedStr);
+            
+            float speed = 1.0f;
+            try { speed = std::stof(speedStr); } catch (...) { speed = 1.0f; }
+            float t = (float)GetTime() * speed;
+            const char* txt = rest.c_str();
+            float fontSize = 12.0f;
+            
+            Color col = COLOR_GHOST;
+            
+            if (type == "glitch") {
+                float jx = sinf(t * 48.0f) * 1.5f;
+                float jy = cosf(t * 32.0f) * 0.8f;
+                DrawScaledText(txt, leftX + jx + 1.5f, y + jy - 0.5f, fontSize, Fade(COLOR_BLOOD, 0.7f));
+                DrawScaledText(txt, leftX + jx - 1.5f, y + jy + 0.5f, fontSize, Fade(COLOR_CYAN, 0.7f));
+                DrawScaledText(txt, leftX + jx, y + jy, fontSize, COLOR_GHOST);
+            }
+            else if (type == "pulse") {
+                float p = sinf(t * 3.0f) * 0.3f + 0.7f;
+                DrawScaledText(txt, leftX, y, fontSize, Fade(COLOR_TOXIC, p));
+            }
+            else if (type == "scan") {
+                float scanPos = fmodf(t * 100.0f, fontSize + 20.0f) - 20.0f;
+                // Draw with a scanning line effect
+                DrawScaledText(txt, leftX, y, fontSize, Fade(COLOR_GHOST, 0.3f));
+                // Draw bright scan line
+                float startX = leftX;
+                float endX = leftX + MeasureScaledTextWidth(txt, fontSize);
+                if (scanPos < fontSize) {
+                    DrawScaledRect(startX + scanPos * (endX - startX) / 40.0f, y, 4, fontSize * 0.8f, Fade(COLOR_CYAN, 0.8f));
+                }
+                DrawScaledText(txt, leftX, y, fontSize, COLOR_GHOST);
+            }
+            else if (type == "typewriter") {
+                int charCount = (int)(t * 8.0f) % (strlen(txt) + 1);
+                char display[256];
+                strncpy(display, txt, charCount);
+                display[charCount] = '\0';
+                DrawScaledText(display, leftX, y, fontSize, COLOR_TOXIC);
+                if (charCount < (int)strlen(txt)) {
+                    DrawScaledText("_", leftX + MeasureScaledTextWidth(display, fontSize), y, fontSize, COLOR_CYAN);
+                }
+            }
+            else {
+                DrawScaledText(txt, leftX, y, fontSize, COLOR_GHOST);
+            }
+            
+            y += lineH + 4.0f;
+        }
+
+        else if (StartsWith(raw, "[GLOW:")) {
+            std::string body, rest;
+            ParseTaggedField(raw, "[GLOW:", body, rest);
+            std::string colorName, sizeStr;
+            SplitOnce(body, ':', colorName, sizeStr);
+            
+            Color glowCol = COLOR_AMBER;
+            if (colorName == "BLOOD") glowCol = COLOR_BLOOD;
+            else if (colorName == "TOXIC") glowCol = COLOR_TOXIC;
+            else if (colorName == "CYAN") glowCol = COLOR_CYAN;
+            else if (colorName == "AMBER") glowCol = COLOR_AMBER;
+            
+            float glowSize = 8.0f;
+            try { glowSize = std::stof(sizeStr); } catch (...) { glowSize = 8.0f; }
+            const char* txt = rest.c_str();
+            float fontSize = 14.0f;
+            float textW = MeasureScaledTextWidth(txt, fontSize);
+            
+            // Multiple glow layers
+            for (int i = 3; i >= 1; i--) {
+                float alpha = 0.1f * (i / 3.0f);
+                DrawScaledText(txt, leftX - i, y - i, fontSize, Fade(glowCol, alpha));
+                DrawScaledText(txt, leftX + i, y + i, fontSize, Fade(glowCol, alpha));
+            }
+            DrawScaledText(txt, leftX, y, fontSize, glowCol);
+            
+            y += lineH + 6.0f;
+        }
+
+        else if (StartsWith(raw, "[TERMINAL]")) {
+            static std::vector<std::string> terminalBuffer;
+            static float terminalTimer = 0.0f;
+            static int terminalLine = 0;
+            
+            terminalTimer += GetFrameTime();
+            
+            const char* lines[] = {
+                "> Scanning network...",
+                "> 3 hosts found",
+                "> Establishing connection...",
+                "> Connection established",
+                "> Ready for commands"
+            };
+            int numLines = 5;
+            
+            float termX = leftX;
+            float termY = y;
+            float termW = 500.0f;
+            float termH = 80.0f + numLines * 18.0f;
+            
+            DrawScaledRect(termX, termY, termW, termH, COLOR_CLI_BG);
+            DrawScaledRectLines(termX, termY, termW, termH, COLOR_BORDER);
+            
+            for (int i = 0; i < numLines; i++) {
+                float ly = termY + 8.0f + i * 18.0f;
+                if (i <= terminalLine) {
+                    DrawScaledText(lines[i], termX + 12.0f, ly, 10, COLOR_TOXIC);
+                }
+            }
+            
+            // Blinking cursor
+            if ((int)(GetTime() * 2.0f) % 2 == 0) {
+                float cursorX = termX + 12.0f + MeasureScaledTextWidth(lines[terminalLine], 10);
+                float cursorY = termY + 8.0f + terminalLine * 18.0f;
+                DrawScaledRect(cursorX, cursorY, 6, 14, COLOR_TOXIC);
+            }
+            
+            if (terminalTimer > 0.8f && terminalLine < numLines - 1) {
+                terminalTimer = 0.0f;
+                terminalLine++;
+            }
+            
+            y += termH + 10.0f;
+        }
+
+        else if (StartsWith(raw, "[COUNTDOWN:")) {
+            std::string body, rest;
+            ParseTaggedField(raw, "[COUNTDOWN:", body, rest);
+            
+            float totalSeconds = 10.0f;
+            try { totalSeconds = std::stof(body); } catch (...) { totalSeconds = 10.0f; }
+            
+            static float countdownTimer = 0.0f;
+            static bool countdownActive = false;
+            static float countdownStart = 0.0f;
+            
+            if (!countdownActive) {
+                countdownActive = true;
+                countdownStart = (float)GetTime();
+            }
+            
+            float elapsed = (float)GetTime() - countdownStart;
+            float remaining = totalSeconds - elapsed;
+            
+            if (remaining < 0.0f) remaining = 0.0f;
+            
+            float pulse = sinf((float)GetTime() * 8.0f) * 0.3f + 0.7f;
+            char countStr[32];
+            if (remaining > 0.0f) {
+                snprintf(countStr, sizeof(countStr), "%.1f", remaining);
+            } else {
+                snprintf(countStr, sizeof(countStr), "GO!");
+                countdownActive = false;
+            }
+            
+            float fontSize = 48.0f;
+            float textW = MeasureScaledTextWidth(countStr, fontSize);
+            Color col = remaining < 3.0f ? COLOR_BLOOD : COLOR_TOXIC;
+            col.a = (unsigned char)(pulse * 200 + 55);
+            
+            // Glow effect
+            for (int i = 3; i >= 1; i--) {
+                DrawScaledText(countStr, leftX + textW/2 - i, y + fontSize/2 - i, fontSize, Fade(col, 0.1f * i));
+            }
+            DrawScaledText(countStr, leftX, y, fontSize, col);
+            
+            y += fontSize + 16.0f;
+        }
+
+        else if (StartsWith(raw, "[PROGRESS:")) {
+            std::string body, rest;
+            ParseTaggedField(raw, "[PROGRESS:", body, rest);
+            
+            std::string valStr, maxStr, label;
+            size_t pos1 = body.find(':');
+            size_t pos2 = body.find(':', pos1 + 1);
+            if (pos1 != std::string::npos && pos2 != std::string::npos) {
+                valStr = body.substr(0, pos1);
+                maxStr = body.substr(pos1 + 1, pos2 - pos1 - 1);
+                label = body.substr(pos2 + 1);
+            }
+            
+            float value = 0.0f, maxVal = 100.0f;
+            try { value = std::stof(valStr); } catch (...) { value = 0.0f; }
+            try { maxVal = std::stof(maxStr); } catch (...) { maxVal = 100.0f; }
+            
+            float ratio = value / maxVal;
+            if (ratio < 0.0f) ratio = 0.0f;
+            if (ratio > 1.0f) ratio = 1.0f;
+            
+            float barW = 400.0f;
+            float barH = 18.0f;
+            float barX = leftX;
+            float barY = y;
+            
+            DrawScaledRect(barX, barY, barW, barH, COLOR_BLACK);
+            DrawScaledRectLines(barX, barY, barW, barH, COLOR_BORDER);
+            
+            // Gradient fill
+            for (int x = 0; x < (int)(barW * ratio); x += 2) {
+                float progress = (float)x / barW;
+                unsigned char r = (unsigned char)(30 + progress * 200);
+                unsigned char g = (unsigned char)(200 - progress * 150);
+                unsigned char b = (unsigned char)(50 + progress * 50);
+                DrawScaledRect(barX + x, barY, 2, barH, {r, g, b, 255});
+            }
+            
+            // Label
+            char labelBuf[128];
+            snprintf(labelBuf, sizeof(labelBuf), "%s %.1f%%", label.c_str(), ratio * 100.0f);
+            DrawScaledText(labelBuf, barX + barW + 16.0f, barY + 2.0f, 10, COLOR_AMBER);
+            
+            y += barH + 12.0f;
+        }
+
+        else if (StartsWith(raw, "[SPECTRUM]")) {
+            const char* txt = raw.c_str() + 10; // Skip [SPECTRUM]
+            float t = (float)GetTime();
+            float fontSize = 14.0f;
+            
+            float x = leftX;
+            for (int i = 0; txt[i] != '\0'; i++) {
+                char c[2] = {txt[i], '\0'};
+                float hue = sinf(t * 0.5f + i * 0.3f) * 0.5f + 0.5f;
+                Color col = {
+                    (unsigned char)(255 * (0.5f + 0.5f * sinf(t * 0.8f + i * 0.4f))),
+                    (unsigned char)(255 * (0.5f + 0.5f * sinf(t * 0.7f + i * 0.3f + 2.0f))),
+                    (unsigned char)(255 * (0.5f + 0.5f * sinf(t * 0.6f + i * 0.2f + 4.0f))),
+                    255
+                };
+                float charW = MeasureScaledTextWidth(c, fontSize);
+                DrawScaledText(c, x, y, fontSize, col);
+                x += charW + 1.0f;
+            }
+            
+            y += lineH;
+        }
+
+        else if (StartsWith(raw, "[MATRIX]")) {
+            float mx = leftX;
+            float my = y;
+            float mw = 600.0f;
+            float mh = 120.0f;
+            
+            DrawScaledRect(mx, my, mw, mh, COLOR_BLACK);
+            DrawScaledRectLines(mx, my, mw, mh, COLOR_TOXIC);
+            
+            // Draw data stream
+            DrawDataStream(mx + 10, my + 10, mw - 20, mh - 20, COLOR_TOXIC, 20, 180.0f);
+            
+            // Header
+            DrawScaledText("MATRIX ACTIVE", mx + 10, my + 4, 9, COLOR_TOXIC);
+            
+            y += mh + 10.0f;
+        }
+
+        else if (StartsWith(raw, "[PANEL:")) {
+            std::string body, rest;
+            ParseTaggedField(raw, "[PANEL:", body, rest);
+            const char* title = body.c_str();
+            const char* content = rest.c_str();
+            
+            float pw = 500.0f;
+            float ph = 40.0f + 20.0f; // header + content estimate
+            float px = leftX;
+            float py = y;
+            
+            DrawScaledRect(px, py, pw, ph, COLOR_PANEL);
+            DrawScaledRectLines(px, py, pw, ph, COLOR_BORDER);
+            
+            // Title bar
+            DrawScaledRect(px, py, pw, 22.0f, COLOR_BLOOD);
+            DrawScaledText(title, px + 12, py + 4, 10, COLOR_BLACK);
+            
+            // Content
+            DrawScaledText(content, px + 12, py + 30.0f, 11, COLOR_GHOST);
+            
+            y += ph + 10.0f;
+        }
+
+        else if (StartsWith(raw, "[WAVE]")) {
+            const char* txt = raw.c_str() + 6;
+            float t = (float)GetTime();
+            float fontSize = 16.0f;
+            float x = leftX;
+            
+            for (int i = 0; txt[i] != '\0'; i++) {
+                char c[2] = {txt[i], '\0'};
+                float waveOffset = sinf(t * 2.0f + i * 0.4f) * 4.0f;
+                float charW = MeasureScaledTextWidth(c, fontSize);
+                DrawScaledText(c, x, y + waveOffset, fontSize, COLOR_CYAN);
+                x += charW + 1.0f;
+            }
+            
+            y += lineH + 6.0f;
+        }
 
         // Unknown/Unsupported tags
         else {
@@ -526,7 +825,6 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
             y += lineH;
         }
     }
-
     EndScissorMode();
 
     // Clamp scroll

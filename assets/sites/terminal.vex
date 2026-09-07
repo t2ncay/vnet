@@ -1,4 +1,4 @@
-[TITLE] MASTER DECRYPTION GATEWAY // THE KEYS TO THE KINGDOM
+[TITLE] MASTER DECRYPTION GATEWAY TERMINAL // CORE NODE #003
 [CATEGORY] core
 [MAP_X] 25
 [MAP_Y] 25
@@ -6,21 +6,27 @@
 [HACK_DIFFICULTY] 3.0
 
 [CONTENT]
-[TITLE] MASTER DECRYPTION GATEWAY TERMINAL // CORE NODE #003
+[GLOW:BLOOD:12]MASTER DECRYPTION GATEWAY TERMINAL // CORE NODE #003
 [HR]
 [BADGE:CORE NODE #003:BLOOD] [BADGE:CRYPTO GATEWAY:TOXIC]
+
 [ART:vnet]
+
 [TEXT]
 [BOX] +-----------------------------------------------------------------+
 [BOX] | SYSTEM ROLE: MASTER VFS ROOT DECRYPTION & COMMAND GATEWAY      |
 [BOX] | SECURITY LAYER: 8-FACTOR QUANTUM HASH SHIELD (VFS VAULT CORE) |
 [BOX] | ACCESS PROTOCOL: PARALLEL SLOT VERIFICATION VIA CLI HANDSHAKE   |
 [BOX] +-----------------------------------------------------------------+
+
+[PROGRESS:100:100:VFS_ROOT_GATEWAY_LOCKDOWN]
+
 [TEXT]
-[GAUGE:100:VFS_ROOT_GATEWAY_LOCKDOWN]
-[TEXT]
+[ANIMATE:pulse:2.0]⚠ ACTIVE THREAT: FEDERAL E-RAID DETECTED ON THIS NODE
+
 [SUBTITLE] CRYPTOGRAPHIC SLOT ALLOCATION MATRIX:
 [BADGE:VFS ROOT OVERRIDE:AMBER]
+
 [BOX] +-----------------------------------------------------------------+
 [BOX] | SLOT 01: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_1 REQ)    |
 [BOX] | SLOT 02: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_2 REQ)    |
@@ -31,34 +37,46 @@
 [BOX] | SLOT 07: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_7 REQ)    |
 [BOX] | SLOT 08: [████] (STATUS: ENCRYPTED HASH VECTOR // KEY_8 REQ)    |
 [BOX] +-----------------------------------------------------------------+
+
 [TEXT]
-[SUBTITLE] THE WHISTLEBLOWER'S GIFT (d34d_7dp):
-[TEXT] 'd34d_7dp was a senior systems architect at Vektra Corporation.'
-[TEXT] 'He had access to the master key allocation system. He watched'
-[TEXT] 'the 2014 blackout from the inside. He saw the cover-up.'
-[TEXT] 'He knew about the six agents before they were deployed.'
-[TEXT] 'In his final transmission, he wrote: "The keys are not codes.'
-[TEXT] 'They are memories. Each key unlocks a fragment of what happened'
-[TEXT] 'in the summer of 2014. Find them. Assemble them. And when you do,'
-[TEXT] 'the terminal will open. Not just the network—the truth."'
-[TEXT] 'He was executed by Directorate 7 two hours after sending that message.'
-[BLOOD] 'His body was never recovered. But his words are still here.'
-[PULSE] 'Waiting. For someone who can read between the bytes.'
+[PANEL:The Whistleblower's Gift (d34d_7dp)]
+[GLOW:CYAN:6]'d34d_7dp was a senior systems architect at Vektra Corporation.'
+[TEXT]'He had access to the master key allocation system. He watched'
+[TEXT]'the 2014 blackout from the inside. He saw the cover-up.'
+[TEXT]'He knew about the six agents before they were deployed.'
+[TEXT]
+[ANIMATE:typewriter:1.5]'In his final transmission, he wrote: "The keys are not codes.'
+[ANIMATE:typewriter:1.5]'They are memories. Each key unlocks a fragment of what happened'
+[ANIMATE:typewriter:1.5]'in the summer of 2014. Find them. Assemble them. And when you do,'
+[ANIMATE:typewriter:1.5]'the terminal will open. Not just the network—the truth."'
+[TEXT]
+[BLOOD]'He was executed by Directorate 7 two hours after sending that message.'
+[PULSE]'Waiting. For someone who can read between the bytes.'
+[/PANEL]
+
 [TEXT]
 [SUBTITLE] DIRECT VFS ROOT DECRYPTION PAYLOAD INJECTION:
-[TEXT] Enter all 8 exfiltrated key codes below or execute 'win <k1>..<k8>' in CLI [TAB]:
+[GLOW:AMBER:6]Enter all 8 exfiltrated key codes below or execute 'win <k1>..<k8>' in CLI [TAB]:
+
 [INPUT:terminal_key_payload:ENTER 8 KEYS SEPARATED BY SPACES]
 [TEXT]
-[BTN:execute_root_override:>>> EXECUTE MASTER VFS ROOT BREACH & OVERRIDE <<<]
+[GLOW:TOXIC:10]>>> EXECUTE MASTER VFS ROOT BREACH & OVERRIDE <<<
+[BTN:execute_root_override:⚡ BREACH TERMINAL & UNLOCK VFS ROOT ⚡]
+
 [TEXT]
 [BLOOD] OVERLOAD TACTIC: Executing 'overload terminal.vnet' in CLI [TAB] locks this core node.
 [PULSE] OVERLOADING ALL 5 CORE NODES (market, vault, terminal, crypto, hellroom)
 [GLITCH] WILL COLLAPSE THE VNET BACKBONE INTO A TOTAL GRID BLACKOUT WIN!
+
 [TEXT]
+[COUNTDOWN:15]
 [SUBTITLE] ALTERNATIVE VICTORY PATHWAYS:
 [TEXT] - Economic Takeover: Mine 25.0 VCOIN and execute 'takeover' in CLI [TAB].
 [TEXT] - Grid Blackout: Coordinate with peers to overload all 5 mutual core nodes.
 [HR]
+[WAVE]THE SIGNAL IS ALIVE...
+[SPECTRUM]DECRYPTION GATEWAY ACTIVE // AWAITING KEYS
+
 [LINK:vault.vnet] >> ACCESS CORRUPTED VFS DATA VAULT
 [LINK:vnet.dir] << CLOSE GATEWAY & RETURN TO DIRECTORY
 [HR]
