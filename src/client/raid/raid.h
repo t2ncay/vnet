@@ -61,6 +61,9 @@ void HandleRaidCLIInput(char* buffer);
 // Commands
 void ProcessRaidCommand(const char* token, const char* args, const char* cmd);
 
+void DrawNetworkVisualization(float x, float y, float w, float h);
+void UpdateRaidSequence(float dt);
+
 // ============================================================
 // RAID TARGET FILES (for BURN minigame)
 // ============================================================
