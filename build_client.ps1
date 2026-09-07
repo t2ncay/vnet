@@ -1,41 +1,74 @@
 # ============================================================
-# VNET CLIENT - Build Script v3.0 (Recursive Source Discovery)
+# VNET CLIENT - Fast Parallel Build Script v5.1
 # VEKTRAOS v9.5 CYBERWARFARE ENGINE
 # ============================================================
 
-# Color functions
-function Write-Success { Write-Host "✅ $($args[0])" -ForegroundColor Green }
-function Write-Error { Write-Host "❌ $($args[0])" -ForegroundColor Red }
-function Write-Warning { Write-Host "⚠️ $($args[0])" -ForegroundColor Yellow }
-function Write-Info { Write-Host "ℹ️ $($args[0])" -ForegroundColor Cyan }
-function Write-Header { Write-Host "`n╔═══════════════════════════════════════════════════════╗" -ForegroundColor Magenta; Write-Host "║ $($args[0])" -ForegroundColor Magenta; Write-Host "╚═══════════════════════════════════════════════════════╝`n" -ForegroundColor Magenta }
+# ---- COLOR PALETTE ----
+$COLOR_BLACK   = "Black"
+$COLOR_PANEL   = "DarkGray"
+$COLOR_BLOOD   = "Red"
+$COLOR_CYAN    = "Cyan"
+$COLOR_AMBER   = "Yellow"
+$COLOR_TOXIC   = "Green"
+$COLOR_GHOST   = "Gray"
+$COLOR_PURPLE  = "Magenta"
+$COLOR_WHITE   = "White"
 
-# Progress bar function
-function Write-ProgressBar {
-    param(
-        [string]$Activity,
-        [int]$Current,
-        [int]$Total,
-        [string]$Status = ""
-    )
-    $percent = ($Current / $Total) * 100
-    $barLength = 40
-    $filled = [int](($percent / 100) * $barLength)
-    $empty = $barLength - $filled
-    $bar = "█" * $filled + "░" * $empty
-    Write-Host -NoNewline "`r  $Activity [$bar] $([math]::Round($percent, 1))% $Status" -ForegroundColor Cyan
+# ---- EMOJI FALLBACK (using surrogate pairs or text replacements) ----
+$CHECK  = "$([char]0x2714)"  # ✓
+$CROSS  = "$([char]0x2718)"  # ✘
+$WARN   = "$([char]0x26A0)"  # ⚠
+$INFO   = "$([char]0x2139)"  # ℹ
+$FOLDER = "📁"               # Use direct Unicode (works in PS7)
+$GEAR   = "⚙"
+$CLOCK  = "⏰"
+$BOLT   = "⚡"
+$SCALE  = "⚖️"
+$ROCKET = "🚀"
+$GAME   = "🎮"
+
+# ---- COLOR FUNCTIONS ----
+function Write-Success { Write-Host "  $CHECK $($args[0])" -ForegroundColor $COLOR_TOXIC }
+function Write-Error { Write-Host "  $CROSS $($args[0])" -ForegroundColor $COLOR_BLOOD }
+function Write-Warning { Write-Host "  $WARN $($args[0])" -ForegroundColor $COLOR_AMBER }
+function Write-Info { Write-Host "  $INFO $($args[0])" -ForegroundColor $COLOR_CYAN }
+function Write-Section { Write-Host "`n  ═══ $($args[0]) ═══" -ForegroundColor $COLOR_PURPLE }
+
+# ---- HEADER WITH ASCII ART ----
+function Write-Header {
+    Clear-Host
+    Write-Host ""
+    Write-Host "  ╔═══════════════════════════════════════════════════════════════╗" -ForegroundColor $COLOR_PURPLE
+    Write-Host "  ║                                                               ║" -ForegroundColor $COLOR_PURPLE
+    Write-Host "  ║   ██╗   ██╗███████╗██╗  ██╗████████╗██████╗  █████╗          ║" -ForegroundColor $COLOR_CYAN
+    Write-Host "  ║   ██║   ██║██╔════╝██║ ██╔╝╚══██╔══╝██╔══██╗██╔══██╗         ║" -ForegroundColor $COLOR_CYAN
+    Write-Host "  ║   ██║   ██║█████╗  █████╔╝    ██║   ██████╔╝███████║         ║" -ForegroundColor $COLOR_CYAN
+    Write-Host "  ║   ╚██╗ ██╔╝██╔══╝  ██╔═██╗    ██║   ██╔══██╗██╔══██║         ║" -ForegroundColor $COLOR_CYAN
+    Write-Host "  ║    ╚████╔╝ ███████╗██║  ██╗   ██║   ██║  ██║██║  ██║         ║" -ForegroundColor $COLOR_CYAN
+    Write-Host "  ║     ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝         ║" -ForegroundColor $COLOR_CYAN
+    Write-Host "  ║                                                               ║" -ForegroundColor $COLOR_PURPLE
+    Write-Host "  ║        ██████╗ ██████╗ ██╗     ██████╗                         ║" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ║       ██╔════╝██╔═══██╗██║     ╚════██╗                        ║" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ║       ██║     ██║   ██║██║      █████╔╝                        ║" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ║       ██║     ██║   ██║██║     ██╔═══╝                         ║" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ║       ╚██████╗╚██████╔╝███████╗███████╗                        ║" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ║        ╚═════╝ ╚═════╝ ╚══════╝╚══════╝                        ║" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ║                                                               ║" -ForegroundColor $COLOR_PURPLE
+    Write-Host "  ║         COLD SIGNAL // CYBER OPERATIONS v9.5                  ║" -ForegroundColor $COLOR_AMBER
+    Write-Host "  ║         FAST PARALLEL BUILD SYSTEM v5.1                       ║" -ForegroundColor $COLOR_GHOST
+    Write-Host "  ║                                                               ║" -ForegroundColor $COLOR_PURPLE
+    Write-Host "  ╚═══════════════════════════════════════════════════════════════╝" -ForegroundColor $COLOR_PURPLE
+    Write-Host ""
 }
 
 # ============================================================
-# HEADER
+# MAIN EXECUTION
 # ============================================================
 
-Clear-Host
-Write-Header "VNET CLIENT - BUILD SYSTEM v3.0 (RECURSIVE SOURCE DISCOVERY)"
+Write-Header
 
-# ============================================================
-# PROJECT SETUP
-# ============================================================
+# ---- PROJECT SETUP ----
+Write-Section "INITIALIZING BUILD ENVIRONMENT"
 
 $projectDir = "C:\Users\Admin\Desktop\Tuncay\Game Projects\vnet"
 if (-not (Test-Path $projectDir)) {
@@ -44,173 +77,85 @@ if (-not (Test-Path $projectDir)) {
 }
 
 Set-Location $projectDir
-Write-Info "Project directory: $projectDir"
+Write-Info "Project root: $projectDir"
 
-# ============================================================
-# CHECK DEPENDENCIES
-# ============================================================
+# ---- DEPENDENCY CHECK ----
+Write-Section "VERIFYING DEPENDENCIES"
 
-Write-Header "CHECKING DEPENDENCIES"
-
-# Check g++
 $gpp = Get-Command g++ -ErrorAction SilentlyContinue
 if (-not $gpp) {
     Write-Error "g++ not found! Please install MinGW."
-    Write-Warning "Download from: https://www.mingw-w64.org/"
+    Write-Host "  Download: https://www.mingw-w64.org/" -ForegroundColor $COLOR_GHOST
     exit 1
 }
 Write-Success "Compiler: $($gpp.Source)"
 
-# Check raylib
-if (Test-Path "vendor/raylib/include/raylib.h") {
-    Write-Success "Raylib header: vendor/raylib/include/raylib.h"
-} else {
+if (-not (Test-Path "vendor/raylib/include/raylib.h")) {
     Write-Error "Raylib header not found!"
     exit 1
 }
+Write-Success "Raylib header: vendor/raylib/include/raylib.h"
 
 if (Test-Path "vendor/raylib/lib/libraylib.a") {
     Write-Success "Raylib library: vendor/raylib/lib/libraylib.a"
 } elseif (Test-Path "vendor/raylib/lib/raylib.lib") {
     Write-Success "Raylib library: vendor/raylib/lib/raylib.lib"
 } else {
-    Write-Error "Raylib library not found!"
-    exit 1
+    Write-Warning "Raylib library not found, will use dynamic linking"
 }
 
-# Check font
-if (Test-Path "assets/VCR_OSD_MONO_1.001.ttf") {
-    Write-Success "VCR font: assets/VCR_OSD_MONO_1.001.ttf"
+if (Test-Path "assets/fonts/JetBrainsMono-Bold.ttf") {
+    Write-Success "Font: assets/fonts/JetBrainsMono-Bold.ttf"
 } else {
-    Write-Warning "VCR font not found at assets/VCR_OSD_MONO_1.001.ttf"
-    Write-Info "Using default font"
+    Write-Warning "JetBrains font not found, using default"
 }
 
-# ============================================================
-# RECURSIVE SOURCE FILE DISCOVERY - FIXED DUPLICATES
-# ============================================================
+# ---- SOURCE DISCOVERY ----
+Write-Section "SCANNING SOURCE FILES"
 
-Write-Header "RECURSIVE SOURCE DISCOVERY"
-
-# Find ALL .cpp files recursively in src/
-Write-Info "Scanning src/ directory recursively..."
-
-# Get all .cpp files, excluding temporary/build files
 $allCppFiles = Get-ChildItem -Path "src" -Recurse -Filter "*.cpp" | 
                Where-Object { $_.FullName -notmatch "build" -and $_.FullName -notmatch "temp" } |
                ForEach-Object { $_.FullName }
 
-# Filter files - keep only those we want to compile
-# Exclude: server files (they're separate)
-$excludePatterns = @(
-    "src\\server\\",
-    "src\\tools\\",
-    "src\\test\\"
-)
-
 $clientSources = @()
 foreach ($file in $allCppFiles) {
-    $shouldExclude = $false
-    foreach ($pattern in $excludePatterns) {
-        if ($file -match $pattern) {
-            $shouldExclude = $true
-            break
-        }
-    }
-    if (-not $shouldExclude) {
+    if ($file -notmatch "src\\server\\" -and 
+        $file -notmatch "src\\tools\\" -and 
+        $file -notmatch "src\\test\\") {
         $clientSources += $file
     }
 }
 
-# ============================================================
-# CRITICAL FIX: Remove duplicates!
-# ============================================================
-$clientSources = $clientSources | Select-Object -Unique
+Write-Success "Found $($clientSources.Count) source files"
 
-# Convert to relative paths for cleaner display
-$relativeSources = @()
-foreach ($file in $clientSources) {
-    $relative = $file.Replace("$projectDir\", "")
-    $relativeSources += $relative
-}
-
-# Display discovered files
-Write-Success "Found $($clientSources.Count) source files:"
-Write-Host ""
-Write-Host "  ┌─────────────────────────────────────────────────────────────┐" -ForegroundColor Cyan
-foreach ($src in $relativeSources | Sort-Object) {
-    Write-Host "  │  $src" -ForegroundColor Gray
-}
-Write-Host "  └─────────────────────────────────────────────────────────────┘" -ForegroundColor Cyan
-Write-Host ""
-
-# Show breakdown by directory
-$dirGroups = $relativeSources | ForEach-Object { 
+# Show breakdown
+$dirGroups = $clientSources | ForEach-Object { 
     $dir = Split-Path $_ -Parent
+    $dir = $dir -replace ".*\\src\\", ""
     if ($dir -eq "") { "root" } else { $dir }
 } | Group-Object | Sort-Object Count -Descending
 
-Write-Host "  📁 Source file breakdown:"
+Write-Host ""
+Write-Host "  📁 Source breakdown:" -ForegroundColor $COLOR_CYAN
 foreach ($group in $dirGroups) {
-    Write-Host "    ├─ $($group.Name) : $($group.Count) files" -ForegroundColor Green
+    $barLength = [math]::Min(30, $group.Count * 2)
+    $bar = "█" * $barLength
+    Write-Host "    $($group.Name.PadRight(30)) $bar $($group.Count) files" -ForegroundColor $COLOR_GHOST
 }
 Write-Host ""
 
-# ============================================================
-# VERIFY ESSENTIAL FILES - FIXED PATHS
-# ============================================================
-
-Write-Info "Verifying essential source files..."
-
-$essentialFiles = @(
-    "src\client\main.cpp",
-    "src\client\desktop\desktop.cpp",
-    "src\client\desktop\desktop.h",
-    "src\shared\vnet.cpp",
-    "src\shared\vex_parser.cpp",
-    "src\shared\vnet_sites.cpp"
-)
-
-$missingEssential = $false
-foreach ($file in $essentialFiles) {
-    if (-not (Test-Path $file)) {
-        Write-Error "Essential file missing: $file"
-        $missingEssential = $true
-    } else {
-        Write-Success "Found: $file"
-    }
-}
-
-if ($missingEssential) {
-    Write-Error "Essential source files missing!"
-    Write-Info "Make sure you've moved desktop.cpp/h to src/client/desktop/"
-    exit 1
-}
-
-# ============================================================
-# BUILD CLIENT
-# ============================================================
-
-Write-Header "BUILDING VNET CLIENT"
-
-# Create build directory
+# ---- BUILD DIRECTORY ----
 if (Test-Path "build_client") {
-    Write-Info "Cleaning build directory..."
+    Write-Info "Cleaning previous build..."
     Remove-Item -Recurse -Force "build_client" -ErrorAction SilentlyContinue
 }
 New-Item -ItemType Directory -Path "build_client" -Force | Out-Null
-Write-Success "Build directory created"
+Write-Success "Build directory: build_client/"
 
-# ============================================================
-# INCLUDE PATHS AND DEFINES
-# ============================================================
-
+# ---- INCLUDE PATHS ----
 $projectDirAbs = (Get-Location).Path
 $raylibInclude = "$projectDirAbs/vendor/raylib/include"
 $raylibLib = "$projectDirAbs/vendor/raylib/lib"
-
-Write-Info "Raylib include: $raylibInclude"
-Write-Info "Raylib lib: $raylibLib"
 
 $includeDirs = @(
     "-I$projectDirAbs",
@@ -219,6 +164,8 @@ $includeDirs = @(
     "-I$projectDirAbs/src/client/desktop/apps",
     "-I$projectDirAbs/src/client/desktop/apps/vdec",
     "-I$projectDirAbs/src/client/desktop/settings",
+    "-I$projectDirAbs/src/client/connection",
+    "-I$projectDirAbs/src/client/raid",
     "-I$projectDirAbs/src/shared",
     "-I$projectDirAbs/src/lib",
     "-I$raylibInclude"
@@ -230,77 +177,100 @@ $defines = @(
     "-D_WIN32_WINNT=0x0600"
 )
 
-# ============================================================
-# COMPILE ALL SOURCE FILES
-# ============================================================
+$compileBase = @(
+    "-std=c++17",
+    "-O3",
+    "-g",
+    "-Wall",
+    "-Wextra"
+) + $includeDirs + $defines
 
-Write-Host "`n"
-Write-Host "  ╔═══════════════════════════════════════════════════════════════╗" -ForegroundColor Yellow
-Write-Host "  ║  🔨 COMPILING $($clientSources.Count) SOURCE FILES  ║" -ForegroundColor Yellow
-Write-Host "  ╚═══════════════════════════════════════════════════════════════╝" -ForegroundColor Yellow
-Write-Host ""
+# ---- PARALLEL COMPILATION ----
+Write-Section "PARALLEL COMPILATION"
+
+$maxJobs = [Environment]::ProcessorCount
+if ($maxJobs -gt 8) { $maxJobs = 8 }
+Write-Info "Using $maxJobs parallel jobs ($([Environment]::ProcessorCount) cores available)"
 
 $objectFiles = @()
 $failedFiles = @()
 $totalFiles = $clientSources.Count
-$i = 0
+$jobs = @()
+$completed = 0
+$startTime = Get-Date
+
+Write-Host ""
+Write-Host "  ╔═══════════════════════════════════════════════════════════════════╗" -ForegroundColor $COLOR_AMBER
+Write-Host "  ║  🔨 COMPILING $totalFiles SOURCE FILES ($maxJobs parallel)  ║" -ForegroundColor $COLOR_AMBER
+Write-Host "  ╚═══════════════════════════════════════════════════════════════════╝" -ForegroundColor $COLOR_AMBER
+Write-Host ""
 
 foreach ($src in $clientSources) {
-    $i++
-    $relativePath = $src.Replace("$projectDir\", "")
+    $relativePath = $src.Replace("$projectDirAbs\", "")
     $safeName = $relativePath -replace '[/\\:\. ]', '_'
     $obj = "build_client\$safeName.o"
     $filename = Split-Path $relativePath -Leaf
-    $directory = Split-Path $relativePath -Parent
-
-    Write-ProgressBar -Activity "Compiling Client" -Current $i -Total $totalFiles -Status "$filename ($directory)"
-
-    $compileArgs = @(
-        "-std=c++17",
-        "-O3",
-        "-g",
-        "-Wall",
-        "-Wextra"
-    ) + $includeDirs + $defines + @(
-        "-c",
-        $src,
-        "-o",
-        $obj
-    )
-
-    $output = & g++ @compileArgs 2>&1
-    $exitCode = $LASTEXITCODE
-
-    if ($exitCode -ne 0) {
-        $failedFiles += $filename
-        Write-Host "`n  ❌ $filename - FAILED" -ForegroundColor Red
-        $output | ForEach-Object { Write-Host "     $_" -ForegroundColor Red }
-    } else {
-        $objectFiles += $obj
+    
+    $scriptBlock = {
+        param($srcFile, $objFile, $compileArgs, $filename)
+        $output = & g++ @compileArgs -c $srcFile -o $objFile 2>&1
+        $exitCode = $LASTEXITCODE
+        return @{
+            success = ($exitCode -eq 0)
+            filename = $filename
+            output = $output
+            objFile = $objFile
+        }
     }
+    
+    $jobArgs = @($src, $obj, $compileBase, $filename)
+    $jobs += Start-Job -ScriptBlock $scriptBlock -ArgumentList $jobArgs
+}
+
+while ($jobs.Count -gt 0) {
+    $completedJobs = $jobs | Where-Object { $_.State -eq 'Completed' -or $_.State -eq 'Failed' }
+    foreach ($job in $completedJobs) {
+        $result = Receive-Job -Job $job
+        $jobs = $jobs | Where-Object { $_ -ne $job }
+        Remove-Job -Job $job
+        
+        if ($result.success) {
+            $objectFiles += $result.objFile
+            Write-Host "  $CHECK $($result.filename)" -ForegroundColor $COLOR_TOXIC
+        } else {
+            $failedFiles += $result.filename
+            Write-Host "  $CROSS $($result.filename) - FAILED" -ForegroundColor $COLOR_BLOOD
+            if ($result.output) {
+                $result.output | ForEach-Object { Write-Host "     $_" -ForegroundColor $COLOR_GHOST }
+            }
+        }
+        $completed++
+        
+        $percent = [math]::Round(($completed / $totalFiles) * 100, 1)
+        $elapsed = [math]::Round(((Get-Date) - $startTime).TotalSeconds, 1)
+        Write-Host -NoNewline "`r  Progress: $percent% ($completed/$totalFiles) | Elapsed: ${elapsed}s" -ForegroundColor $COLOR_CYAN
+    }
+    Start-Sleep -Milliseconds 100
 }
 
 Write-Host "`n"
 
 if ($failedFiles.Count -gt 0) {
     Write-Error "Compilation failed on $($failedFiles.Count) file(s):"
-    foreach ($f in $failedFiles) {
-        Write-Host "  - $f" -ForegroundColor Red
-    }
+    foreach ($f in $failedFiles) { Write-Host "  - $f" -ForegroundColor $COLOR_BLOOD }
     exit 1
 }
 
-Write-Success "All $totalFiles files compiled successfully!"
+$compileTime = [math]::Round(((Get-Date) - $startTime).TotalSeconds, 1)
+Write-Success "All $totalFiles files compiled successfully in ${compileTime}s"
 
-# ============================================================
-# LINKING CLIENT
-# ============================================================
-
-Write-Header "LINKING CLIENT"
+# ---- LINKING ----
+Write-Section "LINKING EXECUTABLE"
 
 Write-Info "Linking $($objectFiles.Count) object files..."
 
-# Try standard linking
+$linkStart = Get-Date
+
 $linkArgs = @(
     "-o", "vnet_client.exe"
 ) + $objectFiles + @(
@@ -315,15 +285,11 @@ $linkArgs = @(
     "-lm"
 )
 
-Write-Info "Linking..."
 $linkOutput = & g++ @linkArgs 2>&1
 $linkExit = $LASTEXITCODE
 
-# If standard linking fails, try direct library path
 if ($linkExit -ne 0) {
-    Write-Warning "First link attempt failed, trying alternative library linking..."
-    $linkOutput | ForEach-Object { Write-Host "  $_" -ForegroundColor Yellow }
-
+    Write-Warning "First link attempt failed, trying direct library..."
     $linkArgs2 = @(
         "-o", "vnet_client.exe"
     ) + $objectFiles + @(
@@ -342,61 +308,62 @@ if ($linkExit -ne 0) {
 
 if ($linkExit -ne 0) {
     Write-Error "Linking failed!"
-    $linkOutput | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+    $linkOutput | ForEach-Object { Write-Host "  $_" -ForegroundColor $COLOR_BLOOD }
     exit 1
 }
 
-Write-Success "Linking successful!"
+$linkTime = [math]::Round(((Get-Date) - $linkStart).TotalSeconds, 1)
+Write-Success "Linking successful in ${linkTime}s"
 
-# ============================================================
-# POST-BUILD
-# ============================================================
+# ---- POST-BUILD ----
+Write-Section "POST-BUILD"
 
-Write-Header "POST-BUILD"
-
-# Clean up object files
-Write-Info "Cleaning up object files..."
 Remove-Item -Path "build_client\*.o" -ErrorAction SilentlyContinue
-Write-Success "Cleanup complete"
+Write-Info "Cleaned object files"
 
-# Copy raylib.dll if it exists
 if (Test-Path "vendor/raylib/lib/raylib.dll") {
     Copy-Item "vendor/raylib/lib/raylib.dll" -Destination "." -Force
     Write-Success "Copied raylib.dll"
 }
 
-# ============================================================
-# SUMMARY
-# ============================================================
+# ---- SUMMARY ----
+Write-Section "BUILD SUMMARY"
 
-Write-Header "BUILD SUMMARY"
+$totalTime = [math]::Round(((Get-Date) - $startTime).TotalSeconds, 1)
 
 if (Test-Path "vnet_client.exe") {
     $size = [math]::Round((Get-Item vnet_client.exe).Length / 1KB, 2)
-    Write-Success "✅ Client executable: $projectDir\vnet_client.exe"
-    Write-Info "📦 Output size: $size KB"
-    Write-Info "📁 Source files compiled: $($clientSources.Count)"
-    Write-Info "🕐 Build time: $(Get-Date -Format 'HH:mm:ss')"
-    Write-Success "🎉 Client build completed successfully!"
+    
+    Write-Host ""
+    Write-Host "  ╔═══════════════════════════════════════════════════════════════════╗" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ║                         BUILD SUCCESSFUL!                        ║" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ╠═══════════════════════════════════════════════════════════════════╣" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ║  $FOLDER Executable : vnet_client.exe                     ║" -ForegroundColor $COLOR_WHITE
+    Write-Host "  ║  $GEAR Size        : $size KB                              ║" -ForegroundColor $COLOR_WHITE
+    Write-Host "  ║  $INFO Files       : $totalFiles sources                   ║" -ForegroundColor $COLOR_WHITE
+    Write-Host "  ║  $BOLT Parallel    : $maxJobs jobs                         ║" -ForegroundColor $COLOR_WHITE
+    Write-Host "  ║  $CLOCK Time       : ${totalTime}s total                   ║" -ForegroundColor $COLOR_WHITE
+    Write-Host "  ║  $SCALE Status     : $CHECK READY TO RUN         ║" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ╚═══════════════════════════════════════════════════════════════════╝" -ForegroundColor $COLOR_TOXIC
+    Write-Host ""
 } else {
-    Write-Error "❌ Build failed - executable not found!"
+    Write-Error "Build failed - executable not found!"
     exit 1
 }
 
-# ============================================================
-# RUN CLIENT
-# ============================================================
+# ---- RUN PROMPT ----
+Write-Section "READY TO LAUNCH"
 
-Write-Header "RUNNING VNET CLIENT"
-
-Write-Host "┌─────────────────────────────────────────────────────────────────┐" -ForegroundColor Magenta
-Write-Host "│  🚀 Press any key to launch the client, or close this window. │" -ForegroundColor Cyan
-Write-Host "└─────────────────────────────────────────────────────────────────┘" -ForegroundColor Magenta
+Write-Host ""
+Write-Host "  ┌─────────────────────────────────────────────────────────────────────┐" -ForegroundColor $COLOR_PURPLE
+Write-Host "  │  $ROCKET Press any key to launch the client, or close this window.  │" -ForegroundColor $COLOR_CYAN
+Write-Host "  └─────────────────────────────────────────────────────────────────────┘" -ForegroundColor $COLOR_PURPLE
 Write-Host ""
 
 $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 if ($key) {
-    Write-Host "🎮 Launching VNET Client..." -ForegroundColor Green
+    Write-Host ""
+    Write-Host "  $GAME Launching VNET Client..." -ForegroundColor $COLOR_TOXIC
     Write-Host ""
     .\vnet_client.exe
 }
