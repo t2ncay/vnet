@@ -39,6 +39,11 @@ struct NetNode {
     bool discovered;
     float pulsePhase;
     float rotationAngle;
+
+    bool isCollectible;
+    bool isHostile;
+    float attackCooldown;
+    float scanRevealTimer; 
 };
 
 // ============================================================
@@ -58,6 +63,13 @@ struct NetPlayer {
     bool onGround;
     bool moving;
     float walkCycle;
+    int health;
+    int maxHealth;
+    int shield;
+    int maxShield;
+    float shieldRegenTimer;
+    bool isScanning;
+    float scanRange;
 };
 
 // ============================================================
@@ -94,6 +106,9 @@ struct NetWorld {
     
     // Glitch transition
     float transitionGlitchTimer;
+
+    bool showBloom;
+    float bloomIntensity;
 };
 
 // ============================================================
@@ -133,6 +148,7 @@ void ApplyNetWorldPBR(Camera3D camera);
 void EndNetWorldPBR(void);
 
 // Rendering
+void DrawTransitionOverlay(void);
 void DrawNetWorldScene(void);
 void DrawNetTerrain(void);
 void DrawNetNodes(void);
@@ -143,6 +159,7 @@ void DrawDataRings(void);
 void DrawWireSphere(Vector3 position, float radius, Color color, int rings = 12, int segments = 12);
 void DrawNetUI(void);
 void DrawNetMinimap(void);
+void DrawCyberSkybox(void);
 void LoadNetWorldShader(void);
 void UnloadNetWorldShader(void);
 void ApplyNetWorldShader(void);

@@ -1,6 +1,7 @@
 #include "networld.h"
 #include "../render.h"
 #include "../game.h"
+#include "raymath.h"
 #include <cmath>
 
 // ============================================================
@@ -37,7 +38,7 @@ const int MAX_DASHES = 1;
 // Mouse Look
 // Radians of yaw/pitch per pixel of raw mouse delta. Tuned for
 // DisableCursor()'s raw relative-motion mode (set in EnterNetWorld()).
-const float MOUSE_SENSITIVITY = 0.0035f;
+const float MOUSE_SENSITIVITY = 0.0015f;
 // Clamp pitch just short of +/-90 degrees so the look direction never
 // flips past straight up/down (which would invert yaw controls).
 const float PITCH_LIMIT = 1.45f;
@@ -355,6 +356,24 @@ void ApplyNetPhysics(float dt) {
             if (velDot < 0) {
                 vel.x -= 1.0f * velDot * normal.x;
                 vel.z -= 1.0f * velDot * normal.z;
+            }
+        }
+    }
+
+    if (g_physics.isDashing) {
+        for (auto& node : g_netWorld.nodes) {
+            if (node.type == NodeType::ENEMY && node.active) {
+                float d = Vector3Distance(pos, node.position);
+                if (d < node.radius + 0.8f) {
+                    node.active = false;
+                    node.color = {0.2f,0.2f,0.2f};
+                    g_player.vcoin += 0.5f;
+                    TriggerGlitch(0.5f);
+                    // Bounce back
+                    vel.x = -vel.x * 0.5f;
+                    vel.z = -vel.z * 0.5f;
+                    // Give brief invincibility? Not implemented.
+                }
             }
         }
     }

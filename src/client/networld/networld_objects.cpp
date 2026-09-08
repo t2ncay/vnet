@@ -109,9 +109,31 @@ void GenerateNetWorld(void) {
         dataNode.rotationAngle = 0.0f;
         g_netWorld.nodes.push_back(dataNode);
     }
+
+    // FRAGNODES
+    const char* fragNames[] = {"FRAG_A", "FRAG_B", "FRAG_C", "FRAG_D", "FRAG_E"};
+    for (int i = 0; i < 5; i++) {
+        float angle = (i * 1.2f) + 2.0f;
+        float radius = 18.0f + (i * 2.0f);
+        float x = cosf(angle) * radius;
+        float z = sinf(angle) * radius;
+        NetNode frag;
+        frag.type = NodeType::DATA_NODE;
+        frag.id = "frag_" + std::to_string(i);
+        frag.label = fragNames[i];
+        frag.position = {x, 0.6f, z};
+        frag.spawnPosition = frag.position;
+        frag.color = {0.8f, 0.8f, 0.2f}; // gold
+        frag.radius = 0.4f;
+        frag.active = true;
+        frag.discovered = false;
+        frag.isCollectible = true;
+        frag.pulsePhase = (float)i * 2.1f;
+        g_netWorld.nodes.push_back(frag);
+    }
     
     // ---- ENEMY NODES (glitch bots) ----
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 5; i++) {
         float angle = (i * 2.1f) + 1.2f;
         float radius = 20.0f + (rand() % 100) / 100.0f * 10.0f;
         

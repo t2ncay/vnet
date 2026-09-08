@@ -182,64 +182,17 @@ static void DrawGlitchedCube(const GlitchCube& cube, float time) {
 void DrawNetWorld(void) {
     if (!g_netWorld.active) return;
     
-    // Init glitch cubes if needed
+    // Init glitch cubes and effects if needed
     if (!g_glitchCubesInit) {
         InitGlitchCubes();
     }
-    // Init the persistent particle / data-stream buffers if needed
     if (!g_netEffectsInit) {
         InitNetEffects();
     }
     
-    // ---- GLITCH TRANSITION OVERLAY ----
+    // ---- GLITCH TRANSITION OVERLAY (CINEMATIC) ----
     if (g_netWorld.state == NetWorldState::ENTERING || g_netWorld.state == NetWorldState::EXITING) {
-        float intensity = g_netWorld.glitchIntensity;
-        
-        unsigned char alpha = (unsigned char)(intensity * 200);
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, alpha});
-        
-        for (int i = 0; i < (int)(intensity * 20); i++) {
-            int y = rand() % GetScreenHeight();
-            int h = 2 + rand() % 8;
-            int alpha2 = (int)(intensity * 150);
-            DrawRectangle(0, y, GetScreenWidth(), h, {220, 20, 40, (unsigned char)alpha2});
-        }
-        
-        float scanLineOffset = g_netWorld.scanlineOffset;
-        for (int y = 0; y < GetScreenHeight(); y += 4) {
-            float scanY = y + fmodf(scanLineOffset, 4.0f);
-            DrawRectangle(0, (int)scanY, GetScreenWidth(), 1, {0, 0, 0, (unsigned char)(intensity * 20)});
-        }
-        
-        if (g_netWorld.state == NetWorldState::ENTERING) {
-            float progress = g_netWorld.stateTimer / g_netWorld.transitionDuration;
-            int w = GetScreenWidth();
-            int h = GetScreenHeight();
-            
-            const char* messages[] = {
-                "INITIALIZING CYBERSPACE...",
-                "MAPPING NEURAL TOPOLOGY...",
-                "SYNCHRONIZING WITH VNET...",
-                "JACKING IN..."
-            };
-            int msgIdx = (int)(progress * 4) % 4;
-            
-            int fontSize = 24;
-            int tw = MeasureText(messages[msgIdx], fontSize);
-            int tx = (w - tw) / 2;
-            int ty = h / 2 + 60;
-            
-            Color textCol = {40, 240, 100, (unsigned char)(200 * (0.5f + 0.5f * sinf(g_netWorld.time * 4.0f)))};
-            DrawScaledText(messages[msgIdx], tx, ty, fontSize, textCol);
-            
-            int barX = w / 2 - 150;
-            int barY = h / 2 + 100;
-            int barW = 300;
-            int barH = 8;
-            DrawRectangle(barX, barY, barW, barH, {10, 15, 20, 200});
-            DrawRectangle(barX, barY, (int)(barW * progress), barH, {40, 240, 100, 200});
-            DrawRectangleLines(barX, barY, barW, barH, {40, 240, 100, 150});
-        }
+        DrawTransitionOverlay();
         return;
     }
 
@@ -251,6 +204,8 @@ void DrawNetWorld(void) {
 
     // ---- 3D SCENE ----
     BeginMode3D(g_netWorld.camera);
+
+    DrawCyberSkybox();
     
     DrawNetTerrain();
     DrawGlitchCubes3D();
@@ -315,36 +270,18 @@ void DrawNetTerrain(void) {
     float gridSize = size / g_netWorld.gridSize;
     float height = g_netWorld.terrainHeight;
     float t = g_netWorld.time;
-    
     float pulse = sinf(t * 1.5f) * 0.3f + 0.7f;
-    
-    // ---- DATA PILLARS (cyberpunk instead of flat grid) ----
-    for (int x = 0; x <= g_netWorld.gridSize; x += 2) {
-        for (int z = 0; z <= g_netWorld.gridSize; z += 2) {
-            float xPos = -halfSize + x * gridSize;
-            float zPos = -halfSize + z * gridSize;
-            
-            // Skip center area for visibility
-            float distFromCenter = sqrtf(xPos*xPos + zPos*zPos);
-            if (distFromCenter < 8.0f) continue;
-            
-            float pillarHeight = 0.3f + sinf(xPos * 0.3f + zPos * 0.2f + t * 0.2f) * 0.2f + 0.3f;
-            float alpha = 0.04f + (1.0f - distFromCenter / halfSize) * 0.06f * pulse;
-            
-            Color col = Fade(COLOR_CYAN, alpha);
-            
-            // Draw pillar as thin line
-            DrawLine3D(
-                {xPos, height, zPos},
-                {xPos, height + pillarHeight, zPos},
-                col
-            );
-            
-            // Glow at top
-            if (pillarHeight > 0.4f) {
-                DrawSphere({xPos, height + pillarHeight, zPos}, 0.06f, Fade(COLOR_TOXIC, alpha * 0.5f));
-            }
-        }
+
+    // Draw neon grid lines
+    for (int x = 0; x <= g_netWorld.gridSize; x++) {
+        float xPos = -halfSize + x * gridSize;
+        Color col = (x % 2 == 0) ? Fade(COLOR_CYAN, 0.15f * pulse) : Fade(COLOR_TOXIC, 0.1f * pulse);
+        DrawLine3D({xPos, height, -halfSize}, {xPos, height, halfSize}, col);
+    }
+    for (int z = 0; z <= g_netWorld.gridSize; z++) {
+        float zPos = -halfSize + z * gridSize;
+        Color col = (z % 2 == 0) ? Fade(COLOR_CYAN, 0.15f * pulse) : Fade(COLOR_TOXIC, 0.1f * pulse);
+        DrawLine3D({-halfSize, height, zPos}, {halfSize, height, zPos}, col);
     }
     
     // ---- CONCENTRIC RINGS ----
@@ -429,6 +366,10 @@ void DrawNetNodes(void) {
             Color selCol = {255, 255, 255, (unsigned char)(selPulse * 150 + 55)};
             DrawCircle3D(pos, radius * 2.0f, {0, 1, 0}, t * 2.0f, Fade(selCol, 0.2f * selPulse));
             DrawCircle3D(pos, radius * 2.0f, {1, 0, 0}, -t * 2.0f, Fade(selCol, 0.15f * selPulse));
+        }
+
+        if (node.scanRevealTimer > 0) {
+            DrawCircle3D(pos, radius * 2.5f, {0,1,0}, t*2, Fade(GREEN, 0.3f));
         }
     }
 }
@@ -814,4 +755,159 @@ void DrawWireSphere(Vector3 position, float radius, Color color, int rings, int 
     
     // ---- CENTER GLOW ----
     DrawSphere(position, radius * 0.08f, color);
+}
+
+void DrawCyberSkybox(void) {
+    // Simple gradient background
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {8, 8, 24, 255});
+    // Draw stars as white dots (use a fixed set)
+    static Vector3 stars[200];
+    static bool init = false;
+    if (!init) {
+        for (int i = 0; i < 200; i++) {
+            float theta = (rand() / (float)RAND_MAX) * 2 * PI;
+            float phi = acos(2 * (rand() / (float)RAND_MAX) - 1);
+            float r = 150.0f;
+            stars[i] = {r * sin(phi) * cos(theta), r * cos(phi), r * sin(phi) * sin(theta)};
+        }
+        init = true;
+    }
+    for (int i = 0; i < 200; i++) {
+        DrawSphere(stars[i], 0.3f, Fade(WHITE, 0.5f + 0.5f * sinf(g_netWorld.time + i)));
+    }
+    // Grid lines far away
+    float size = 200.0f;
+    float half = size / 2.0f;
+    for (int i = -10; i <= 10; i++) {
+        float pos = i * (size / 20.0f);
+        DrawLine3D({pos, -20.0f, -half}, {pos, -20.0f, half}, Fade(COLOR_CYAN, 0.03f));
+        DrawLine3D({-half, -20.0f, pos}, {half, -20.0f, pos}, Fade(COLOR_CYAN, 0.03f));
+    }
+}
+
+// ============================================================
+// CINEMATIC TRANSITION OVERLAY
+// ============================================================
+void DrawTransitionOverlay(void) {
+    float intensity = g_netWorld.glitchIntensity;
+    float progress = g_netWorld.stateTimer / g_netWorld.transitionDuration;
+    bool isEntering = (g_netWorld.state == NetWorldState::ENTERING);
+    float t = g_netWorld.time;
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
+
+    // ---- 1. BACKGROUND GRADIENT ----
+    for (int y = 0; y < h; y++) {
+        float alpha = 1.0f - (float)y / h;
+        Color col = {0, (unsigned char)(20 * alpha), (unsigned char)(40 * alpha), 255};
+        DrawPixel(0, y, col);
+    }
+
+    // ---- 2. GRID LINES ----
+    float gridSize = 40.0f;
+    for (float x = fmod(t * 50.0f, gridSize) - gridSize; x < w + gridSize; x += gridSize) {
+        DrawLine((int)x, 0, (int)x, h, {40, 180, 255, (unsigned char)(20 * (1.0f - intensity))});
+    }
+    for (float y = fmod(t * 30.0f, gridSize) - gridSize; y < h + gridSize; y += gridSize) {
+        DrawLine(0, (int)y, w, (int)y, {40, 180, 255, (unsigned char)(20 * (1.0f - intensity))});
+    }
+
+    // ---- 3. MATRIX DATA RAIN (falling characters) ----
+    static const int RAIN_COUNT = 60;
+    static struct RainDrop {
+        float x, y, speed;
+        char ch;
+    } rain[RAIN_COUNT];
+    static bool rainInit = false;
+    if (!rainInit) {
+        for (int i = 0; i < RAIN_COUNT; i++) {
+            rain[i].x = (rand() % w);
+            rain[i].y = (rand() % h) - h;
+            rain[i].speed = 50.0f + rand() % 100;
+            rain[i].ch = "0123456789ABCDEF"[rand() % 16];
+        }
+        rainInit = true;
+    }
+    for (int i = 0; i < RAIN_COUNT; i++) {
+        rain[i].y += rain[i].speed * GetFrameTime();
+        if (rain[i].y > h) {
+            rain[i].y = -20.0f;
+            rain[i].x = rand() % w;
+            rain[i].ch = "0123456789ABCDEF"[rand() % 16];
+        }
+        // Fade out near top/bottom
+        float alpha = 0.3f * (1.0f - intensity * 0.5f) * (1.0f - fabs(rain[i].y - h/2) / (h/2));
+        DrawText(TextFormat("%c", rain[i].ch), (int)rain[i].x, (int)rain[i].y, 14, Fade(COLOR_CYAN, alpha));
+    }
+
+    // ---- 4. GLITCH BARS (chromatic + flicker) ----
+    for (int i = 0; i < (int)(intensity * 30 + 5); i++) {
+        int y = rand() % h;
+        int hBar = 2 + rand() % 8;
+        unsigned char alpha = (unsigned char)(intensity * (150 + rand() % 100));
+        // Red channel offset
+        DrawRectangle(rand() % 5 - 2, y, w + 4, hBar, {255, 40, 40, (unsigned char)(alpha * 0.7f)});
+        DrawRectangle(0, y, w, hBar, {220, 20, 40, alpha});
+        // Blue channel offset
+        DrawRectangle(rand() % 5 - 2, y + 2, w + 4, hBar, {40, 40, 255, (unsigned char)(alpha * 0.5f)});
+    }
+
+    // ---- 5. SCANLINES (CRT effect) ----
+    for (int y = 0; y < h; y += 3) {
+        float scanY = y + fmodf(t * 60.0f + g_netWorld.scanlineOffset, 3.0f);
+        unsigned char alpha = (unsigned char)(intensity * 30 + 10);
+        DrawRectangle(0, (int)scanY, w, 1, {0, 0, 0, alpha});
+    }
+
+    // ---- 6. FLICKER (random full-screen flashes) ----
+    if (rand() % 100 < 3) {
+        DrawRectangle(0, 0, w, h, {255, 255, 255, (unsigned char)(rand() % 20)});
+    }
+
+    // ---- 7. PROGRESS INDICATOR (circular ring) ----
+    int cx = w / 2;
+    int cy = h / 2 - 20;
+    int radius = 100;
+    float angle = t * 2.0f;
+    float progressAngle = (isEntering ? progress : 1.0f - progress) * 360.0f;
+
+    // Outer glow ring
+    DrawCircleLines(cx, cy, radius + 10, Fade(COLOR_CYAN, 0.2f * (1.0f - intensity)));
+    // Progress arc
+    DrawCircleSector({(float)cx, (float)cy}, radius, -90, -90 + progressAngle, 36, Fade(COLOR_TOXIC, 0.8f));
+    // Inner ring
+    DrawCircleLines(cx, cy, radius - 5, Fade(COLOR_TOXIC, 0.4f));
+    // Spinning dot
+    float dotAngle = angle;
+    Vector3 dotPos = {cx + cosf(dotAngle) * radius, cy + sinf(dotAngle) * radius, 0};
+    DrawCircle((int)dotPos.x, (int)dotPos.y, 6, Fade(COLOR_AMBER, 0.8f));
+
+    // ---- 8. MESSAGE TEXT (with glow) ----
+    const char* messages[] = {
+        "INITIALIZING CYBERSPACE...",
+        "MAPPING NEURAL TOPOLOGY...",
+        "SYNCHRONIZING WITH VNET...",
+        "JACKING IN..."
+    };
+    int msgIdx = (int)(progress * 4) % 4;
+    int fontSize = 32;
+    int tw = MeasureText(messages[msgIdx], fontSize);
+    int tx = (w - tw) / 2;
+    int ty = cy + radius + 40;
+
+    // Glow effect: draw multiple copies with offset and different colors
+    for (int offset = 4; offset >= 0; offset--) {
+        Color col = (offset == 0) ? COLOR_TOXIC : Fade(COLOR_CYAN, 0.1f * (5 - offset));
+        DrawText(messages[msgIdx], tx + (offset == 0 ? 0 : (offset % 2 == 0 ? offset : -offset)),
+                 ty + (offset == 0 ? 0 : (offset % 2 == 0 ? -offset : offset)), fontSize, col);
+    }
+
+    // ---- 9. STATUS TEXT (VERSION INFO) ----
+    DrawText("VEKTRA NET 3.0", 20, h - 30, 14, Fade(COLOR_GHOST, 0.5f));
+
+    // ---- 10. VIGNETTE (dark edges) ----
+    DrawRectangle(0, 0, w, 4, {0, 0, 0, 80});
+    DrawRectangle(0, h - 4, w, 4, {0, 0, 0, 80});
+    DrawRectangle(0, 0, 4, h, {0, 0, 0, 80});
+    DrawRectangle(w - 4, 0, 4, h, {0, 0, 0, 80});
 }

@@ -8,6 +8,7 @@ static Shader g_crtShader = {0};
 static bool g_shaderLoaded = false;
 static bool g_shaderActive = false;
 static int g_timeLoc = -1;
+static int g_bloomLoc = -1;
 static int g_resolutionLoc = -1;
 static int g_glitchLoc = -1;
 static int g_scanlineLoc = -1;
@@ -32,6 +33,7 @@ void LoadNetWorldShader(void) {
         g_vignetteLoc = GetShaderLocation(g_crtShader, "vignetteIntensity");
         g_chromaticLoc = GetShaderLocation(g_crtShader, "chromaticAberration");
         g_warpLoc = GetShaderLocation(g_crtShader, "warpAmount");
+        g_bloomLoc = GetShaderLocation(g_crtShader, "bloomIntensity");
         
         g_shaderLoaded = true;
         printf("[SHADER] NetWorld CRT shader loaded successfully.\n");
