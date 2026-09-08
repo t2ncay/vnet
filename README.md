@@ -502,9 +502,9 @@ This project is licensed under the **MIT License** – see the [LICENSE](LICENSE
 
 ## 📬 Contact
 
-- **Project Lead:** [@yourusername](https://github.com/yourusername)
+- **Project Lead:** [@t2ncay](https://github.com/t2ncay)
 - **Discord:** [VNET Community](https://discord.gg/vnet)
-- **Email:** vnet@project.com
+- **Email:** [vnet@project.com](mailto:4tvnex@gmail.com)
 
 ---
 
