@@ -38,7 +38,16 @@ Three distinct paths to win:
 - Use **VDEC (VNET Decryption Toolkit)** to decrypt, hash, and brute-force keys
 - Keys are synchronized with the server via **KEY_SYNC** protocol
 
-#### **2. Mining & Economy**
+#### **2. VDEC – VNET Decryption Toolkit**
+
+- **Key Ring** – Track 8 cryptographic keys with visual progress
+- **Encrypt / Decrypt** – Caesar cipher operations with server-side engine
+- **Hash Calculator** – MD5‑style cryptographic digests
+- **Decryption Minigame** – Challenge-based key unlocking
+- **Bit‑shift Offset Control** – Fine‑tune decryption parameters
+- **Immersive Cyberpunk UI** – Scanlines, glows, and matrix‑style animations
+
+#### **3. Mining & Economy**
 
 - Mine blocks at `crypto.vnet` using the `mine <block_id>` command
 - Each block yields **0.20–0.60 VCOIN** with a **20-second cooldown**
@@ -49,7 +58,7 @@ Three distinct paths to win:
   - **Neural Calm** (0.15 VCOIN) – Reduce paranoia
   - **Exploits** – DOS, Spike, Redirect, Overload, Ion Cannon
 
-#### **3. Exploit & Cyberwarfare Kit**
+#### **4. Exploit & Cyberwarfare Kit**
 
 | Command                 | Cost       | Cooldown | Effect                             |
 | ----------------------- | ---------- | -------- | ---------------------------------- |
@@ -60,7 +69,19 @@ Three distinct paths to win:
 | `ion <target>`          | 2.00 VCOIN | 180s     | Orbital strike (at `orbital.vnet`) |
 | `proxy <url> <node>`    | 0.40 VCOIN | 120s     | Route through proxy                |
 
-#### **4. Threat & Paranoia System**
+#### **5. Federal E‑Raid System**
+
+- **Cinematic Sequence** – Glitch → Flash → Hex Flood → Blackout → Active Raid
+- **3D Operator Face** – Wireframe head with dynamic dialogue
+- **Desktop Lockdown** – Background black, only terminal and intruder detector remain
+- **Minigame Options**:
+  - **EVADE** – Deploy decoy nodes to misdirect federal scanners
+  - **ESCAPE** – Migrate to a new port before trace locks
+  - **BURN** – Scorched earth: purge logs and kill processes
+- **Consequences** – Trace spike, ICE loss, VCOIN confiscation, site burning
+- **Rewards** – VCOIN bonuses, trace reduction, ICE restoration
+
+#### **6. Threat & Paranoia System**
 
 - **Trace Level (0–100%):** Increases with every action. High trace attracts **federal e-raids**, **bot stalkers**, and **ICE lockouts**.
 - **CRT Heat (35–100°C):** Overheating causes glitching and system instability.
@@ -71,30 +92,42 @@ Three distinct paths to win:
 
 ## 🖥️ Desktop Environment
 
-A fully functional **GNOME-style desktop** built from scratch:
+A fully functional **VEKTRA OS‑style desktop** built from scratch:
 
 ### 🪟 **Window Management**
 
-- **Draggable, resizable windows** with title bars
-- **Minimize / Maximize / Close** controls
+- **Draggable, resizable windows** with macOS‑style title bars
+- **Red / Yellow / Green window controls** (close, minimize, maximize)
 - **Workspace switching** (Ctrl+1/2/3)
 - **Application grid** (Super key or click "Activities")
+- **Z‑index ordering** – click to bring windows to front
+
+### 🔐 **Login & Loading Experience**
+
+- **VEKTRA OS login screen** – replaces the old connection menu
+- **Animated grid background** with floating nodes and connection lines
+- **Glowing VEKTRA logo** with pulse effect
+- **Cyberpunk‑styled IP and handle inputs**
+- **System status panel** – network, encryption, uptime, port
+- **CRT scanline and vignette overlays**
+- **Loading screen** with rotating hexagon gear, progress bar, and dynamic status messages
 
 ### 📱 **Built-in Applications**
 
-| App             | Description                                                                  |
-| --------------- | ---------------------------------------------------------------------------- |
-| **🌐 Browser**  | VNET page renderer with markup engine (TITLE, LINK, GAUGE, BOX, VIDEO, etc.) |
-| **💻 Terminal** | Full-featured CLI with scrolling, command history, and syntax highlighting   |
-| **👤 Profile**  | Player stats, site directory, VCOIN wallet, ICE/trace status                 |
-| **⚙️ Settings** | Theming (15+ themes), audio control, display options, security               |
-| **📡 Feed**     | Real-time system feed with threat radar and activity ticker                  |
-| **🔥 Hellroom** | P2P IRC chatroom with whispers, nick changes, and actions                    |
-| **🔐 VDEC**     | Decryption toolkit with Key Ring, Encrypt/Decrypt, Hash, and Minigame        |
+| App                 | Description                                                                                                 |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **🌐 Browser**      | VNET page renderer with multi‑tab support, bookmarks, history, and security indicators                      |
+| **💻 Terminal**     | Full-featured CLI with scrolling, command history, and syntax highlighting                                  |
+| **👤 Profile**      | Player stats, site directory, VCOIN wallet, ICE/trace status                                                |
+| **⚙️ Settings**     | Theming (15+ themes), audio control, display options, security                                              |
+| **📡 Feed**         | Real-time system feed with threat radar and activity ticker                                                 |
+| **🔥 Hellroom**     | P2P IRC chatroom with nick changes, whispers, commands (`/nick`, `/me`, `/w`, `/clear`, `/help`, `/status`) |
+| **🔐 VDEC**         | Decryption toolkit with Key Ring, Encrypt/Decrypt, Hash, and Minigame                                       |
+| **🎵 Music Player** | VEKTRA OS‑styled player with visualizer, playlist, and CRT effects                                          |
 
 ### 🎨 **Themes (15)**
 
-```text
+```
 classic • tokyo • redroom • amber • matrix • cyberpunk • nord
 dracula • synthwave • cobalt • monokai • gruvbox • abyss • solaris • ghost
 ```
@@ -112,21 +145,24 @@ dracula • synthwave • cobalt • monokai • gruvbox • abyss • solaris �
 
 ### **Protocol Commands (VNetCmd)**
 
-| Command    | Purpose                       |
-| ---------- | ----------------------------- |
-| `PING`     | Peer registration & heartbeat |
-| `CHAT`     | Global broadcast message      |
-| `WHISPER`  | Private direct message        |
-| `GET`      | Page request                  |
-| `DOS`      | Denial-of-service attack      |
-| `SPIKE`    | Trace spike injection         |
-| `OVERLOAD` | Site overloading              |
-| `WIN`      | Key submission                |
-| `TAKEOVER` | Economic victory              |
-| `SCAN`     | Site discovery                |
-| `SATSCAN`  | Satellite surveillance        |
-| `NETSCAN`  | Peer discovery                |
-| `VDEC_*`   | Decryption toolkit operations |
+| Command         | Purpose                       |
+| --------------- | ----------------------------- |
+| `PING`          | Peer registration & heartbeat |
+| `CHAT`          | Global broadcast message      |
+| `WHISPER`       | Private direct message        |
+| `GET`           | Page request                  |
+| `DOS`           | Denial-of-service attack      |
+| `SPIKE`         | Trace spike injection         |
+| `OVERLOAD`      | Site overloading              |
+| `WIN`           | Key submission                |
+| `TAKEOVER`      | Economic victory              |
+| `SCAN`          | Site discovery                |
+| `SATSCAN`       | Satellite surveillance        |
+| `NETSCAN`       | Peer discovery                |
+| `VDEC_DECRYPT`  | Decryption operation          |
+| `VDEC_ENCRYPT`  | Encryption operation          |
+| `VDEC_HASH`     | Hash calculation              |
+| `VDEC_MINIGAME` | Decryption challenge          |
 
 ### **Server Features**
 
@@ -134,9 +170,10 @@ dracula • synthwave • cobalt • monokai • gruvbox • abyss • solaris �
 - **Key generation** with scrambling & location mapping
 - **Mining block rotation** (8 new blocks every 30s)
 - **Decoy system** with tripwire traps
-- **Federal e-raids** (every 120s)
+- **Federal e-raids** with cinematic sequence
 - **Bot stalker** (every 120s)
 - **Site overloading** with 45s cooldown
+- **VDEC engine** – server-side encryption, decryption, and hashing
 
 ---
 
@@ -171,6 +208,7 @@ VNET uses a custom **tag-based markup language** for page rendering:
 - **Glitch spikes** for network events
 - **Dynamic color palettes** per theme
 - **Animated backgrounds** with floating grid nodes
+- **CRT distortion effects** – vignette, chromatic aberration, scanline interference
 
 ### **Responsive Scaling**
 
@@ -198,45 +236,44 @@ VNET uses a custom **tag-based markup language** for page rendering:
 
 ### **Directory Structure**
 
-```text
+```
 src/
 ├── client/
-│   ├── main.cpp
+│   ├── connection/          # VEKTRA OS login screen
+│   ├── desktop/
+│   │   ├── apps/
+│   │   │   ├── browser.cpp/h
+│   │   │   ├── feed.cpp
+│   │   │   ├── hellroom.cpp
+│   │   │   ├── profile.cpp
+│   │   │   ├── settings.cpp
+│   │   │   ├── terminal.cpp
+│   │   │   └── vdec/         # VDEC modules (6 files)
+│   │   ├── settings/
+│   │   │   ├── theme.cpp
+│   │   │   ├── audio.cpp
+│   │   │   ├── display.cpp
+│   │   │   ├── security.cpp
+│   │   │   └── system.cpp
+│   │   ├── desktop.cpp
+│   │   ├── desktop.h
+│   │   └── desktop_icons.cpp
 │   ├── game.cpp/h
-│   ├── render.cpp/h
-│   ├── player.cpp/h
-│   ├── vnet_client.cpp/h
+│   ├── main.cpp
 │   ├── music_player.cpp/h
-│   ├── wallpaper.cpp/h
-│   └── desktop/
-│       ├── desktop.cpp
-│       ├── desktop.h
-│       ├── desktop_icons.cpp
-│       ├── apps/
-│       │   ├── browser.cpp
-│       │   ├── terminal.cpp
-│       │   ├── profile.cpp
-│       │   ├── settings.cpp
-│       │   ├── feed.cpp
-│       │   ├── hellroom.cpp
-│       │   └── vdec/
-│       │       ├── vdec.cpp
-│       │       ├── keyring.cpp
-│       │       ├── decrypt.cpp
-│       │       ├── encrypt.cpp
-│       │       ├── hash.cpp
-│       │       └── minigame.cpp
-│       └── settings/
-│           ├── theme.cpp
-│           ├── audio.cpp
-│           ├── display.cpp
-│           ├── security.cpp
-│           └── system.cpp
+│   ├── player.cpp/h
+│   ├── render.cpp/h
+│   ├── vnet_client.cpp/h
+│   └── wallpaper.cpp/h
+├── server/
+│   ├── main.cpp
+│   └── server_core.cpp
 ├── shared/
 │   ├── vnet.cpp/h
 │   ├── vnet_sites.cpp/h
 │   ├── vnet_protocol.h
-│   └── utils.cpp/h
+│   ├── utils.cpp/h
+│   └── vex_parser.cpp/h      # .vex file parser
 └── lib/
     └── vnet_lib.cpp/h
 ```
@@ -296,6 +333,11 @@ mine <block_id>   # Mine a specific block
 dos <port>        # DOS attack
 spike <port>      # Trace spike
 overload <url>    # Overload site
+
+# VDEC
+vdec decrypt      # Open decryption toolkit
+vdec encrypt      # Open encryption toolkit
+vdec hash         # Open hash calculator
 
 # System
 status            # Show network status
@@ -384,23 +426,30 @@ List all themes: `theme list`
 
 ## 🧪 Development
 
-### **Adding a New Site**
+### **Adding a New Site (.vex Format)**
 
-1. Define content in `vnet_sites.cpp`:
+1. Create a `.vex` file in `assets/sites/`:
 
-```cpp
-static const char* MY_SITE_CONTENT[] = SITE_CONTENT(
-    "[TITLE] My Site",
-    "[TEXT] Welcome to my site!",
-    "[LINK:vnet.dir] >> Back"
-);
+```markdown
+[TITLE] My Site Title
+[CATEGORY] core
+[ID] mysite.vnet
+[MAP_X] 0
+[MAP_Y] 0
+[HAS_KEY] false
+[HACK_DIFFICULTY] 1.0
+
+[CONTENT]
+[TITLE] My Site // NODE
+[HR]
+[BADGE:TAG:BLOOD]
+[TEXT] Welcome to my site!
+[LINK:vnet.dir] >> Return to Directory
+[/CONTENT]
 ```
 
-2. Register in `SITE_DATA[]`:
-
-```cpp
-{"mysite.vnet", "My Site", "category", MY_SITE_CONTENT, 0.0f, 0.0f, false, 1.0f}
-```
+2. The parser automatically loads all `.vex` files at startup
+3. Placeholders like `ICE_COUNT`, `VCOIN_BALANCE`, `TRACE_LEVEL`, `HANDLE_NAME`, `PORT_NUMBER` are replaced dynamically
 
 ### **Adding a New Command**
 
