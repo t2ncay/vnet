@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <cstring>
+#include <string>
 
 // String utilities
 void StrTrim(char* str);
@@ -12,7 +13,7 @@ bool StrEndsWith(const char* str, const char* suffix);
 int RandomInt(int min, int max);
 float RandomFloat(float min, float max);
 
-// Color utilities (for future)
+// Color utilities
 uint32_t ColorToHex(int r, int g, int b, int a);
 
 // Time utilities
@@ -25,3 +26,5 @@ void SafeStrCat(char* dest, const char* src, size_t destSize);
 // VNET specific utilities
 bool IsValidVNETUrl(const char* url);
 void NormalizeVNETUrl(char* url);
+
+std::string GetExecutableDirectory();
