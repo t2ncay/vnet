@@ -819,6 +819,16 @@ void DrawMarkupPage(float contentX, float contentY, float contentW, float conten
             y += lineH + 6.0f;
         }
 
+        else if (StartsWith(raw, "[OVERLOAD]")) {
+            float t = (float)GetTime();
+            float pulse = sinf(t * 5.0f) * 0.3f + 0.7f;
+            const char* txt = raw.c_str() + 10;
+            
+            DrawScaledText("⚡", leftX, y, 20, {255, 200, 0, (unsigned char)(pulse * 200 + 55)});
+            DrawScaledText(txt, leftX + 28, y + 4, 12, COLOR_BLOOD);
+            y += lineH + 4.0f;
+        }
+
         // Unknown/Unsupported tags
         else {
             // Skip silently or log for debugging

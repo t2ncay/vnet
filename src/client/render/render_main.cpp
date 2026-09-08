@@ -76,7 +76,6 @@ void DrawUI(void) {
     // ============================================================
     if (g_loginScreen.isActive) {
         DrawLoginScreen(g_loginScreen);
-        DrawCustomCursor();
         return;
     }
 
