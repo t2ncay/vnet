@@ -27,6 +27,40 @@ static GlitchCube g_glitchCubes[25];
 static bool g_glitchCubesInit = false;
 
 // ============================================================
+// FLOATING PARTICLE / DATA-STREAM STRUCTS
+// ------------------------------------------------------------
+// FIX: DrawNetEffects() previously called rand() to pick a brand-new random
+// x/z position for every particle and every data-stream glyph on *every
+// single frame*. That meant nothing ever actually animated smoothly -
+// each of the 200+ particles and 60 glyphs teleported to a new random
+// spot 60 times a second, reading as flickering static rather than a
+// coherent floating field. The fix follows the same "generate once, then
+// animate with sin/cos offsets from a stored base position" pattern the
+// GlitchCube system above already uses correctly.
+// ============================================================
+struct FloatingParticle {
+    Vector3 basePos;
+    float speed;
+    float phase;
+    bool useCyan;
+};
+
+struct DataStreamGlyph {
+    Vector3 basePos;
+    float speed;
+    float phase;
+    char character;
+    bool useCyan;
+};
+
+static const int FLOATING_PARTICLE_COUNT = 200;
+static const int DATA_STREAM_GLYPH_COUNT = 60;
+
+static FloatingParticle g_floatingParticles[FLOATING_PARTICLE_COUNT];
+static DataStreamGlyph g_dataStreamGlyphs[DATA_STREAM_GLYPH_COUNT];
+static bool g_netEffectsInit = false;
+
+// ============================================================
 // INIT GLITCH CUBES
 // ============================================================
 static void InitGlitchCubes(void) {
@@ -55,6 +89,42 @@ static void InitGlitchCubes(void) {
         g_glitchCubes[i].active = true;
     }
     g_glitchCubesInit = true;
+}
+
+// ============================================================
+// INIT FLOATING PARTICLES / DATA STREAM GLYPHS (once)
+// ============================================================
+static void InitNetEffects(void) {
+    float halfSize = g_netWorld.worldSize / 2.0f;
+    float size = g_netWorld.worldSize;
+
+    for (int i = 0; i < DATA_STREAM_GLYPH_COUNT; i++) {
+        float x = -halfSize + (rand() % 1000) / 1000.0f * size;
+        float z = -halfSize + (rand() % 1000) / 1000.0f * size;
+        float y = 1.0f + (rand() % 1000) / 1000.0f * 6.0f;
+
+        DataStreamGlyph& g = g_dataStreamGlyphs[i];
+        g.basePos = {x, y, z};
+        g.speed = 0.5f + (rand() % 1000) / 1000.0f * 2.0f;
+        g.phase = (rand() % 1000) / 1000.0f * 2.0f * PI;
+        const char* hexChars = "0123456789ABCDEF";
+        g.character = hexChars[rand() % 16];
+        g.useCyan = (i % 3 == 0);
+    }
+
+    for (int i = 0; i < FLOATING_PARTICLE_COUNT; i++) {
+        float x = -halfSize + (rand() % 1000) / 1000.0f * size;
+        float z = -halfSize + (rand() % 1000) / 1000.0f * size;
+        float y = 0.5f + (rand() % 1000) / 1000.0f * 8.0f;
+
+        FloatingParticle& p = g_floatingParticles[i];
+        p.basePos = {x, y, z};
+        p.speed = 0.05f + (rand() % 1000) / 1000.0f * 0.3f;
+        p.phase = (rand() % 1000) / 1000.0f * 2.0f * PI;
+        p.useCyan = (i % 2 == 0);
+    }
+
+    g_netEffectsInit = true;
 }
 
 // ============================================================
@@ -115,6 +185,10 @@ void DrawNetWorld(void) {
     // Init glitch cubes if needed
     if (!g_glitchCubesInit) {
         InitGlitchCubes();
+    }
+    // Init the persistent particle / data-stream buffers if needed
+    if (!g_netEffectsInit) {
+        InitNetEffects();
     }
     
     // ---- GLITCH TRANSITION OVERLAY ----
@@ -475,28 +549,20 @@ void DrawNetPlayer(void) {
 
 void DrawNetEffects(void) {
     float t = g_netWorld.time;
-    float size = g_netWorld.worldSize;
-    float halfSize = size / 2.0f;
     float pulse = sinf(t * 1.0f) * 0.3f + 0.7f;
     
     // ---- DATA STREAMS (falling hex) ----
-    for (int i = 0; i < 60; i++) { // More streams
-        float x = -halfSize + (rand() % 1000) / 1000.0f * size;
-        float z = -halfSize + (rand() % 1000) / 1000.0f * size;
-        float y = 1.0f + (rand() % 1000) / 1000.0f * 6.0f;
+    // Each glyph now animates around its own fixed basePos instead of
+    // being re-rolled with rand() every frame (see InitNetEffects()).
+    for (int i = 0; i < DATA_STREAM_GLYPH_COUNT; i++) {
+        const DataStreamGlyph& glyph = g_dataStreamGlyphs[i];
+        float yOffset = sinf(t * glyph.speed + glyph.phase) * 2.0f;
+        Vector3 pos = {glyph.basePos.x, glyph.basePos.y + yOffset, glyph.basePos.z};
         
-        float speed = 0.5f + (rand() % 1000) / 1000.0f * 2.0f;
-        float phase = (rand() % 1000) / 1000.0f * 2.0f * PI;
-        float yOffset = sinf(t * speed + phase) * 2.0f;
-        
-        Vector3 pos = {x, y + yOffset, z};
-        
-        const char* hexChars = "0123456789ABCDEF";
-        char c = hexChars[(int)(fmodf(t * 5.0f + i * 7.0f, 16))];
-        char str[2] = {c, '\0'};
+        char str[2] = {glyph.character, '\0'};
         
         float alpha = 0.08f + 0.12f * sinf(t * 1.5f + i * 0.5f);
-        Color col = (i % 3 == 0) ? COLOR_CYAN : COLOR_TOXIC;
+        Color col = glyph.useCyan ? COLOR_CYAN : COLOR_TOXIC;
         DrawScaledText3D(str, pos, 0.4f + 0.2f * pulse, Fade(col, alpha));
         
         // Glow trail
@@ -510,27 +576,28 @@ void DrawNetEffects(void) {
     }
     
     // ---- FLOATING PARTICLES ----
-    for (int i = 0; i < 200; i++) { // More particles
-        float x = -halfSize + (rand() % 1000) / 1000.0f * size;
-        float z = -halfSize + (rand() % 1000) / 1000.0f * size;
-        float y = 0.5f + (rand() % 1000) / 1000.0f * 8.0f;
+    // Same fix: drift around a fixed basePos with sin/cos offsets instead
+    // of teleporting to a new random position each frame.
+    for (int i = 0; i < FLOATING_PARTICLE_COUNT; i++) {
+        const FloatingParticle& particle = g_floatingParticles[i];
+        float xOffset = sinf(t * particle.speed + particle.phase) * 1.5f;
+        float zOffset = cosf(t * particle.speed * 0.7f + particle.phase * 1.3f) * 1.5f;
         
-        float speed = 0.05f + (rand() % 1000) / 1000.0f * 0.3f;
-        float phase = (rand() % 1000) / 1000.0f * 2.0f * PI;
-        float xOffset = sinf(t * speed + phase) * 1.5f;
-        float zOffset = cosf(t * speed * 0.7f + phase * 1.3f) * 1.5f;
-        
-        Vector3 pos = {x + xOffset, y, z + zOffset};
+        Vector3 pos = {particle.basePos.x + xOffset, particle.basePos.y, particle.basePos.z + zOffset};
         
         float alpha = 0.05f + 0.2f * sinf(t * 0.8f + i * 0.5f);
-        Color pCol = (i % 2 == 0) ? Fade(COLOR_CYAN, alpha) : Fade(COLOR_TOXIC, alpha * 0.5f);
+        Color pCol = particle.useCyan ? Fade(COLOR_CYAN, alpha) : Fade(COLOR_TOXIC, alpha * 0.5f);
         DrawSphere(pos, 0.03f, pCol);
     }
     
     // ---- RANDOM GLITCH FLASHES ----
+    // This one is intentionally still fully randomized each trigger (it's a
+    // rare, one-shot flash rather than a persistent element), so rand() here
+    // is fine as-is.
     if (fmodf(t * 1.5f, 1.0f) > 0.97f) {
-        float flashX = -halfSize + (rand() % 1000) / 1000.0f * size;
-        float flashZ = -halfSize + (rand() % 1000) / 1000.0f * size;
+        float halfSize = g_netWorld.worldSize / 2.0f;
+        float flashX = -halfSize + (rand() % 1000) / 1000.0f * g_netWorld.worldSize;
+        float flashZ = -halfSize + (rand() % 1000) / 1000.0f * g_netWorld.worldSize;
         DrawSphere({flashX, 3.0f, flashZ}, 0.8f, Fade(COLOR_BLOOD, 0.15f));
         DrawSphere({flashX, 3.0f, flashZ}, 1.5f, Fade(COLOR_BLOOD, 0.05f));
     }

@@ -15,7 +15,12 @@ const float PLAYER_SPRINT_SPEED = 22.0f;
 const float PLAYER_ACCELERATION = 45.0f;
 const float PLAYER_DECELERATION = 35.0f;
 const float PLAYER_AIR_ACCELERATION = 15.0f;
-const float PLAYER_AIR_DECELERATION = 0.85f;
+// FIX: this constant existed but was never actually used anywhere (the air
+// deceleration branch below hard-coded PLAYER_AIR_ACCELERATION * 0.5f
+// instead), and its old value of 0.85f was far too small to read as a
+// per-second deceleration rate on the same scale as the other movement
+// constants. Given a real value and now wired into ApplyNetPhysics().
+const float PLAYER_AIR_DECELERATION = 6.0f;
 
 // Jumping
 const float JUMP_VELOCITY = 10.0f;
@@ -28,6 +33,14 @@ const float DASH_SPEED = 35.0f;
 const float DASH_DURATION = 0.2f;
 const float DASH_COOLDOWN = 0.6f;
 const int MAX_DASHES = 1;
+
+// Mouse Look
+// Radians of yaw/pitch per pixel of raw mouse delta. Tuned for
+// DisableCursor()'s raw relative-motion mode (set in EnterNetWorld()).
+const float MOUSE_SENSITIVITY = 0.0035f;
+// Clamp pitch just short of +/-90 degrees so the look direction never
+// flips past straight up/down (which would invert yaw controls).
+const float PITCH_LIMIT = 1.45f;
 
 // ============================================================
 // PLAYER PHYSICS STATE
@@ -220,7 +233,9 @@ void ApplyNetPhysics(float dt) {
         vel.x += (targetX - vel.x) * fminf(accel * dt, 1.0f);
         vel.z += (targetZ - vel.z) * fminf(accel * dt, 1.0f);
     } else {
-        float decel = g_physics.isGrounded ? PLAYER_DECELERATION : PLAYER_AIR_ACCELERATION * 0.5f;
+        // FIX: now actually uses PLAYER_AIR_DECELERATION for the airborne
+        // case instead of silently reusing PLAYER_AIR_ACCELERATION * 0.5f.
+        float decel = g_physics.isGrounded ? PLAYER_DECELERATION : PLAYER_AIR_DECELERATION;
         vel.x *= (1.0f - fminf(decel * dt, 1.0f));
         vel.z *= (1.0f - fminf(decel * dt, 1.0f));
         if (fabsf(vel.x) < 0.1f) vel.x = 0;
@@ -387,11 +402,32 @@ float GetPlayerSpeed(void) {
 }
 
 // ============================================================
-// COMPATIBILITY
+// MOUSE LOOK  (previously missing entirely — player.yaw / player.pitch
+// were declared and consumed by the camera in networld_core.cpp, but
+// nothing ever wrote to them, so the camera could never actually turn)
 // ============================================================
 
 void HandleNetInput(void) {
-    // Input is now handled inside ApplyNetPhysics
+    if (g_netWorld.state != NetWorldState::ACTIVE) return;
+
+    // DisableCursor() is called in EnterNetWorld(), which puts raylib's
+    // cursor into locked/relative mode — GetMouseDelta() then reports raw
+    // frame-to-frame look movement, which is what we want for an FPS-style
+    // camera instead of clamped screen-space cursor position.
+    Vector2 mouseDelta = GetMouseDelta();
+
+    NetPlayer& player = g_netWorld.player;
+    player.yaw   -= mouseDelta.x * MOUSE_SENSITIVITY;
+    player.pitch -= mouseDelta.y * MOUSE_SENSITIVITY;
+
+    // Keep yaw bounded so it doesn't grow without limit over a long session
+    const float TWO_PI = 6.28318530718f;
+    if (player.yaw > TWO_PI)  player.yaw -= TWO_PI;
+    if (player.yaw < -TWO_PI) player.yaw += TWO_PI;
+
+    // Clamp pitch so the look direction can't flip past straight up/down
+    if (player.pitch > PITCH_LIMIT)  player.pitch = PITCH_LIMIT;
+    if (player.pitch < -PITCH_LIMIT) player.pitch = -PITCH_LIMIT;
 }
 
 void UpdateNetPlayer(float dt) {

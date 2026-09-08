@@ -18,6 +18,10 @@ static int g_warpLoc = -1;
 void LoadNetWorldShader(void) {
     if (g_shaderLoaded) return;
     
+    // ==== ASSET LOAD: CRT POST-PROCESS SHADER ====
+    // GPU resource acquired here. Must be released via UnloadNetWorldShader()
+    // exactly once per successful load (guarded below by g_shaderLoaded) —
+    // never call UnloadShader() elsewhere for this handle.
     g_crtShader = LoadShader(0, "src/client/render/shaders/networld.fs");
     
     if (g_crtShader.id != 0) {
@@ -34,6 +38,7 @@ void LoadNetWorldShader(void) {
     } else {
         printf("[SHADER] Failed to load NetWorld CRT shader.\n");
     }
+    // ==== END ASSET LOAD ====
 }
 
 void UnloadNetWorldShader(void) {
@@ -42,9 +47,13 @@ void UnloadNetWorldShader(void) {
             EndShaderMode();
             g_shaderActive = false;
         }
+        // ==== ASSET UNLOAD: CRT POST-PROCESS SHADER ====
+        // Must run before the graphics context shuts down, and must not be
+        // called more than once for the same successful LoadShader() call.
         UnloadShader(g_crtShader);
         g_shaderLoaded = false;
         printf("[SHADER] NetWorld CRT shader unloaded.\n");
+        // ==== END ASSET UNLOAD ====
     }
 }
 

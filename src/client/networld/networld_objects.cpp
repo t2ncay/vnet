@@ -26,6 +26,7 @@ void GenerateNetWorld(void) {
     core.id = "core";
     core.label = "VEKTRA CORE";
     core.position = {0.0f, 1.0f, 0.0f};
+    core.spawnPosition = core.position;
     core.color = {1.0f, 0.6f, 0.0f};
     core.radius = 2.5f;
     core.active = true;
@@ -65,6 +66,7 @@ void GenerateNetWorld(void) {
         portal.id = siteIds[i];
         portal.label = siteIds[i];
         portal.position = {x, 0.8f, z};
+        portal.spawnPosition = portal.position;
         portal.color = {0.0f, 0.8f, 1.0f};
         portal.radius = 1.2f;
         portal.active = true;
@@ -98,6 +100,7 @@ void GenerateNetWorld(void) {
         dataNode.id = "data_" + std::to_string(i);
         dataNode.label = dataLabels[i % 8];
         dataNode.position = {x, 0.6f, z};
+        dataNode.spawnPosition = dataNode.position;
         dataNode.color = {0.6f, 0.6f, 0.8f};
         dataNode.radius = 0.6f;
         dataNode.active = true;
@@ -120,6 +123,10 @@ void GenerateNetWorld(void) {
         enemy.id = "enemy_" + std::to_string(i);
         enemy.label = "GLITCH_BOT";
         enemy.position = {x, 0.6f, z};
+        // Anchor used by the enemy-orbit patrol motion in
+        // UpdateNetWorld() (networld_core.cpp) so bots circle a fixed
+        // point rather than drifting.
+        enemy.spawnPosition = enemy.position;
         enemy.color = {1.0f, 0.2f, 0.2f};
         enemy.radius = 0.8f;
         enemy.active = true;

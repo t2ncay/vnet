@@ -119,7 +119,11 @@ void LoadNetWorldPBR(void)
 {
     if (g_pbrLoaded) return;
     
-    // Load PBR shader from files
+    // ==== ASSET LOAD: PBR VERTEX+FRAGMENT SHADER ====
+    // GPU resource acquired here. Every light created below via
+    // CreateLight() only holds shader-uniform locations (ints), not GPU
+    // handles of its own, so it needs no separate unload step — it lives
+    // and dies with g_pbrShader. Must be paired with UnloadNetWorldPBR().
     g_pbrShader = LoadShader(
         "src/client/render/shaders/networld.vs",
         "src/client/render/shaders/networld.fs"
@@ -184,6 +188,7 @@ void LoadNetWorldPBR(void)
         printf("[PBR]   src/client/render/shaders/networld.vs\n");
         printf("[PBR]   src/client/render/shaders/networld.fs\n");
     }
+    // ==== END ASSET LOAD ====
 }
 
 // ============================================================
@@ -230,8 +235,12 @@ void UnloadNetWorldPBR(void)
 {
     if (g_pbrLoaded)
     {
+        // ==== ASSET UNLOAD: PBR VERTEX+FRAGMENT SHADER ====
+        // Must run before the graphics context shuts down, and must not be
+        // called more than once for the same successful LoadShader() call.
         UnloadShader(g_pbrShader);
         g_pbrLoaded = false;
         printf("[PBR] NetWorld PBR shader unloaded.\n");
+        // ==== END ASSET UNLOAD ====
     }
 }

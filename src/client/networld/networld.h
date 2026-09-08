@@ -30,6 +30,9 @@ struct NetNode {
     std::string id;              // Corresponds to VNET site URL
     std::string label;
     Vector3 position;
+    Vector3 spawnPosition;       // Anchor point used for patrol/orbit motion so
+                                  // moving nodes (e.g. ENEMY) circle a fixed
+                                  // origin instead of drifting via integration.
     Vector3 color;               // RGB float for glow
     float radius;
     bool active;
