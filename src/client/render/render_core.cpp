@@ -161,19 +161,23 @@ bool RefRectHover(float x, float y, float w, float h, Vector2 refMouse) {
 void LoadAssets(void) {
     // ---- Primary text font: monospace, handles ASCII + box-drawing/symbols ----
     static const char* kTextGlyphSample =
-        " !\"#$%&'()*+,-./0123456789:;<=>?@"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
-        "abcdefghijklmnopqrstuvwxyz{|}~├─"
-        "\xC2\xB0"                                  // °
-        "\xE2\x97\x88\xE2\x96\xB6\xE2\x98\x85\xE2\x9C\x93\xE2\x9C\x97"   // ◈▶★✓✗
-        "\xE2\x95\x91\xE2\x96\x93\xE2\x96\x92\xE2\x96\x91"               // ║▓▒░
-        "\xE2\x9A\x99\xE2\x9A\xA1\xE2\x9A\xA0\xE2\x8F\xB1"               // ⚙⚡⚠⏱
-        "\xE2\x97\x84\xE2\x96\xBA\xE2\x9F\xB3\xE2\x8C\x82"               // ◄►⟳⌂
-        "\xE2\x95\x94\xE2\x95\x90\xE2\x95\x97\xE2\x96\x88\xE2\x95\x9D\xE2\x95\x9A"  // ╔═╗█╝╚
-        "\xE2\x96\xBE\xE2\x96\xB8\xE2\x80\xA2";                          // ▾▸•
+    " !\"#$%&'()*+,-./0123456789:;<=>?@"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+    "abcdefghijklmnopqrstuvwxyz{|}~├─"
+    "\xC2\xB0"
+    "\xE2\x97\x88\xE2\x96\xB6\xE2\x98\x85\xE2\x9C\x93\xE2\x9C\x97"
+    "\xE2\x95\x91\xE2\x96\x93\xE2\x96\x92\xE2\x96\x91"
+    "\xE2\x9A\x99\xE2\x9A\xA1\xE2\x9A\xA0\xE2\x8F\xB1"
+    "\xE2\x97\x84\xE2\x96\xBA\xE2\x9F\xB3\xE2\x8C\x82"
+    "\xE2\x95\x94\xE2\x95\x90\xE2\x95\x97\xE2\x96\x88\xE2\x95\x9D\xE2\x95\x9A"
+    "\xE2\x96\xBE\xE2\x96\xB8\xE2\x80\xA2"
+    // Add more glyphs for cyberpunk symbols
+    "\xE2\x80\xA2\xE2\x8A\x9F\xE2\x88\x9E\xE2\x89\xA1\xE2\x88\x87"; // •⊟∞≡∋
 
     int textCpCount = 0;
     int* textCodepoints = LoadCodepoints(kTextGlyphSample, &textCpCount);
+
+    // Load JetBrainsMono-Bold.ttf with size 32 (higher quality)
     g_fontVCR = LoadFontEx("assets/fonts/JetBrainsMono-Bold.ttf", 32, textCodepoints, textCpCount);
     RegisterGlyphSet(textCodepoints, textCpCount, g_vcrGlyphSet);
     UnloadCodepoints(textCodepoints);

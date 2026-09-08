@@ -203,3 +203,90 @@ void DrawDataStream(float x, float y, float w, float h, Color color, int columns
         }
     }
 }
+
+// ============================================================
+// WINDOW FRAME / GLOW TEXT HELPERS
+// ============================================================
+
+float DrawWindowFrame(float x, float y, float w, float h, const WindowFrameOpts& opts) {
+    // ---- Background ----
+    DrawScaledRect(x, y, w, h, COLOR_PANEL);
+    DrawScaledRectLines(x, y, w, h, Fade(opts.accentColor, 0.4f));
+
+    // ---- Title bar ----
+    float titleH = 26.0f;
+    DrawScaledRect(x, y, w, titleH, Fade(opts.accentColor, 0.15f));
+    DrawScaledLine(x, y + titleH, x + w, y + titleH, Fade(opts.accentColor, 0.3f));
+
+    // ---- Title text ----
+    float titleFontSize = 11.0f;
+    float tw = MeasureScaledTextWidth(opts.title, titleFontSize);
+    DrawScaledText(opts.title, x + 12.0f, y + (titleH - titleFontSize) / 2.0f + 2.0f,
+                   titleFontSize, opts.accentColor);
+
+    // ---- Small corner accents ----
+    Color cornerCol = Fade(opts.accentColor, 0.2f);
+    float cSize = 6.0f;
+    // Top-left
+    DrawScaledLine(x + 4.0f, y + 4.0f, x + 4.0f + cSize, y + 4.0f, cornerCol);
+    DrawScaledLine(x + 4.0f, y + 4.0f, x + 4.0f, y + 4.0f + cSize, cornerCol);
+    // Top-right
+    DrawScaledLine(x + w - 4.0f - cSize, y + 4.0f, x + w - 4.0f, y + 4.0f, cornerCol);
+    DrawScaledLine(x + w - 4.0f, y + 4.0f, x + w - 4.0f, y + 4.0f + cSize, cornerCol);
+    // Bottom-left
+    DrawScaledLine(x + 4.0f, y + h - 4.0f - cSize, x + 4.0f, y + h - 4.0f, cornerCol);
+    DrawScaledLine(x + 4.0f, y + h - 4.0f, x + 4.0f + cSize, y + h - 4.0f, cornerCol);
+    // Bottom-right
+    DrawScaledLine(x + w - 4.0f, y + h - 4.0f - cSize, x + w - 4.0f, y + h - 4.0f, cornerCol);
+    DrawScaledLine(x + w - 4.0f - cSize, y + h - 4.0f, x + w - 4.0f, y + h - 4.0f, cornerCol);
+
+    // ---- Return content start Y (below title bar + small padding) ----
+    return y + titleH + 4.0f;
+}
+
+void DrawGlowText(const char* text, float x, float y, float fontSize, Color color, float intensity) {
+    if (intensity <= 0.0f || text == nullptr || text[0] == '\0') {
+        DrawScaledText(text, x, y, fontSize, color);
+        return;
+    }
+    // Draw multiple layers with decreasing alpha
+    int layers = 4;
+    for (int i = layers; i >= 1; i--) {
+        float alpha = (float)i / (float)layers * intensity * 0.4f;
+        float offset = (float)(layers - i + 1) * 1.0f;
+        DrawScaledText(text, x - offset, y - offset, fontSize, Fade(color, alpha));
+        DrawScaledText(text, x + offset, y + offset, fontSize, Fade(color, alpha));
+        DrawScaledText(text, x - offset, y + offset, fontSize, Fade(color, alpha));
+        DrawScaledText(text, x + offset, y - offset, fontSize, Fade(color, alpha));
+    }
+    // Main text on top
+    DrawScaledText(text, x, y, fontSize, color);
+}
+
+void DrawChromaticText(const char* text, float x, float y, float fontSize, Color baseColor, float offset) {
+    if (text == nullptr || text[0] == '\0') return;
+
+    // Red channel offset (positive X)
+    Color red = baseColor;
+    red.r = 255;
+    red.g = 0;
+    red.b = 0;
+    DrawScaledText(text, x + offset, y, fontSize, Fade(red, 0.3f));
+
+    // Blue channel offset (negative X)
+    Color blue = baseColor;
+    blue.r = 0;
+    blue.g = 0;
+    blue.b = 255;
+    DrawScaledText(text, x - offset, y, fontSize, Fade(blue, 0.3f));
+
+    // Green channel (main) – we use the base color's green component
+    Color green = baseColor;
+    green.r = 0;
+    green.g = 255;
+    green.b = 0;
+    DrawScaledText(text, x, y, fontSize, Fade(green, 0.3f));
+
+    // Finally draw the full base color text on top (slightly opaque)
+    DrawScaledText(text, x, y, fontSize, Fade(baseColor, 0.9f));
+}

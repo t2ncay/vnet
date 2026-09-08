@@ -1,6 +1,17 @@
 #pragma once
 #include "raylib.h"
 
+struct WindowFrameOpts {
+    const char* title;          // Title text for the window bar
+    Color accentColor;          // Border and title bar accent
+};
+
+float DrawWindowFrame(float x, float y, float w, float h, const WindowFrameOpts& opts);
+
+void DrawGlowText(const char* text, float x, float y, float fontSize, Color color, float intensity = 0.3f);
+
+void DrawChromaticText(const char* text, float x, float y, float fontSize, Color baseColor, float offset = 1.5f);
+
 // ============================================================
 // JITTER / SHAKE SYSTEM
 // ============================================================
