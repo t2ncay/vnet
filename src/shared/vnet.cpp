@@ -7,6 +7,7 @@
 #include "../client/desktop/desktop.h"
 #include "../client/raid/raid.h"
 #include "../client/duel/duel.h"
+#include "../client/networld/networld.h"
 #include "vex_parser.h"
 #include "vnet_sites.h"
 
@@ -1541,7 +1542,13 @@ void ProcessCommand(const char* cmd) {
             DuelHack(args);
         }
     }
-// Also handle raid commands as before (they have priority)
+    else if (strcmp(token, "networld") == 0 || strcmp(token, "net") == 0) {
+        NetWorldCommand(args);
+    }
+    else if (strcmp(token, "exit") == 0 && IsInNetWorld()) {
+        ExitNetWorld();
+    }
+    // Also handle raid commands as before (they have priority)
     
     // ============================================================
     // UNKNOWN COMMAND
