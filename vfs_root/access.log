@@ -1,0 +1,7 @@
+192.168.1.45 - - [08/Sep/2026:14:23:11 +0000] "GET /vnet/status HTTP/1.1" 200 4321 "-" "VektraScanner/1.0"
+10.0.0.23 - - [08/Sep/2026:14:25:44 +0000] "POST /api/decrypt HTTP/1.1" 403 1024 "-" "Python-urllib/3.9"
+172.16.0.100 - sh4d0w [08/Sep/2026:14:30:01 +0000] "GET /keys.db HTTP/1.1" 200 1524 "-" "Curl/7.68"
+192.168.1.1 - - [08/Sep/2026:14:45:33 +0000] "GET /shell HTTP/1.1" 404 512 "-" "Nmap Scripting Engine"
+10.0.0.5 - - [08/Sep/2026:15:01:12 +0000] "POST /overload HTTP/1.1" 200 2048 "-" "IonCannon/2.0"
+ERROR: [client 10.0.0.5] File not found: /var/www/html/backdoor.php
+ALERT: Multiple SYN flood attempts detected from 10.0.0.23
