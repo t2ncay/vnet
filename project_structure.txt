@@ -1,224 +1,234 @@
 C:.
-¦   .gitignore
-¦   build_all.ps1
-¦   build_and_run.bat
-¦   build_client.ps1
-¦   build_server.ps1
-¦   CHANGELOG.md
-¦   CMakeLists.txt
-¦   Makefile
-¦   project_structure.txt
-¦   raylib.dll
-¦   README.md
-¦   screenshot000.png
-¦   vnet_client.exe
-¦   vnet_demo.exe
-¦   vnet_server.exe
-¦   
+ï¿½   .gitignore
+ï¿½   build_and_run.bat
+ï¿½   build_client.ps1
+ï¿½   build_server.ps1
+ï¿½   CHANGELOG.md
+ï¿½   CMakeLists.txt
+ï¿½   Makefile
+ï¿½   project_structure.txt
+ï¿½   raylib.dll
+ï¿½   README.md
+ï¿½   screenshot000.png
+ï¿½   vnet_client.exe
+ï¿½   vnet_server.exe
+ï¿½   
 +---.github
-¦   +---ISSUE_TEMPLATE
-¦           bug_report.md
-¦           
+ï¿½   +---ISSUE_TEMPLATE
+ï¿½           bug_report.md
+ï¿½           
 +---assets
-¦   +---audios
-¦   ¦       akira.wav
-¦   ¦       alarm.mp3
-¦   ¦       ambiance_coldcore.mp3
-¦   ¦       analog_electronic_noise.mp3
-¦   ¦       brown_noise.mp3
-¦   ¦       crimewave.mp3
-¦   ¦       crt_noise.mp3
-¦   ¦       e_raid.mp3
-¦   ¦       look_behind.mp3
-¦   ¦       mouse_click.mp3
-¦   ¦       pt_radio.mp3
-¦   ¦       runaway.mp3
-¦   ¦       tuncay.wav
-¦   ¦       vanished.mp3
-¦   ¦       wind.mp3
-¦   ¦       
-¦   +---fonts
-¦   ¦       JetBrainsMono-Bold.ttf
-¦   ¦       JetBrainsMono-Regular.ttf
-¦   ¦       SUPER-VCR_MONO.ttf
-¦   ¦       VCR_OSD_MONO_1.001.ttf
-¦   ¦       
-¦   +---icons
-¦   ¦       browser.png
-¦   ¦       feed.png
-¦   ¦       folder.png
-¦   ¦       hellroom.png
-¦   ¦       next.png
-¦   ¦       pause.png
-¦   ¦       play.png
-¦   ¦       prev.png
-¦   ¦       profile.png
-¦   ¦       redroom.png
-¦   ¦       repeat.png
-¦   ¦       settings.png
-¦   ¦       shuffle.png
-¦   ¦       terminal.png
-¦   ¦       vdec.png
-¦   ¦       
-¦   +---images
-¦   ¦       luna.jpg
-¦   ¦       void.jpeg
-¦   ¦       
-¦   +---sites
-¦           asylum.vex
-¦           blackbank.vex
-¦           bounty.vex
-¦           cctv-core.vex
-¦           corridor204863.vex
-¦           crypto.vex
-¦           cult.vex
-¦           d34d_7dp.vex
-¦           darkdrop.vex
-¦           deadchannel.vex
-¦           deepocean.vex
-¦           deepwiki.vex
-¦           dollhouse.vex
-¦           dump.vex
-¦           echolab.vex
-¦           entropy.vex
-¦           eye.vex
-¦           feed99.vex
-¦           forum.vex
-¦           ghost.vex
-¦           glitch.vex
-¦           hashbeat.vex
-¦           hellroom.vex
-¦           hive.vex
-¦           index.vex
-¦           lifeleaks.vex
-¦           luna.vex
-¦           market.vex
-¦           morgue.vex
-¦           necro.vex
-¦           nexus.vex
-¦           norilsk-relay.vex
-¦           oldnet-archive.vex
-¦           orbital.vex
-¦           passports.vex
-¦           pastebin.vex
-¦           phantom.vex
-¦           project9.vex
-¦           redroom.vex
-¦           schizo.vex
-¦           signal0.vex
-¦           silkroad.vex
-¦           skinwalker.vex
-¦           snuff.vex
-¦           stasi.vex
-¦           stasis.vex
-¦           subcell.vex
-¦           substation04.vex
-¦           terminal.vex
-¦           vault.vex
-¦           vektrapay.vex
-¦           void.vex
-¦           watchtower.vex
-¦           weaponry.vex
-¦           whisper.vex
-¦           zeroauction.vex
-¦           
-+---build_client
-+---build_server
+ï¿½   +---audios
+ï¿½   ï¿½       akira.wav
+ï¿½   ï¿½       alarm.mp3
+ï¿½   ï¿½       ambiance_coldcore.mp3
+ï¿½   ï¿½       analog_electronic_noise.mp3
+ï¿½   ï¿½       brown_noise.mp3
+ï¿½   ï¿½       crimewave.mp3
+ï¿½   ï¿½       crt_noise.mp3
+ï¿½   ï¿½       e_raid.mp3
+ï¿½   ï¿½       look_behind.mp3
+ï¿½   ï¿½       mouse_click.mp3
+ï¿½   ï¿½       pt_radio.mp3
+ï¿½   ï¿½       runaway.mp3
+ï¿½   ï¿½       tuncay.wav
+ï¿½   ï¿½       vanished.mp3
+ï¿½   ï¿½       wind.mp3
+ï¿½   ï¿½       
+ï¿½   +---fonts
+ï¿½   ï¿½       JetBrainsMono-Bold.ttf
+ï¿½   ï¿½       JetBrainsMono-Regular.ttf
+ï¿½   ï¿½       SUPER-VCR_MONO.ttf
+ï¿½   ï¿½       VCR_OSD_MONO_1.001.ttf
+ï¿½   ï¿½       
+ï¿½   +---icons
+ï¿½   ï¿½       browser.png
+ï¿½   ï¿½       feed.png
+ï¿½   ï¿½       folder.png
+ï¿½   ï¿½       hellroom.png
+ï¿½   ï¿½       next.png
+ï¿½   ï¿½       pause.png
+ï¿½   ï¿½       play.png
+ï¿½   ï¿½       prev.png
+ï¿½   ï¿½       profile.png
+ï¿½   ï¿½       redroom.png
+ï¿½   ï¿½       repeat.png
+ï¿½   ï¿½       settings.png
+ï¿½   ï¿½       shuffle.png
+ï¿½   ï¿½       terminal.png
+ï¿½   ï¿½       vdec.png
+ï¿½   ï¿½       
+ï¿½   +---images
+ï¿½   ï¿½       luna.jpg
+ï¿½   ï¿½       void.jpeg
+ï¿½   ï¿½       
+ï¿½   +---sites
+ï¿½           asylum.vex
+ï¿½           blackbank.vex
+ï¿½           bounty.vex
+ï¿½           cctv-core.vex
+ï¿½           corridor204863.vex
+ï¿½           crypto.vex
+ï¿½           cult.vex
+ï¿½           d34d_7dp.vex
+ï¿½           darkdrop.vex
+ï¿½           deadchannel.vex
+ï¿½           deepocean.vex
+ï¿½           deepwiki.vex
+ï¿½           dollhouse.vex
+ï¿½           dump.vex
+ï¿½           echolab.vex
+ï¿½           entropy.vex
+ï¿½           eye.vex
+ï¿½           feed99.vex
+ï¿½           forum.vex
+ï¿½           ghost.vex
+ï¿½           glitch.vex
+ï¿½           hashbeat.vex
+ï¿½           hellroom.vex
+ï¿½           hive.vex
+ï¿½           index.vex
+ï¿½           lifeleaks.vex
+ï¿½           luna.vex
+ï¿½           market.vex
+ï¿½           morgue.vex
+ï¿½           necro.vex
+ï¿½           nexus.vex
+ï¿½           norilsk-relay.vex
+ï¿½           oldnet-archive.vex
+ï¿½           orbital.vex
+ï¿½           passports.vex
+ï¿½           pastebin.vex
+ï¿½           phantom.vex
+ï¿½           project9.vex
+ï¿½           redroom.vex
+ï¿½           schizo.vex
+ï¿½           signal0.vex
+ï¿½           silkroad.vex
+ï¿½           skinwalker.vex
+ï¿½           snuff.vex
+ï¿½           stasi.vex
+ï¿½           stasis.vex
+ï¿½           subcell.vex
+ï¿½           substation04.vex
+ï¿½           terminal.vex
+ï¿½           vault.vex
+ï¿½           vektrapay.vex
+ï¿½           void.vex
+ï¿½           watchtower.vex
+ï¿½           weaponry.vex
+ï¿½           whisper.vex
+ï¿½           zeroauction.vex
+ï¿½           
 +---docs
-¦       index.html
-¦       web_prototype.html
-¦       
+ï¿½       index.html
+ï¿½       web_prototype.html
+ï¿½       
 +---src
-¦   +---client
-¦   ¦   ¦   audio.cpp
-¦   ¦   ¦   audio.h
-¦   ¦   ¦   game.cpp
-¦   ¦   ¦   game.h
-¦   ¦   ¦   main.cpp
-¦   ¦   ¦   player.cpp
-¦   ¦   ¦   player.h
-¦   ¦   ¦   render.cpp
-¦   ¦   ¦   render.h
-¦   ¦   ¦   vnet_client.cpp
-¦   ¦   ¦   vnet_client.h
-¦   ¦   ¦   
-¦   ¦   +---connection
-¦   ¦   ¦       login_screen.cpp
-¦   ¦   ¦       login_screen.h
-¦   ¦   ¦       
-¦   ¦   +---desktop
-¦   ¦   ¦   ¦   desktop.cpp
-¦   ¦   ¦   ¦   desktop.h
-¦   ¦   ¦   ¦   desktop_icons.cpp
-¦   ¦   ¦   ¦   wallpaper.cpp
-¦   ¦   ¦   ¦   wallpaper.h
-¦   ¦   ¦   ¦   
-¦   ¦   ¦   +---apps
-¦   ¦   ¦   ¦   ¦   browser.cpp
-¦   ¦   ¦   ¦   ¦   feed.cpp
-¦   ¦   ¦   ¦   ¦   hellroom.cpp
-¦   ¦   ¦   ¦   ¦   intruder_detector.cpp
-¦   ¦   ¦   ¦   ¦   profile.cpp
-¦   ¦   ¦   ¦   ¦   settings.cpp
-¦   ¦   ¦   ¦   ¦   terminal.cpp
-¦   ¦   ¦   ¦   ¦   
-¦   ¦   ¦   ¦   +---vdec
-¦   ¦   ¦   ¦           decrypt.cpp
-¦   ¦   ¦   ¦           encrypt.cpp
-¦   ¦   ¦   ¦           hash.cpp
-¦   ¦   ¦   ¦           keyring.cpp
-¦   ¦   ¦   ¦           minigame.cpp
-¦   ¦   ¦   ¦           vdec.cpp
-¦   ¦   ¦   ¦           
-¦   ¦   ¦   +---settings
-¦   ¦   ¦   ¦       audio.cpp
-¦   ¦   ¦   ¦       display.cpp
-¦   ¦   ¦   ¦       security.cpp
-¦   ¦   ¦   ¦       theme.cpp
-¦   ¦   ¦   ¦       
-¦   ¦   ¦   +---widgets
-¦   ¦   ¦           music_player.cpp
-¦   ¦   ¦           music_player.h
-¦   ¦   ¦           
-¦   ¦   +---raid
-¦   ¦           raid.cpp
-¦   ¦           raid.h
-¦   ¦           raid_commands.cpp
-¦   ¦           raid_core.cpp
-¦   ¦           raid_draw.cpp
-¦   ¦           raid_sequence.cpp
-¦   ¦           raid_ui.cpp
-¦   ¦           
-¦   +---lib
-¦   ¦       vnet_lib.cpp
-¦   ¦       vnet_lib.h
-¦   ¦       
-¦   +---server
-¦   ¦       main.cpp
-¦   ¦       server_core.cpp
-¦   ¦       
-¦   +---shared
-¦           utils.cpp
-¦           utils.h
-¦           vex_parser.cpp
-¦           vex_parser.h
-¦           vnet.cpp
-¦           vnet.h
-¦           vnet_protocol.h
-¦           vnet_sites.cpp
-¦           vnet_sites.h
-¦           
+ï¿½   +---client
+ï¿½   ï¿½   ï¿½   audio.cpp
+ï¿½   ï¿½   ï¿½   audio.h
+ï¿½   ï¿½   ï¿½   game.cpp
+ï¿½   ï¿½   ï¿½   game.h
+ï¿½   ï¿½   ï¿½   main.cpp
+ï¿½   ï¿½   ï¿½   player.cpp
+ï¿½   ï¿½   ï¿½   player.h
+ï¿½   ï¿½   ï¿½   render.h
+ï¿½   ï¿½   ï¿½   vnet_client.cpp
+ï¿½   ï¿½   ï¿½   vnet_client.h
+ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   +---connection
+ï¿½   ï¿½   ï¿½       login_screen.cpp
+ï¿½   ï¿½   ï¿½       login_screen.h
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---desktop
+ï¿½   ï¿½   ï¿½   ï¿½   desktop.cpp
+ï¿½   ï¿½   ï¿½   ï¿½   desktop.h
+ï¿½   ï¿½   ï¿½   ï¿½   desktop_icons.cpp
+ï¿½   ï¿½   ï¿½   ï¿½   wallpaper.cpp
+ï¿½   ï¿½   ï¿½   ï¿½   wallpaper.h
+ï¿½   ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   ï¿½   +---apps
+ï¿½   ï¿½   ï¿½   ï¿½   ï¿½   browser.cpp
+ï¿½   ï¿½   ï¿½   ï¿½   ï¿½   feed.cpp
+ï¿½   ï¿½   ï¿½   ï¿½   ï¿½   hellroom.cpp
+ï¿½   ï¿½   ï¿½   ï¿½   ï¿½   intruder_detector.cpp
+ï¿½   ï¿½   ï¿½   ï¿½   ï¿½   profile.cpp
+ï¿½   ï¿½   ï¿½   ï¿½   ï¿½   settings.cpp
+ï¿½   ï¿½   ï¿½   ï¿½   ï¿½   terminal.cpp
+ï¿½   ï¿½   ï¿½   ï¿½   ï¿½   
+ï¿½   ï¿½   ï¿½   ï¿½   +---vdec
+ï¿½   ï¿½   ï¿½   ï¿½           decrypt.cpp
+ï¿½   ï¿½   ï¿½   ï¿½           encrypt.cpp
+ï¿½   ï¿½   ï¿½   ï¿½           hash.cpp
+ï¿½   ï¿½   ï¿½   ï¿½           keyring.cpp
+ï¿½   ï¿½   ï¿½   ï¿½           minigame.cpp
+ï¿½   ï¿½   ï¿½   ï¿½           vdec.cpp
+ï¿½   ï¿½   ï¿½   ï¿½           
+ï¿½   ï¿½   ï¿½   +---settings
+ï¿½   ï¿½   ï¿½   ï¿½       audio.cpp
+ï¿½   ï¿½   ï¿½   ï¿½       display.cpp
+ï¿½   ï¿½   ï¿½   ï¿½       security.cpp
+ï¿½   ï¿½   ï¿½   ï¿½       theme.cpp
+ï¿½   ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   ï¿½   +---widgets
+ï¿½   ï¿½   ï¿½           music_player.cpp
+ï¿½   ï¿½   ï¿½           music_player.h
+ï¿½   ï¿½   ï¿½           
+ï¿½   ï¿½   +---raid
+ï¿½   ï¿½   ï¿½       raid.cpp
+ï¿½   ï¿½   ï¿½       raid.h
+ï¿½   ï¿½   ï¿½       raid_commands.cpp
+ï¿½   ï¿½   ï¿½       raid_core.cpp
+ï¿½   ï¿½   ï¿½       raid_draw.cpp
+ï¿½   ï¿½   ï¿½       raid_sequence.cpp
+ï¿½   ï¿½   ï¿½       raid_ui.cpp
+ï¿½   ï¿½   ï¿½       
+ï¿½   ï¿½   +---render
+ï¿½   ï¿½       ï¿½   render_core.cpp
+ï¿½   ï¿½       ï¿½   render_core.h
+ï¿½   ï¿½       ï¿½   render_effects.cpp
+ï¿½   ï¿½       ï¿½   render_effects.h
+ï¿½   ï¿½       ï¿½   render_main.cpp
+ï¿½   ï¿½       ï¿½   render_main.h
+ï¿½   ï¿½       ï¿½   render_markup.cpp
+ï¿½   ï¿½       ï¿½   render_markup.h
+ï¿½   ï¿½       ï¿½   render_themes.cpp
+ï¿½   ï¿½       ï¿½   render_themes.h
+ï¿½   ï¿½       ï¿½   
+ï¿½   ï¿½       +---shaders
+ï¿½   ï¿½               crt.fs
+ï¿½   ï¿½               
+ï¿½   +---lib
+ï¿½   ï¿½       vnet_lib.cpp
+ï¿½   ï¿½       vnet_lib.h
+ï¿½   ï¿½       
+ï¿½   +---server
+ï¿½   ï¿½       main.cpp
+ï¿½   ï¿½       server_core.cpp
+ï¿½   ï¿½       
+ï¿½   +---shared
+ï¿½           utils.cpp
+ï¿½           utils.h
+ï¿½           vex_parser.cpp
+ï¿½           vex_parser.h
+ï¿½           vnet.cpp
+ï¿½           vnet.h
+ï¿½           vnet_protocol.h
+ï¿½           vnet_sites.cpp
+ï¿½           vnet_sites.h
+ï¿½           
 +---vendor
     +---raylib
-        ¦   CHANGELOG
-        ¦   LICENSE
-        ¦   README.md
-        ¦   
+        ï¿½   CHANGELOG
+        ï¿½   LICENSE
+        ï¿½   README.md
+        ï¿½   
         +---include
-        ¦       raylib.h
-        ¦       raymath.h
-        ¦       rlgl.h
-        ¦       
+        ï¿½       raylib.h
+        ï¿½       raymath.h
+        ï¿½       rlgl.h
+        ï¿½       
         +---lib
                 libraylib.a
                 libraylibdll.a
