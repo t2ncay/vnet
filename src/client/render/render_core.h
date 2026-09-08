@@ -35,6 +35,7 @@ void DrawGradientBackground(float x, float y, float w, float h, Color topColor, 
 // GLOBALS
 // ============================================================
 extern Font g_fontVCR;
+extern Font g_fontIcons;   // fallback glyph font for pictographic icons
 extern float g_fontScale;
 extern float g_uiScale;
 extern float g_offsetX;
