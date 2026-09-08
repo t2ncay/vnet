@@ -1,13 +1,15 @@
 #pragma once
 #include "raylib.h"
 #include "./widgets/music_player.h"
+#include "./apps/file_manager.h" 
+#include "../../shared/utils.h"
 
 #include <cstring>
 #include <string>
 #include <vector>
 #include <functional>
 #include <unordered_map>
-#include <cmath> 
+#include <cmath>
 
 // ============================================================
 // GNOME-STYLE DESKTOP
@@ -40,7 +42,7 @@ struct AppWindow {
 
 struct AppIcon {
     std::string name;
-    std::string iconKey;  // Key to look up texture
+    std::string iconKey;
     std::string description;
     std::function<void()> onClick;
 };
@@ -48,7 +50,6 @@ struct AppIcon {
 struct Workspace {
     std::vector<int> windows;
     std::string name;
-    
     Workspace() = default;
     Workspace(const std::string& n) : name(n) {}
 };
@@ -61,43 +62,43 @@ public:
     }
 
     struct VDECState {
-        // Key ring - stores found keys
         char keys[8][32];
         bool keysFound[8];
         int keyCount;
-        
-        // Current operation
         char inputBuffer[1024];
         char outputBuffer[1024];
         char hashBuffer[1024];
-        
-        // UI state
-        int selectedTab;  // 0=Keys, 1=Encrypt, 2=Hash, 3=Master
+        int selectedTab;
         int selectedKeyIndex;
         bool inputFocused;
         bool outputFocused;
         float scrollOffset;
-        
-        // Minigame state
         bool minigameActive;
         float minigameTimer;
         int minigameTarget;
         int minigameAttempts;
         char minigameInput[16];
         bool minigameSuccess;
-        
-        // Bit-shift
         int bitShiftOffset;
     } m_vdec;
+
+    struct FileManagerState {
+        std::string currentPath = "/";
+        int selectedIndex = -1;
+        int scrollOffset = 0;
+        bool showingFileContent = false;
+        std::string currentFileContent;
+        std::string currentFileName;
+    } m_fileManager;
 
     void Init();
     void Shutdown();
     void Update(float dt);
     void Draw();
-    
+
     bool IsActive() const { return m_active; }
-    void Toggle() {  }
-    
+    void Toggle() { }
+
     int OpenApp(AppType type, const char* title = nullptr);
     void CloseWindow(int idx);
     void FocusWindow(int idx);
@@ -108,16 +109,15 @@ public:
     void MoveWindowToWorkspace(int winIdx, int wsIdx);
 
     bool IsDesktopBlocking() const { return m_active && !m_appGridVisible; }
-    
+
     bool IsBrowserFocused() const {
         for (const auto& win : m_windows) {
-            if (win.type == AppType::Browser && win.focused && !win.minimized) {
+            if (win.type == AppType::Browser && win.focused && !win.minimized)
                 return true;
-            }
         }
         return false;
     }
-    
+
     bool GetBrowserRect(int& x, int& y, int& w, int& h) const {
         for (const auto& win : m_windows) {
             if (win.type == AppType::Browser && !win.minimized) {
@@ -146,9 +146,8 @@ public:
 
     bool IsTerminalFocused() const {
         for (const auto& win : m_windows) {
-            if (win.type == AppType::Terminal && win.focused && !win.minimized) {
+            if (win.type == AppType::Terminal && win.focused && !win.minimized)
                 return true;
-            }
         }
         return false;
     }
@@ -157,18 +156,21 @@ public:
     void NavigateBack();
     void NavigateForward();
 
-    // VDEC helpers
-    void SetVDECOutput(const char* text) { 
-        strncpy(m_vdec.outputBuffer, text, sizeof(m_vdec.outputBuffer) - 1); 
+    void SetVDECOutput(const char* text) {
+        strncpy(m_vdec.outputBuffer, text, sizeof(m_vdec.outputBuffer) - 1);
     }
-    void SetVDECHash(const char* text) { 
-        strncpy(m_vdec.hashBuffer, text, sizeof(m_vdec.hashBuffer) - 1); 
+    void SetVDECHash(const char* text) {
+        strncpy(m_vdec.hashBuffer, text, sizeof(m_vdec.hashBuffer) - 1);
     }
-    void SetVDECMinigameTarget(int target) { 
-        m_vdec.minigameTarget = target; 
+    void SetVDECMinigameTarget(int target) {
+        m_vdec.minigameTarget = target;
     }
 
     void SyncVDECKeys();
+
+    
+    VFSManager m_vfs;
+    float m_windowTitleHeight = 30.0f;
 
 private:
     Desktop() = default;
@@ -180,7 +182,6 @@ private:
     void PushHellroomMessage(const char* fmt, ...);
     void SendHellroomMessage();
 
-    // Add to private section
     struct HellroomState {
         char inputBuffer[512];
         char nickBuffer[32];
@@ -199,6 +200,7 @@ private:
     void DrawWorkspaceIndicator();
     void DrawClock();
     void DrawDesktopIcons();
+
     void DrawVDEC(const AppWindow& win);
     void DrawVDECDecrypt(float x, float y, float w, float h);
     void DrawVDECEncrypt(float x, float y, float w, float h);
@@ -206,14 +208,14 @@ private:
     void DrawVDECMinigame(float x, float y, float w, float h);
     void DrawVDECKeyRing(float x, float y, float w, float h);
     void DrawIntruderDetector(const AppWindow& win);
-    
-    // App content renderers
+
     void DrawBrowser(const AppWindow& win);
     void DrawBrowserConnectionOverlay(float contentX, float contentY, float contentW, float contentH);
     void DrawTerminal(const AppWindow& win);
     void DrawProfile(const AppWindow& win);
     void DrawSettings(const AppWindow& win);
     void DrawFeed(const AppWindow& win);
+    void DrawFileManager(const AppWindow& win);
 
     // Icon management
     void LoadIcons();
@@ -235,13 +237,10 @@ private:
     float m_musicWidgetW = 280.0f;
     float m_musicWidgetH = 380.0f;
     bool m_musicWidgetVisible = true;
-    
-    // Icon textures
+
     std::unordered_map<std::string, Texture2D> m_iconTextures;
-    
-    // Layout constants
+
     float m_topBarHeight = 44.0f;
-    float m_windowTitleHeight = 30.0f;
 };
 
 Desktop& GetDesktop();

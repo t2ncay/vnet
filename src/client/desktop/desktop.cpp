@@ -1,11 +1,12 @@
-#include "desktop.h"
-#include "render.h"
-#include "vnet.h"
-#include "game.h"
-#include "vnet_client.h"
-#include "vnet_sites.h"
+#include "./desktop.h"
+#include "../render.h"
+#include "../../shared/vnet.h"
+#include "../game.h"
+#include "../vnet_client.h"
+#include "../../shared/vnet_sites.h"
 #include "wallpaper.h"
-#include "vnet_protocol.h" 
+#include "../../shared/vnet_protocol.h" 
+#include "./apps/file_manager.h"
 
 #include <cstdio>
 #include <cstring>
@@ -47,6 +48,10 @@ static void LaunchVDEC() {
 
 static void LaunchIntruderDetector() {
     GetDesktop().OpenApp(AppType::IntruderDetector, "INTRUDER DETECTOR v3.2");
+}
+
+static void LaunchFileManager() {
+    GetDesktop().OpenApp(AppType::FileManager, "VFS File Manager");
 }
 
 // icon functions
@@ -119,6 +124,7 @@ void Desktop::Init() {
     m_apps.push_back({"Feed", "feed", "System feed", LaunchFeed});
     m_apps.push_back({"Hellroom", "hellroom", "IRC Chatroom", LaunchHellroom});
     m_apps.push_back({"VDEC", "vdec", "Decryption Toolkit", LaunchVDEC});
+    m_apps.push_back({"Files", "folder", "VFS Explorer", LaunchFileManager});
     
     m_workspaces.clear();
     m_workspaces.emplace_back("Main");
@@ -148,6 +154,18 @@ void Desktop::Init() {
             m_vdec.keyCount++;
         }
     }
+
+    std::string exeDir = GetExecutableDirectory();
+    std::string vfsPath = exeDir + "vfs_root"; // assumes vfs_root is in same folder as .exe
+
+    // Create directory if missing
+    if (!fs::exists(vfsPath)) {
+        fs::create_directories(vfsPath);
+        PushCliLog("[VFS] Created vfs_root at %s", vfsPath.c_str());
+    }
+
+    m_vfs.SetRoot(vfsPath);
+    m_fileManager.currentPath = "/";
 }
 
 void Desktop::Shutdown() {
@@ -796,6 +814,7 @@ void Desktop::DrawWindowContent(const AppWindow& win) {
         case AppType::Hellroom: DrawHellroom(win); break;
         case AppType::VDEC:     DrawVDEC(win); break;
         case AppType::IntruderDetector: DrawIntruderDetector(win); break;
+        case AppType::FileManager: DrawFileManager(win); break;
         default: break;
     }
     
@@ -1109,6 +1128,10 @@ void Desktop::SyncVDECKeys() {
             }
         }
     }
+}
+
+void Desktop::DrawFileManager(const AppWindow& win) {
+    ::DrawFileManagerUI(win, *this);
 }
 
 Desktop& GetDesktop() {
