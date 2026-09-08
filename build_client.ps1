@@ -201,7 +201,7 @@ $startTime = Get-Date
 
 Write-Host ""
 Write-Host "  ╔═══════════════════════════════════════════════════════════════════╗" -ForegroundColor $COLOR_AMBER
-Write-Host "  ║  🔨 COMPILING $totalFiles SOURCE FILES ($maxJobs parallel)  ║" -ForegroundColor $COLOR_AMBER
+Write-Host "  ║  🔨 COMPILING $totalFiles SOURCE FILES ($maxJobs parallel)        ║" -ForegroundColor $COLOR_AMBER
 Write-Host "  ╚═══════════════════════════════════════════════════════════════════╝" -ForegroundColor $COLOR_AMBER
 Write-Host ""
 
@@ -336,14 +336,14 @@ if (Test-Path "vnet_client.exe") {
     
     Write-Host ""
     Write-Host "  ╔═══════════════════════════════════════════════════════════════════╗" -ForegroundColor $COLOR_TOXIC
-    Write-Host "  ║                         BUILD SUCCESSFUL!                        ║" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ║                         BUILD SUCCESSFUL!                         ║" -ForegroundColor $COLOR_TOXIC
     Write-Host "  ╠═══════════════════════════════════════════════════════════════════╣" -ForegroundColor $COLOR_TOXIC
-    Write-Host "  ║  $FOLDER Executable : vnet_client.exe                     ║" -ForegroundColor $COLOR_WHITE
-    Write-Host "  ║  $GEAR Size        : $size KB                              ║" -ForegroundColor $COLOR_WHITE
-    Write-Host "  ║  $INFO Files       : $totalFiles sources                   ║" -ForegroundColor $COLOR_WHITE
-    Write-Host "  ║  $BOLT Parallel    : $maxJobs jobs                         ║" -ForegroundColor $COLOR_WHITE
-    Write-Host "  ║  $CLOCK Time       : ${totalTime}s total                   ║" -ForegroundColor $COLOR_WHITE
-    Write-Host "  ║  $SCALE Status     : $CHECK READY TO RUN         ║" -ForegroundColor $COLOR_TOXIC
+    Write-Host "  ║  $FOLDER Executable : vnet_client.exe                             ║" -ForegroundColor $COLOR_WHITE
+    Write-Host "  ║  $GEAR Size        : $size KB                                     ║" -ForegroundColor $COLOR_WHITE
+    Write-Host "  ║  $INFO Files       : $totalFiles sources                          ║" -ForegroundColor $COLOR_WHITE
+    Write-Host "  ║  $BOLT Parallel    : $maxJobs jobs                                ║" -ForegroundColor $COLOR_WHITE
+    Write-Host "  ║  $CLOCK Time       : ${totalTime}s total                          ║" -ForegroundColor $COLOR_WHITE
+    Write-Host "  ║  $SCALE Status     : $CHECK READY TO RUN                          ║" -ForegroundColor $COLOR_TOXIC
     Write-Host "  ╚═══════════════════════════════════════════════════════════════════╝" -ForegroundColor $COLOR_TOXIC
     Write-Host ""
 } else {
