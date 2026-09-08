@@ -91,6 +91,10 @@ public:
         std::string currentFileName;
     } m_fileManager;
 
+    std::vector<AppWindow> m_windows;
+    std::vector<AppIcon> m_apps;
+    std::vector<Workspace> m_workspaces;
+
     void Init();
     void Shutdown();
     void Update(float dt);
@@ -172,15 +176,15 @@ public:
     VFSManager m_vfs;
     float m_windowTitleHeight = 30.0f;
 
+    void DrawHellroom(const AppWindow& win);
+    void PushHellroomMessage(const char* fmt, ...);
+    void SendHellroomMessage();
+
 private:
     Desktop() = default;
     ~Desktop() = default;
     Desktop(const Desktop&) = delete;
     Desktop& operator=(const Desktop&) = delete;
-
-    void DrawHellroom(const AppWindow& win);
-    void PushHellroomMessage(const char* fmt, ...);
-    void SendHellroomMessage();
 
     struct HellroomState {
         char inputBuffer[512];
@@ -222,9 +226,6 @@ private:
     void UnloadIcons();
     Texture2D GetIcon(const std::string& key);
 
-    std::vector<AppWindow> m_windows;
-    std::vector<AppIcon> m_apps;
-    std::vector<Workspace> m_workspaces;
     std::vector<std::string> m_navHistory;
     int m_navHistoryIndex = -1;
     int m_currentWorkspace = 0;
