@@ -5,3 +5,4 @@ build_client/
 build_server/
 *.png
 project_structure.txt
+.vscode
