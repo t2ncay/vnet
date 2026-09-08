@@ -163,7 +163,7 @@ void LoadAssets(void) {
     static const char* kTextGlyphSample =
         " !\"#$%&'()*+,-./0123456789:;<=>?@"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
-        "abcdefghijklmnopqrstuvwxyz{|}~"
+        "abcdefghijklmnopqrstuvwxyz{|}~├─"
         "\xC2\xB0"                                  // °
         "\xE2\x97\x88\xE2\x96\xB6\xE2\x98\x85\xE2\x9C\x93\xE2\x9C\x97"   // ◈▶★✓✗
         "\xE2\x95\x91\xE2\x96\x93\xE2\x96\x92\xE2\x96\x91"               // ║▓▒░

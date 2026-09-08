@@ -96,6 +96,7 @@ void UpdateGame(float dt) {
     UpdateVNET(dt);
     UpdatePlayer(dt);
     UpdateRaid(dt);
+    UpdateDuel(dt);
 
     GetDesktop().Update(dt); 
     GetMusicPlayer().Update(dt); 
@@ -125,6 +126,10 @@ void DrawGame(void) {
     ClearBackground(COLOR_BLACK);
 
     DrawUI();
+
+    if (IsDuelActive()) {
+        DrawDuelScreen();
+    }
 
     if (g_game.showFPS) {
         char fpsText[32];
@@ -199,6 +204,11 @@ void HandleInput(void) {
     if (IsKeyPressed(KEY_F1)) g_game.showFPS = !g_game.showFPS;
     if (IsKeyPressed(KEY_F2)) g_game.showDebug = !g_game.showDebug;
 
+    if (IsKeyPressed(KEY_F9)) {
+        DuelHack("CPU");
+        printf("[DEBUG] Duel active: %d, state: %d\n", g_duel.active, (int)g_duel.state);
+    }
+
     if (IsKeyPressed(KEY_F11)) {
         ToggleFullscreen();
         RecalcScale();
@@ -206,6 +216,61 @@ void HandleInput(void) {
 
     if (IsKeyPressed(KEY_TAB)) {
         g_player.cliOpen = !g_player.cliOpen;
+    }
+
+    // ============================================================
+    // DUEL TERMINAL INPUT HANDLING
+    // ============================================================
+    if (IsDuelActive() && g_duel.state == DuelState::ACTIVE) {
+        // Auto-focus the duel terminal when active (optional)
+        static bool duelTerminalFocused = false;
+        
+        // Click to focus
+        Vector2 refMouse = GetRefMousePos();
+        if (RefRectHover(40, REF_HEIGHT - 160, REF_WIDTH - 80, 140, refMouse) && 
+            IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            duelTerminalFocused = true;
+        }
+
+        // Only process input if focused
+        if (duelTerminalFocused) {
+            // Character input
+            int key = GetCharPressed();
+            while (key > 0) {
+                if (key >= 32 && key <= 126) {
+                    size_t len = strlen(g_duelInputBuffer);
+                    if (len < sizeof(g_duelInputBuffer) - 1) {
+                        g_duelInputBuffer[len] = (char)key;
+                        g_duelInputBuffer[len + 1] = '\0';
+                    }
+                }
+                key = GetCharPressed();
+            }
+
+            // Backspace
+            if (IsKeyPressed(KEY_BACKSPACE)) {
+                int len = (int)strlen(g_duelInputBuffer);
+                if (len > 0) {
+                    g_duelInputBuffer[len - 1] = '\0';
+                }
+            }
+
+            // Enter
+            if (IsKeyPressed(KEY_ENTER)) {
+                if (strlen(g_duelInputBuffer) > 0) {
+                    ProcessDuelCommand(g_duelInputBuffer);
+                    g_duelInputBuffer[0] = '\0';  // Clear buffer
+                }
+            }
+        }
+
+        // TAB to toggle focus (optional)
+        if (IsKeyPressed(KEY_TAB)) {
+            duelTerminalFocused = !duelTerminalFocused;
+        }
+
+        // Don't process main terminal input during duel
+        return;
     }
 
     // ============================================================

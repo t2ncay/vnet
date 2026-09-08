@@ -494,12 +494,6 @@ static void DrawStatusBar(Desktop& desktop, float x, float y, float w, float h) 
         float lastW = MeasureScaledTextWidth(lastStr, 9);
         DrawScaledText(lastStr, x + w - lastW - 12, y + 6, 9, Color{60, 70, 90, 150});
     }
-
-    // VCOIN indicator (right side)
-    char vcoinStr[32];
-    snprintf(vcoinStr, sizeof(vcoinStr), "💰 %.2f VCOIN", g_player.vcoin);
-    float vcoinW = MeasureScaledTextWidth(vcoinStr, 9);
-    if (vcoinW < 100) DrawScaledText(vcoinStr, x + w - 12, y + 6, 9, COLOR_TOXIC);
 }
 
 // ============================================================

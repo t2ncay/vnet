@@ -43,6 +43,8 @@ namespace VNetCmd {
     const char* const VDEC_HASH = "VDEC_HASH";
     const char* const VDEC_KEY_STATUS = "VDEC_KEY_STATUS";
     const char* const VDEC_MINIGAME = "VDEC_MINIGAME";
+    const char* const DUEL_INIT = "DUEL_INIT";
+    const char* const DUEL_ACTION = "DUEL_ACTION";
 }
 
 // Server response prefixes
@@ -76,6 +78,9 @@ namespace VNetResp {
     const char* const VDEC_HASH_RES = "VDEC_HASH_RES:";
     const char* const VDEC_KEY_STATUS_RES = "VDEC_KEY_STATUS_RES:";
     const char* const VDEC_MINIGAME_RES = "VDEC_MINIGAME_RES:";
+    const char* const DUEL_START = "DUEL_START:";
+    const char* const DUEL_ACTION_RES = "DUEL_ACTION_RES:";
+    const char* const DUEL_RESULT = "DUEL_RESULT:";
 }
 
 // ============================================================

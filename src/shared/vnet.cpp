@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include "../client/desktop/desktop.h"
 #include "../client/raid/raid.h"
+#include "../client/duel/duel.h"
 #include "vex_parser.h"
 #include "vnet_sites.h"
 
@@ -560,6 +561,10 @@ void UpdateVNET(float dt) {
                 GetDesktop().SetVDECMinigameTarget(target);
                 PushCliLog("[VDEC] Challenge target set: %d", target);
             }
+        }
+
+        else if (cmd == "DUEL_START" || cmd == "DUEL_ACTION_RES" || cmd == "DUEL_RESULT") {
+            ReceiveDuelPacket(cmd, payload);
         }
 
         // Unknown packet
@@ -1527,6 +1532,16 @@ void ProcessCommand(const char* cmd) {
             PushCliLog("[DEBUG]: Unknown event '%s'", args);
         }
     }
+
+    // === DUEL COMMANDS ===
+    else if (strcmp(token, "hack") == 0) {
+        if (!args) {
+            PushCliLog("[DUEL] Usage: hack <handle>");
+        } else {
+            DuelHack(args);
+        }
+    }
+// Also handle raid commands as before (they have priority)
     
     // ============================================================
     // UNKNOWN COMMAND

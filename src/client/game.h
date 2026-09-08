@@ -4,6 +4,7 @@
 #include "./player.h"
 #include "render.h"
 #include "../shared/utils.h"
+#include "./duel/duel.h"
 
 // ============================================================
 // REFERENCE CANVAS
@@ -37,3 +38,4 @@ struct GameState {
 
 extern GameState g_game;
 extern struct LoginScreen g_loginScreen;
+extern struct Duel g_duel;
