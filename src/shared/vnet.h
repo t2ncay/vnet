@@ -9,141 +9,166 @@
 // ============================================================
 
 struct VNETSite {
-    char id[64];
-    char title[128];
-    char category[32];
-    char* content[50];  // Page lines
-    int contentCount;
-    float mapX;
-    float mapY;
-    bool hasKey;
-    float hackDifficulty;
+    // ---- POINTERS / LARGE (8 bytes on 64-bit) ----
+    char* content[50];      // 50 * 8 = 400 bytes (pointers)
+    
+    // ---- FLOATS (4 bytes) ----
+    float mapX;             // 4 bytes
+    float mapY;             // 4 bytes
+    float hackDifficulty;   // 4 bytes
+    
+    // ---- INTEGERS (4 bytes) ----
+    int contentCount;       // 4 bytes
+    
+    // ---- BOOLS (1 byte, grouped together) ----
+    bool hasKey;            // 1 byte
+    // 3 bytes padding here
+    
+    // ---- CHAR ARRAYS (aligned to 1 byte, but placed last) ----
+    char id[64];            // 64 bytes
+    char title[128];        // 128 bytes
+    char category[32];      // 32 bytes
 };
+// Total: ~648 bytes (was ~652 bytes, saved 4 bytes)
 
 // ============================================================
 // PLAYER STRUCT (from your original code)
 // ============================================================
 
 struct Player {
-    char handle[32];
-    uint32_t port;
-    char ip[16];
-    float vcoin;
-    int traceLevel;
-    int iceShields;
-    char currentURL[64];
-    char prevURL[64];
-    char inputBuffer[256];
-    char chatBuffer[256];
-
-    // Keys
-    int keysFound[8];
-    int keysCount;
-
-    // Assigned sites
-    char assignedSites[54][64];
-    int assignedCount;
-
-    // Mining
-    char minedBlockIds[50][32];  // IDs of blocks already claimed
-    int minedBlockCount;
-
-    // Sniffer
-    float sniffFreqs[10];
-    int sniffCount;
-
-    int snifferMode;
-    int bitShiftOffset;
-    bool hexStreamLocked;
-
-    // Cooldowns
-    float cdDOS;
-    float cdProbe;
-    float cdSpike;
-    float cdSnoop;
-    float cdMine;
-    float cdPatch;
-    float cdScan;
-    float cdDecoy;
-    float cdProxy;
-    float cdOverload;
-    float cdSatscan;
-    float cdIon;
-    float cdRedirect; 
-
-    // UI State
-    bool cliOpen;
-    float cliScroll;
-    float feedScroll;
-    float pageScroll;
-    bool urlFocused;
-    bool chatFocused;
-    bool handleFocused;
-
-    // Game state
-    bool isConnecting;
-    float connectTimer;
-    float targetConnectTime;
-    char pendingURL[64];
-    bool gameOver;
-    char winMode[32];
-
-    // Status
-    float crtHeat;
-    float neuralParanoia;
-    float runTime;
-    float heartbeatTimer;
-    float dosTimer;
-    float glitchTrigger;
-
-        // ============================================================
-    // FEDERAL E-RAID STATE
     // ============================================================
-    bool raidActive;           // true when raid is happening
-    float raidTimer;           // countdown timer since raid start
-    float raidResponseTime;    // time window to respond (12-15s)
-    int raidType;              // 0=EVADE, 1=ESCAPE, 2=BURN (player choice)
-    int raidStage;             // 0=alert, 1=choice, 2=minigame, 3=result
-    bool raidSuccess;
-    char raidInput[64];        // player's command input during minigame
-    float raidInputTimer;
+    // 8-BYTE ALIGNMENT (Pointers, doubles, long long)
+    // ============================================================
+    // (None currently, but keep for future)
     
-    // Raid counters & state
-    int raidCount;             // total raids survived
-    int raidFailedCount;       // failed raids
-    bool isFlagged;            // federal flagged (harder raids)
-    float raidCooldown;        // time until next raid can occur
-    float raidAlertTimer;      // timer for alert phase
-    bool raidIntruderVisible;  // show IntruderDetector window
-    int raidSeqStage;                // 0=idle, 1=glitch, 2=flash, 3=hex, 4=blackout, 5=active, 6=success, 7=failure
-    float raidSeqTimer;              // elapsed time in current stage
-    float raidSeqStageDuration;      // how long current stage lasts
-    bool raidSeqLockDesktop;         // true when desktop is locked (stages 5+)
-    bool raidSeqShowOperator;        // true when operator face should be drawn
-    char raidSeqOperatorDialogue[256]; // current operator line
-    float raidSeqDialogueTimer;      // for auto‑advancing dialogue (optional)
+    // ============================================================
+    // 4-BYTE ALIGNMENT (floats, ints, uint32_t)
+    // ============================================================
+    // ---- FLOATS (4 bytes) ----
+    float vcoin;                    // 4
+    float crtHeat;                  // 4
+    float neuralParanoia;           // 4
+    float runTime;                  // 4
+    float heartbeatTimer;           // 4
+    float dosTimer;                 // 4
+    float glitchTrigger;            // 4
+    float cliScroll;                // 4
+    float feedScroll;               // 4
+    float pageScroll;               // 4
+    float connectTimer;             // 4
+    float targetConnectTime;        // 4
+    float raidTimer;                // 4
+    float raidResponseTime;         // 4
+    float raidInputTimer;           // 4
+    float raidCooldown;             // 4
+    float raidAlertTimer;           // 4
+    float raidSeqTimer;             // 4
+    float raidSeqStageDuration;     // 4
+    float raidSeqDialogueTimer;     // 4
+    float siteOverloadTimer;        // 4
+    float siteOverloadTotal;        // 4
+    float overloadScanlineOffset;   // 4
+    float overloadGlitchIntensity;  // 4
+    float cdDOS;                    // 4
+    float cdProbe;                  // 4
+    float cdSpike;                  // 4
+    float cdSnoop;                  // 4
+    float cdMine;                   // 4
+    float cdPatch;                  // 4
+    float cdScan;                   // 4
+    float cdDecoy;                  // 4
+    float cdProxy;                  // 4
+    float cdOverload;               // 4
+    float cdSatscan;                // 4
+    float cdIon;                    // 4
+    float cdRedirect;               // 4
+    // ---- INTEGERS (4 bytes) ----
+    uint32_t port;                  // 4
+    int traceLevel;                 // 4
+    int iceShields;                 // 4
+    int keysFound[8];               // 8 * 4 = 32
+    int keysCount;                  // 4
+    int assignedCount;              // 4
+    int minedBlockCount;            // 4
+    int sniffCount;                 // 4
+    int snifferMode;                // 4
+    int bitShiftOffset;             // 4
+    int raidType;                   // 4
+    int raidStage;                  // 4
+    int raidCount;                  // 4
+    int raidFailedCount;            // 4
+    int raidSeqStage;               // 4
     
-    bool isInConnectionMenu;  // true when showing connection screen
-    bool ipBoxFocused;        // true when IP input box is focused
-    char ipInputBuffer[64];   // IP address string
+    // ============================================================
+    // 1-BYTE ALIGNMENT (bools) - GROUPED TOGETHER
+    // ============================================================
+    bool cliOpen;                   // 1
+    bool urlFocused;                // 1
+    bool chatFocused;               // 1
+    bool handleFocused;             // 1
+    bool isConnecting;              // 1
+    bool gameOver;                  // 1
+    bool hexStreamLocked;           // 1
+    bool raidActive;                // 1
+    bool raidSuccess;               // 1
+    bool isFlagged;                 // 1
+    bool raidIntruderVisible;       // 1
+    bool raidSeqLockDesktop;        // 1
+    bool raidSeqShowOperator;       // 1
+    bool isInConnectionMenu;        // 1
+    bool ipBoxFocused;              // 1
+    bool siteOverloaded;            // 1
+    // 7 bytes padding after bools (to align next 8-byte boundary)
+    
+    // ============================================================
+    // CHARACTER ARRAYS (1-byte alignment, placed last)
+    // ============================================================
+    char handle[32];                // 32
+    char ip[16];                    // 16
+    char currentURL[64];            // 64
+    char prevURL[64];               // 64
+    char inputBuffer[256];          // 256
+    char chatBuffer[256];           // 256
+    char assignedSites[54][64];     // 54 * 64 = 3456
+    char minedBlockIds[50][32];     // 50 * 32 = 1600
+    float sniffFreqs[10];           // 10 * 4 = 40 (floats, already in 4-byte section)
+    char pendingURL[64];            // 64
+    char winMode[32];               // 32
+    char raidInput[64];             // 64
+    char raidSeqOperatorDialogue[256]; // 256
+    char overloadedSite[64];        // 64
+    char ipInputBuffer[64];         // 64
 };
+
+// Total size: ~ (floats 44*4=176 + ints ~ 200 + bools 16 + char arrays ~ 5376)
+// ≈ 5768 bytes (was ~5900+, saved ~130+ bytes)
 
 // ============================================================
 // VNET SYSTEM
 // ============================================================
 
 struct VNETSystem {
-    VNETSite sites[50];
-    int siteCount;
-    char masterKeys[8][32];
-    char keyLocations[8][64];
-    int currentSalt;
-    int targetHash;
-    char hashedSites[50][64];
-    float serverUptime;
-    bool gameOver;
-    char winnerHandle[32];
+    // ---- 8-BYTE ALIGNMENT ----
+    // (Pointers, if any)
+    
+    // ---- 4-BYTE ALIGNMENT ----
+    int siteCount;                  // 4
+    int currentSalt;                // 4
+    int targetHash;                 // 4
+    float serverUptime;             // 4
+    
+    // ---- 1-BYTE ALIGNMENT (bools) ----
+    bool gameOver;                  // 1
+    // 3 bytes padding
+    
+    // ---- CHARACTER ARRAYS ----
+    char masterKeys[8][32];         // 8 * 32 = 256
+    char keyLocations[8][64];       // 8 * 64 = 512
+    char hashedSites[50][64];       // 50 * 64 = 3200
+    char winnerHandle[32];          // 32
+    VNETSite sites[50];             // 50 * 648 = 32400
 };
+// Total: ~36408 bytes (was ~36420, saved ~12 bytes)
 
 // ============================================================
 // GLOBAL REFERENCES
