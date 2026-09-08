@@ -6,3 +6,4 @@ build_server/
 *.png
 project_structure.txt
 .vscode
+build_log.txt
