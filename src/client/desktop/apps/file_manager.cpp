@@ -194,7 +194,7 @@ static void DrawPathBar(Desktop& desktop, float x, float y, float w, float h) {
     float btnX = x + 8;
     float btnY = y + 6;
     float btnSize = 26.0f;
-    const char* navLabels[] = {"◄", "►", "▲"};
+    const char* navLabels[] = {"🡸", "🡺", "🡹"};
     Vector2 refMouse = GetRefMousePos();
 
     for (int i = 0; i < 3; i++) {
