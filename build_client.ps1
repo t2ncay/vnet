@@ -4,8 +4,6 @@
 # ============================================================
 
 # ---- COLOR PALETTE ----
-$COLOR_BLACK   = "Black"
-$COLOR_PANEL   = "DarkGray"
 $COLOR_BLOOD   = "Red"
 $COLOR_CYAN    = "Cyan"
 $COLOR_AMBER   = "Yellow"

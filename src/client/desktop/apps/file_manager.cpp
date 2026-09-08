@@ -572,6 +572,10 @@ static void DrawFileContentViewer(Desktop& desktop, float cx, float cy, float cw
     std::stringstream ss(desktop.m_fileManager.currentFileContent);
     std::string line;
     while (std::getline(ss, line)) {
+        // Strip trailing carriage return (Windows line endings)
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
         lines.push_back(line);
     }
 
