@@ -279,7 +279,7 @@ src/
 
 ## Contributors
 
-- Project Lead: @sh4d0w_net
+- Project Lead: [@t2ncay](https://github.com/t2ncay)
 - Network Architecture: VNET Development Team
 - UI/UX Design: VEKTRAOS Design Bureau
 
