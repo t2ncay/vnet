@@ -1,5 +1,5 @@
 #include "player.h"
-#include "vnet.h"
+#include "../shared/vnet.h"
 #include <cstring>
 
 extern Player g_player;
