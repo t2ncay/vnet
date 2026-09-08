@@ -4,14 +4,25 @@
 #include "../vnet_client.h"
 #include <cstring>
 #include <cstdio>
-
-// ============================================================
-// DUEL COMMANDS (called from ProcessCommand)
-// ============================================================
+#include <cstdarg>
 
 // ============================================================
 // PROCESS DUEL COMMAND (called from game.cpp)
 // ============================================================
+static void DuelLog(const char* fmt, ...) {
+    char buffer[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    
+    // Push to main terminal
+    PushCliLog("%s", buffer);
+    
+    // Push to duel action log
+    g_duel.actionLog.push_back(buffer);
+}
+
 void ProcessDuelCommand(const char* cmd) {
     if (!IsDuelActive()) {
         PushCliLog("[DUEL] No active duel.");
@@ -151,25 +162,24 @@ void DuelScan(void) {
     if (!IsDuelActive()) return;
     if (g_duel.localRole != DuelRole::ATTACKER) return;
     DuelPlayer& player = g_duel.attacker;
-    // Check objective
     for (auto& obj : player.objectives) {
         if (obj.completed) continue;
         if (obj.type == DuelObjectiveType::SCAN) {
-            bool success = (rand() % 100) < 80; // 80% success
+            bool success = (rand() % 100) < 80;
             if (success) {
                 obj.completed = true;
                 player.objectivesCompleted++;
-                PushCliLog("[DUEL] ✅ SCAN successful! Open ports revealed.");
+                DuelLog("[DUEL] ✅ SCAN successful! Open ports revealed.");  // 👈 Changed
                 g_duel.actionLog.push_back("[SUCCESS] Scan completed.");
             } else {
-                PushCliLog("[DUEL] ❌ SCAN failed. Try again.");
+                DuelLog("[DUEL] ❌ SCAN failed. Try again.");  // 👈 Changed
                 g_duel.actionLog.push_back("[FAIL] Scan failed.");
             }
             AdvanceDuelProgress(player);
             return;
         }
     }
-    PushCliLog("[DUEL] Scan objective already complete or not available.");
+    DuelLog("[DUEL] Scan objective already complete or not available.");  // 👈 Changed
 }
 
 void DuelPortScan(const char* port) {
