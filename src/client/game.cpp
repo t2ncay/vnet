@@ -69,6 +69,7 @@ bool InitGame(void) {
 
     GetDesktop().Init();
     GetMusicPlayer().Init(); 
+    InitNetWorld();
 
     // Placeholder starting page
     LoadPage("vnet.dir");
@@ -93,50 +94,57 @@ void UpdateGame(float dt) {
 
     UpdateThemeTransition(dt);
 
-    UpdateVNET(dt);
-    UpdatePlayer(dt);
-    UpdateRaid(dt);
-    UpdateDuel(dt);
+    UpdateNetWorld(dt);
 
-    GetDesktop().Update(dt); 
-    GetMusicPlayer().Update(dt); 
+    if (!IsInNetWorld() || g_netWorld.state == NetWorldState::ENTERING) {
 
-    g_game.fpsTimer += dt;
-    if (g_game.fpsTimer >= 0.5f) {
-        g_game.currentFPS = GetFPS();
-        g_game.fpsTimer = 0.0f;
-    }
-    
-    // ============================================================
-    // NEW: Handle loading completion delay
-    // ============================================================
-    if (g_loadingWaitingToFinish) {
-        g_loadingCompletionTimer += dt;
-        if (g_loadingCompletionTimer >= 1.5f) {  // Show loading for 1.5 seconds
-            g_loadingWaitingToFinish = false;
-            g_loginScreen.isActive = false;
-            g_loginScreen.isLoading = false;
+        UpdateVNET(dt);
+        UpdatePlayer(dt);
+        UpdateRaid(dt);
+        UpdateDuel(dt);
+
+        GetDesktop().Update(dt); 
+        GetMusicPlayer().Update(dt); 
+
+        g_game.fpsTimer += dt;
+        if (g_game.fpsTimer >= 0.5f) {
+            g_game.currentFPS = GetFPS();
+            g_game.fpsTimer = 0.0f;
+        }
+        
+        if (g_loadingWaitingToFinish) {
+            g_loadingCompletionTimer += dt;
+            if (g_loadingCompletionTimer >= 1.5f) {  // Show loading for 1.5 seconds
+                g_loadingWaitingToFinish = false;
+                g_loginScreen.isActive = false;
+                g_loginScreen.isLoading = false;
+            }
         }
     }
 }
 
 void DrawGame(void) {
     BeginDrawing();
-
     ClearBackground(COLOR_BLACK);
-
-    DrawUI();
-
-    if (IsDuelActive()) {
-        DrawDuelScreen();
+    
+    if (IsInNetWorld()) {
+        // Draw NetWorld (this renders everything including 3D)
+        DrawNetWorld();
+    } else {
+        // Normal desktop rendering
+        DrawUI();
+        if (IsDuelActive()) {
+            DrawDuelScreen();
+        }
     }
-
+    
+    // FPS overlay (always on top)
     if (g_game.showFPS) {
         char fpsText[32];
         snprintf(fpsText, sizeof(fpsText), "FPS: %d", g_game.currentFPS);
         DrawText(fpsText, 10, 10, 18, COLOR_TOXIC);
     }
-
+    
     EndDrawing();
 }
 
