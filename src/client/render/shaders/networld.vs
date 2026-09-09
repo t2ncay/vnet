@@ -26,9 +26,10 @@ void main()
     fragColor = vertexColor;
     
     // Calculate fragment position and normal in world space
-    fragPosition = vec3(model * vec4(vertexPosition, 1.0));
-    fragNormal = normalize(mat3(model) * vertexNormal);
-    fragTangent = normalize(mat3(model) * vertexTangent);
+    vec3 n = (dot(vertexNormal, vertexNormal) > 0.0001) ? vertexNormal : vec3(0.0, 1.0, 0.0);
+    vec3 t = (dot(vertexTangent, vertexTangent) > 0.0001) ? vertexTangent : vec3(1.0, 0.0, 0.0);
+    fragNormal  = normalize(mat3(model) * n);
+    fragTangent = normalize(mat3(model) * t);
     
     // Calculate final vertex position
     gl_Position = mvp * vec4(vertexPosition, 1.0);

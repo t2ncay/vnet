@@ -28,15 +28,14 @@ uniform float roughnessValue;
 uniform float emissivePower;
 uniform vec4 emissiveColor;
 
-// Lights
-#define MAX_LIGHTS 4
+// Lights - MUST match CPU struct exactly!
+#define MAX_LIGHTS 12
 uniform int numOfLights;
 
 struct Light {
     int type;
     int enabled;
     vec3 position;
-    vec3 target;
     vec4 color;
     float intensity;
 };
@@ -113,12 +112,12 @@ void main() {
         float attenuation = 1.0;
         float distance = 0.0;
         
-        if (lights[i].type == 1) {
+        if (lights[i].type == 1) { // point light
             L = lights[i].position - fragPosition;
             distance = length(L);
             L = normalize(L);
             attenuation = 1.0 / (distance * distance + 1.0);
-        } else if (lights[i].type == 0) {
+        } else if (lights[i].type == 0) { // directional
             L = normalize(-lights[i].position);
             attenuation = 1.0;
         }
@@ -142,25 +141,19 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
     
-    // ---- 3. AMBIENT LIGHT (MUCH BRIGHTER) ----
-    float ambientIntensityFinal = 0.15f; // Even brighter!
+    // ---- 3. AMBIENT LIGHT ----
+    float ambientIntensityFinal = 0.15f;
     vec3 ambient = ambientColor * ambientIntensityFinal * albedo * ao;
     vec3 color = ambient + Lo;
     
-    // ---- 4. EMISSIVE (MUCH BRIGHTER) ----
-    color += emissive * 3.0; // Triple emissive intensity
+    // ---- 4. EMISSIVE ----
+    color += emissive * 3.0;
     
     // ---- 5. POST-PROCESS ----
-    // ACES tone mapping (cinematic)
+    // ACES tone mapping
     color = (color * (2.51 * color + 0.03)) / (color * (2.43 * color + 0.59) + 0.14);
-    
-    // Gamma correction
+    // Gamma
     color = pow(color, vec3(1.0/2.2));
-    
-    // Add bloom glow
-    float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color += vec3(0.0, 0.4, 0.8) * luminance * 0.2;
-    
     // Cyan tint boost
     color.g *= 1.1;
     color.b *= 1.15;
