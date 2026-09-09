@@ -190,46 +190,55 @@ void DrawNetWorld(void) {
         InitNetEffects();
     }
     
-    // ---- GLITCH TRANSITION OVERLAY (CINEMATIC) ----
+    // ---- GLITCH TRANSITION OVERLAY ----
     if (g_netWorld.state == NetWorldState::ENTERING || g_netWorld.state == NetWorldState::EXITING) {
         DrawTransitionOverlay();
         return;
     }
 
+    // ============================================================
+    // 1. RENDER 3D SCENE TO RENDER TEXTURE
+    // ============================================================
+    BeginTextureMode(g_netWorld.sceneRT);
+        ClearBackground(BLACK);
+        ApplyNetWorldPBR(g_netWorld.camera);
+        BeginMode3D(g_netWorld.camera);
+            DrawCyberSkybox();
+            DrawNetTerrain();
+            DrawGlitchCubes3D();
+            DrawNetNodes();
+            DrawNetPortals();
+            DrawNetPlayer();
+            DrawNetEffects();
+            DrawDataRings();
+        EndMode3D();
+        EndNetWorldPBR();
+    EndTextureMode();
+
+    // ============================================================
+    // 2. POST-PROCESSING PIPELINE
+    // ============================================================
+
+    // Bloom (reads sceneRT, outputs to compositeRT)
+    ApplyBloom(g_netWorld.sceneRT, g_netWorld.compositeRT);
+
+    // Distortion/Glitch (draws compositeRT to screen with distortion shader)
+    ApplyDistortion(g_netWorld.compositeRT);
+
+    // ---- CRT Overlay ----
     if (g_netWorld.state == NetWorldState::ACTIVE) {
         ApplyNetWorldShader();
     }
-    
-    ApplyNetWorldPBR(g_netWorld.camera);
 
-    // ---- 3D SCENE ----
-    BeginMode3D(g_netWorld.camera);
-
-    DrawCyberSkybox();
-    
-    DrawNetTerrain();
-    DrawGlitchCubes3D();
-    DrawNetNodes();
-    DrawNetPortals();
-    DrawNetPlayer();
-    DrawNetEffects();
-    DrawDataRings();
-    
-    EndMode3D();
-
-    EndNetWorldPBR();
-    
-    // ---- 2D UI OVERLAY ----
+    // ---- UI ----
     DrawNetUI();
-    
-    // ---- SCANLINES ----
+
+    // ---- Additional scanlines/vignette (fallback) ----
     float t = g_netWorld.time;
     for (int y = 0; y < GetScreenHeight(); y += 4) {
         float scanY = y + fmodf(t * 30.0f + g_netWorld.scanlineOffset, 4.0f);
         DrawRectangle(0, (int)scanY, GetScreenWidth(), 1, {0, 0, 0, 4});
     }
-    
-    // ---- VIGNETTE ----
     int w = GetScreenWidth();
     int h = GetScreenHeight();
     DrawRectangle(0, 0, w, 4, {0, 0, 0, 80});

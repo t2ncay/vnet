@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 
+#define MAX_DYNAMIC_LIGHTS 12
+#define MAX_GLITCH_LAYERS  4
+
 // ============================================================
 // NETWORLD ENUMS
 // ============================================================
@@ -19,6 +22,23 @@ enum class NodeType {
     DATA_NODE,      // Information/collectible
     ENEMY,          // Glitch enemy / bot
     CORE            // Central node (hub)
+};
+
+struct DynamicLight {
+    Vector3 position;
+    Vector3 color;
+    float intensity;
+    float radius;
+    float orbitSpeed;
+    float phase;
+    bool active;
+};
+
+struct GlitchLayer {
+    float intensity;
+    float duration;
+    float phase;
+    int type; // 0=SCANLINE, 1=CHROMATIC, 2=BLOCK, 3=PIXELATE
 };
 
 // ============================================================
@@ -109,6 +129,30 @@ struct NetWorld {
 
     bool showBloom;
     float bloomIntensity;
+
+    DynamicLight dynamicLights[MAX_DYNAMIC_LIGHTS];
+    int dynamicLightCount;
+    float distortionStrength;
+    GlitchLayer glitchLayers[MAX_GLITCH_LAYERS];
+    int glitchLayerCount;
+
+    // Render targets for post‑processing
+    RenderTexture2D sceneRT;        // full resolution
+    RenderTexture2D bloomRT;        // half resolution
+    RenderTexture2D blurTemp;       // ping-pong
+    RenderTexture2D fogRT;          // optional
+    RenderTexture2D compositeRT;    // Add this line
+
+    struct Building {
+        int gridWidth;          // number of tiles in X
+        int gridDepth;          // number of tiles in Z
+        float tileSize;         // world units per tile (e.g., 4.0f)
+        std::vector<std::vector<int>> tiles; // 0 = floor, 1 = wall
+        std::vector<Rectangle> rooms;        // for node placement (x, y, width, depth)
+        // We'll also store wall bounding boxes for collision
+        std::vector<BoundingBox> wallBoxes;
+    } building;
+
 };
 
 // ============================================================
@@ -146,6 +190,8 @@ void LoadNetWorldPBR(void);
 void UnloadNetWorldPBR(void);
 void ApplyNetWorldPBR(Camera3D camera);
 void EndNetWorldPBR(void);
+void ApplyDistortion(RenderTexture2D scene);
+void ApplyBloom(RenderTexture2D scene, RenderTexture2D output);
 
 // Rendering
 void DrawTransitionOverlay(void);

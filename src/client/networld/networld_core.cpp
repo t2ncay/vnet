@@ -15,6 +15,10 @@ NetWorld g_netWorld = {0};
 static const float NETWORLD_BASE_FOV = 60.0f;
 static const float NETWORLD_DASH_FOV = 75.0f;
 
+// ============================================================
+// INIT
+// ============================================================
+
 void InitNetWorld(void) {
     InitNetWorldPhysics();
 
@@ -29,7 +33,8 @@ void InitNetWorld(void) {
     g_netWorld.showNodeLabels = true;
     g_netWorld.selectedNodeIndex = -1;
     g_netWorld.interactionCooldown = 0.0f;
-    g_netWorld.bloomIntensity = 0.3f; // new
+    g_netWorld.bloomIntensity = 0.3f;
+    g_netWorld.dynamicLightCount = 0; // will be set later
 
     // Player
     g_netWorld.player.position = {0.0f, 2.0f, 0.0f};
@@ -53,13 +58,73 @@ void InitNetWorld(void) {
     g_netWorld.camera.fovy = NETWORLD_BASE_FOV;
     g_netWorld.camera.projection = CAMERA_PERSPECTIVE;
 
-    // ==== ASSET LOAD: NETWORLD GPU RESOURCES ====
+    // ==== ASSET LOAD: SHADERS ====
     LoadNetWorldShader();
     LoadNetWorldPBR();
     // ==== END ASSET LOAD ====
 
+    // ==== ASSET LOAD: RENDER TEXTURES ====
+    int w = GetScreenWidth();
+    int h = GetScreenHeight();
+    g_netWorld.sceneRT   = LoadRenderTexture(w, h);
+    g_netWorld.bloomRT   = LoadRenderTexture(w/2, h/2);
+    g_netWorld.blurTemp  = LoadRenderTexture(w/2, h/2);
+    g_netWorld.compositeRT = LoadRenderTexture(w, h);
+    // g_netWorld.fogRT can be allocated if needed
+    // ==== END ASSET LOAD ====
+
     printf("[NETWORLD] System initialized.\n");
 }
+
+// ============================================================
+// CLEANUP
+// ============================================================
+
+void UnloadNetWorldResources(void) {
+    // ==== ASSET UNLOAD: RENDER TEXTURES ====
+    UnloadRenderTexture(g_netWorld.sceneRT);
+    UnloadRenderTexture(g_netWorld.bloomRT);
+    UnloadRenderTexture(g_netWorld.blurTemp);
+    UnloadRenderTexture(g_netWorld.compositeRT);
+    // ==== END ASSET UNLOAD ====
+    UnloadNetWorldShader();
+    UnloadNetWorldPBR();
+}
+
+// ============================================================
+// DYNAMIC LIGHTS
+// ============================================================
+
+void InitDynamicLights(void) {
+    g_netWorld.dynamicLightCount = 8;
+    for (int i = 0; i < g_netWorld.dynamicLightCount; i++) {
+        DynamicLight& l = g_netWorld.dynamicLights[i];
+        l.active = true;
+        l.color = {(i % 3 == 0) ? 1.0f : 0.2f, 
+                   (i % 3 == 1) ? 1.0f : 0.2f, 
+                   (i % 3 == 2) ? 1.0f : 0.2f};
+        l.intensity = 20.0f + i * 5.0f;
+        l.radius = 15.0f + i * 4.0f;
+        l.orbitSpeed = 0.2f + i * 0.08f;
+        l.phase = i * 1.5f;
+    }
+}
+
+void UpdateDynamicLights(float dt) {
+    float t = g_netWorld.time;
+    for (int i = 0; i < g_netWorld.dynamicLightCount; i++) {
+        DynamicLight& l = g_netWorld.dynamicLights[i];
+        if (!l.active) continue;
+        float angle = t * l.orbitSpeed + l.phase;
+        l.position.x = cosf(angle) * l.radius;
+        l.position.z = sinf(angle) * l.radius;
+        l.position.y = 5.0f + sinf(t * 0.5f + l.phase) * 2.0f;
+    }
+}
+
+// ============================================================
+// ENTER / EXIT
+// ============================================================
 
 void EnterNetWorld(void) {
     if (g_netWorld.active) return;
@@ -76,6 +141,10 @@ void EnterNetWorld(void) {
 
     if (g_netWorld.nodes.empty()) {
         GenerateNetWorld();
+    }
+    // Initialize dynamic lights if not done yet
+    if (g_netWorld.dynamicLightCount == 0) {
+        InitDynamicLights();
     }
 
     g_netWorld.active = true;
@@ -121,6 +190,10 @@ bool IsInNetWorld(void) {
     return g_netWorld.active && g_netWorld.state != NetWorldState::IDLE;
 }
 
+// ============================================================
+// UPDATE
+// ============================================================
+
 void UpdateNetWorld(float dt) {
     if (!g_netWorld.active) return;
 
@@ -132,7 +205,6 @@ void UpdateNetWorld(float dt) {
     switch (g_netWorld.state) {
         case NetWorldState::ENTERING: {
             g_netWorld.stateTimer += dt;
-            g_netWorld.transitionGlitchTimer += dt;
             float progress = g_netWorld.stateTimer / g_netWorld.transitionDuration;
             g_netWorld.glitchIntensity = 1.0f - progress;
             if (g_netWorld.glitchIntensity < 0.0f) g_netWorld.glitchIntensity = 0.0f;
@@ -146,6 +218,9 @@ void UpdateNetWorld(float dt) {
         }
 
         case NetWorldState::ACTIVE: {
+            // Update dynamic lights
+            UpdateDynamicLights(dt);
+
             HandleNetInput();
             UpdateNetPlayer(dt);
 
@@ -156,7 +231,6 @@ void UpdateNetWorld(float dt) {
                 if (node.scanRevealTimer > 0) node.scanRevealTimer -= dt;
 
                 if (node.type == NodeType::ENEMY && node.active && node.isHostile) {
-                    // Patrol orbit if far from player
                     Vector3 toPlayer = Vector3Subtract(g_netWorld.player.position, node.position);
                     float dist = Vector3Length(toPlayer);
                     if (dist > 20.0f) {
@@ -164,12 +238,10 @@ void UpdateNetWorld(float dt) {
                         node.position.x = node.spawnPosition.x + cosf(angle) * 3.0f;
                         node.position.z = node.spawnPosition.z + sinf(angle) * 3.0f;
                     } else if (dist > 1.5f) {
-                        // Chase
                         Vector3 dir = Vector3Normalize(toPlayer);
                         node.position.x += dir.x * 2.5f * dt;
                         node.position.z += dir.z * 2.5f * dt;
                     } else {
-                        // Attack: damage player
                         g_netWorld.player.health -= 10 * dt;
                         if (g_netWorld.player.health < 0) g_netWorld.player.health = 0;
                         TriggerGlitch(0.3f);
@@ -195,7 +267,7 @@ void UpdateNetWorld(float dt) {
             // Shield regeneration
             g_netWorld.player.shieldRegenTimer += dt;
             if (g_netWorld.player.shieldRegenTimer > 2.0f && g_netWorld.player.shield < g_netWorld.player.maxShield) {
-                g_netWorld.player.shield += 5 * dt;
+                g_netWorld.player.shield += (int)(5 * dt);
                 if (g_netWorld.player.shield > g_netWorld.player.maxShield)
                     g_netWorld.player.shield = g_netWorld.player.maxShield;
             }
@@ -227,7 +299,6 @@ void UpdateNetWorld(float dt) {
 
         case NetWorldState::EXITING: {
             g_netWorld.stateTimer += dt;
-            g_netWorld.transitionGlitchTimer += dt;
             float progress = g_netWorld.stateTimer / g_netWorld.transitionDuration;
             g_netWorld.glitchIntensity = progress;
             if (g_netWorld.glitchIntensity > 1.0f) g_netWorld.glitchIntensity = 1.0f;
@@ -245,6 +316,10 @@ void UpdateNetWorld(float dt) {
         default: break;
     }
 }
+
+// ============================================================
+// SELECTION (unchanged)
+// ============================================================
 
 void UpdateNetSelection(void) {
     Vector2 mousePos = GetMousePosition();

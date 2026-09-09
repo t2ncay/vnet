@@ -9,6 +9,34 @@
 #include <cstdlib>
 #include <ctime>
 #include <cstring>
+#include <algorithm>
+
+static void PlaceRoom(int x, int y, int w, int d, std::vector<std::vector<int>>& tiles) {
+    for (int i = x; i < x + w && i < (int)tiles.size(); i++) {
+        for (int j = y; j < y + d && j < (int)tiles[0].size(); j++) {
+            tiles[i][j] = 0; // floor
+        }
+    }
+}
+
+// ------------------------------------------------------------------
+// Helper: carve a corridor between two rooms (L-shaped)
+// ------------------------------------------------------------------
+static void CarveCorridor(int x1, int y1, int x2, int y2, std::vector<std::vector<int>>& tiles) {
+    // Move along X first, then Z
+    int stepX = (x2 > x1) ? 1 : -1;
+    int stepZ = (y2 > y1) ? 1 : -1;
+    int curX = x1, curZ = y1;
+    while (curX != x2) {
+        tiles[curX][curZ] = 0;
+        curX += stepX;
+    }
+    while (curZ != y2) {
+        tiles[curX][curZ] = 0;
+        curZ += stepZ;
+    }
+    tiles[curX][curZ] = 0; // final cell
+}
 
 // ============================================================
 // GENERATE NETWORLD
@@ -16,17 +44,78 @@
 
 void GenerateNetWorld(void) {
     g_netWorld.nodes.clear();
-    
-    float halfSize = g_netWorld.worldSize / 2.0f;
-    float spacing = g_netWorld.worldSize / 6.0f;
-    
-    // ---- CORE NODE (center) ----
+    g_netWorld.building.wallBoxes.clear();
+    g_netWorld.building.rooms.clear();
+
+    // --- 1. Grid size ---
+    const int GRID_W = 20;
+    const int GRID_D = 20;
+    const float TILE = 4.0f;
+    g_netWorld.building.gridWidth = GRID_W;
+    g_netWorld.building.gridDepth = GRID_D;
+    g_netWorld.building.tileSize = TILE;
+
+    // Initialize all tiles as walls (1)
+    std::vector<std::vector<int>> tiles(GRID_W, std::vector<int>(GRID_D, 1));
+    std::vector<Rectangle> rooms;
+
+    // --- 2. Place rooms (random rectangles) ---
+    int numRooms = 6 + rand() % 5; // 6-10 rooms
+    for (int i = 0; i < numRooms; i++) {
+        int rw = 2 + rand() % 3; // width 2-4 tiles
+        int rd = 2 + rand() % 3; // depth 2-4 tiles
+        int rx = rand() % (GRID_W - rw - 2) + 1; // ensure margin from edges
+        int ry = rand() % (GRID_D - rd - 2) + 1;
+        PlaceRoom(rx, ry, rw, rd, tiles);
+        rooms.push_back({(float)rx, (float)ry, (float)rw, (float)rd});
+    }
+
+    // --- 3. Connect rooms with corridors ---
+    // For simplicity, connect each room to the next in the list
+    for (int i = 0; i < (int)rooms.size() - 1; i++) {
+        int x1 = (int)rooms[i].x + (int)rooms[i].width / 2;
+        int y1 = (int)rooms[i].y + (int)rooms[i].height / 2;
+        int x2 = (int)rooms[i+1].x + (int)rooms[i+1].width / 2;
+        int y2 = (int)rooms[i+1].y + (int)rooms[i+1].height / 2;
+        CarveCorridor(x1, y1, x2, y2, tiles);
+    }
+
+    // Store the tile map and room list in g_netWorld
+    g_netWorld.building.tiles = tiles;
+    g_netWorld.building.rooms = rooms;
+
+    // --- 4. Build wall collision boxes ---
+    // For each wall tile, create a bounding box (tile size, height 3 units)
+    for (int x = 0; x < GRID_W; x++) {
+        for (int z = 0; z < GRID_D; z++) {
+            if (tiles[x][z] == 1) {
+                Vector3 pos = { x * TILE + TILE/2, 1.5f, z * TILE + TILE/2 };
+                Vector3 size = { TILE, 3.0f, TILE };
+                BoundingBox box = {
+                    { pos.x - size.x/2, pos.y - size.y/2, pos.z - size.z/2 },
+                    { pos.x + size.x/2, pos.y + size.y/2, pos.z + size.z/2 }
+                };
+                g_netWorld.building.wallBoxes.push_back(box);
+            }
+        }
+    }
+
+    // --- 5. Place nodes (portals, data, enemies) in rooms ---
+    // Use the rooms list; place at least one portal per room, plus random nodes.
+
+    // Core node at the first room's center
+    Rectangle firstRoom = rooms[0];
+    Vector3 corePos = {
+        (firstRoom.x + firstRoom.width/2) * TILE,
+        1.0f,
+        (firstRoom.y + firstRoom.height/2) * TILE
+    };
     NetNode core;
     core.type = NodeType::CORE;
     core.id = "core";
     core.label = "VEKTRA CORE";
-    core.position = {0.0f, 1.0f, 0.0f};
-    core.spawnPosition = core.position;
+    core.position = corePos;
+    core.spawnPosition = corePos;
     core.color = {1.0f, 0.6f, 0.0f};
     core.radius = 2.5f;
     core.active = true;
@@ -34,39 +123,32 @@ void GenerateNetWorld(void) {
     core.pulsePhase = 0.0f;
     core.rotationAngle = 0.0f;
     g_netWorld.nodes.push_back(core);
-    
-    // ---- PORTAL NODES (for VNET sites) ----
-    std::vector<std::string> siteIds;
-    for (int i = 0; i < g_player.assignedCount && i < 20; i++) {
-        siteIds.push_back(g_player.assignedSites[i]);
-    }
-    
-    // If no sites assigned, use default ones
-    if (siteIds.empty()) {
-        const char* defaultSites[] = {
-            "market.vnet", "vault.vnet", "terminal.vnet", "crypto.vnet", "hellroom.vnet",
-            "forum.vnet", "redroom.vnet", "void.vnet", "ghost.vnet", "orbital.vnet"
+
+    // Place portals in each room (skip the first room if already core)
+    for (int i = 1; i < (int)rooms.size(); i++) {
+        Rectangle r = rooms[i];
+        Vector3 pos = {
+            (r.x + r.width/2) * TILE,
+            0.8f,
+            (r.y + r.height/2) * TILE
         };
-        for (int i = 0; i < 10; i++) {
-            siteIds.push_back(defaultSites[i]);
+        // Choose a site ID from assigned or default
+        std::string siteId;
+        if (i < g_player.assignedCount && i < 20) {
+            siteId = g_player.assignedSites[i];
+        } else {
+            const char* defaultSites[] = {
+                "market.vnet", "vault.vnet", "terminal.vnet", "crypto.vnet", "hellroom.vnet",
+                "forum.vnet", "redroom.vnet", "void.vnet", "ghost.vnet", "orbital.vnet"
+            };
+            siteId = defaultSites[i % 10];
         }
-    }
-    
-    // Place portals in a ring around the core
-    int portalCount = (int)siteIds.size();
-    for (int i = 0; i < portalCount && i < 20; i++) {
-        float angle = (i / (float)portalCount) * 2.0f * PI;
-        float radius = 15.0f + (i % 3) * 5.0f;
-        
-        float x = cosf(angle) * radius;
-        float z = sinf(angle) * radius;
-        
         NetNode portal;
         portal.type = NodeType::PORTAL;
-        portal.id = siteIds[i];
-        portal.label = siteIds[i];
-        portal.position = {x, 0.8f, z};
-        portal.spawnPosition = portal.position;
+        portal.id = siteId;
+        portal.label = siteId;
+        portal.position = pos;
+        portal.spawnPosition = pos;
         portal.color = {0.0f, 0.8f, 1.0f};
         portal.radius = 1.2f;
         portal.active = true;
@@ -75,90 +157,76 @@ void GenerateNetWorld(void) {
         portal.rotationAngle = 0.0f;
         g_netWorld.nodes.push_back(portal);
     }
-    
-    // ---- DATA NODES (scattered) ----
+
+    // Place data nodes and enemies in random rooms (some may share)
     const char* dataLabels[] = {
-        "ENCRYPTED LOG",
-        "VFS CACHE",
-        "ROUTE TABLE",
-        "ICE CONFIG",
-        "SESSION DATA",
-        "KEY FRAGMENT",
-        "NETMAP",
-        "BGP ROUTES"
+        "ENCRYPTED LOG", "VFS CACHE", "ROUTE TABLE", "ICE CONFIG",
+        "SESSION DATA", "KEY FRAGMENT", "NETMAP", "BGP ROUTES"
     };
-    
     for (int i = 0; i < 8; i++) {
-        float angle = (i * 1.7f) + 0.5f;
-        float radius = 25.0f + (rand() % 100) / 100.0f * 15.0f;
-        
-        float x = cosf(angle) * radius;
-        float z = sinf(angle) * radius;
-        
-        NetNode dataNode;
-        dataNode.type = NodeType::DATA_NODE;
-        dataNode.id = "data_" + std::to_string(i);
-        dataNode.label = dataLabels[i % 8];
-        dataNode.position = {x, 0.6f, z};
-        dataNode.spawnPosition = dataNode.position;
-        dataNode.color = {0.6f, 0.6f, 0.8f};
-        dataNode.radius = 0.6f;
-        dataNode.active = true;
-        dataNode.discovered = false;
-        dataNode.pulsePhase = (float)i * 2.3f;
-        dataNode.rotationAngle = 0.0f;
-        g_netWorld.nodes.push_back(dataNode);
+        int roomIdx = rand() % rooms.size();
+        Rectangle r = rooms[roomIdx];
+        // Slight random offset within room
+        float offX = (rand() % 100) / 100.0f * 0.8f - 0.4f;
+        float offZ = (rand() % 100) / 100.0f * 0.8f - 0.4f;
+        Vector3 pos = {
+            (r.x + r.width/2 + offX) * TILE,
+            0.6f,
+            (r.y + r.height/2 + offZ) * TILE
+        };
+        NetNode data;
+        data.type = NodeType::DATA_NODE;
+        data.id = "data_" + std::to_string(i);
+        data.label = dataLabels[i % 8];
+        data.position = pos;
+        data.spawnPosition = pos;
+        data.color = {0.6f, 0.6f, 0.8f};
+        data.radius = 0.6f;
+        data.active = true;
+        data.discovered = false;
+        data.pulsePhase = (float)i * 2.3f;
+        data.rotationAngle = 0.0f;
+        g_netWorld.nodes.push_back(data);
     }
 
-    // FRAGNODES
-    const char* fragNames[] = {"FRAG_A", "FRAG_B", "FRAG_C", "FRAG_D", "FRAG_E"};
+    // Enemies (glitch bots) in corridors or rooms
     for (int i = 0; i < 5; i++) {
-        float angle = (i * 1.2f) + 2.0f;
-        float radius = 18.0f + (i * 2.0f);
-        float x = cosf(angle) * radius;
-        float z = sinf(angle) * radius;
-        NetNode frag;
-        frag.type = NodeType::DATA_NODE;
-        frag.id = "frag_" + std::to_string(i);
-        frag.label = fragNames[i];
-        frag.position = {x, 0.6f, z};
-        frag.spawnPosition = frag.position;
-        frag.color = {0.8f, 0.8f, 0.2f}; // gold
-        frag.radius = 0.4f;
-        frag.active = true;
-        frag.discovered = false;
-        frag.isCollectible = true;
-        frag.pulsePhase = (float)i * 2.1f;
-        g_netWorld.nodes.push_back(frag);
-    }
-    
-    // ---- ENEMY NODES (glitch bots) ----
-    for (int i = 0; i < 5; i++) {
-        float angle = (i * 2.1f) + 1.2f;
-        float radius = 20.0f + (rand() % 100) / 100.0f * 10.0f;
-        
-        float x = cosf(angle) * radius;
-        float z = sinf(angle) * radius;
-        
+        // Place in a corridor: find a floor tile that is not a room
+        // Simpler: pick a random floor tile that is not in any room (corridor)
+        // We'll just place them in rooms for simplicity
+        int roomIdx = rand() % rooms.size();
+        Rectangle r = rooms[roomIdx];
+        float offX = (rand() % 100) / 100.0f * 0.8f - 0.4f;
+        float offZ = (rand() % 100) / 100.0f * 0.8f - 0.4f;
+        Vector3 pos = {
+            (r.x + r.width/2 + offX) * TILE,
+            0.6f,
+            (r.y + r.height/2 + offZ) * TILE
+        };
         NetNode enemy;
         enemy.type = NodeType::ENEMY;
         enemy.id = "enemy_" + std::to_string(i);
         enemy.label = "GLITCH_BOT";
-        enemy.position = {x, 0.6f, z};
-        // Anchor used by the enemy-orbit patrol motion in
-        // UpdateNetWorld() (networld_core.cpp) so bots circle a fixed
-        // point rather than drifting.
-        enemy.spawnPosition = enemy.position;
+        enemy.position = pos;
+        enemy.spawnPosition = pos;
         enemy.color = {1.0f, 0.2f, 0.2f};
         enemy.radius = 0.8f;
         enemy.active = true;
         enemy.discovered = false;
         enemy.pulsePhase = (float)i * 3.7f;
         enemy.rotationAngle = 0.0f;
+        enemy.isHostile = true;
         g_netWorld.nodes.push_back(enemy);
     }
-    
-    printf("[NETWORLD] Generated %zu nodes\n", g_netWorld.nodes.size());
+
+    Vector3 spawnPos = {
+        (firstRoom.x + firstRoom.width/2) * TILE,
+        0.5f,
+        (firstRoom.y + firstRoom.height/2) * TILE
+    };
+    g_netWorld.player.position = spawnPos;
+    printf("[NETWORLD] Player spawn: %.1f, %.1f, %.1f\n", spawnPos.x, spawnPos.y, spawnPos.z);
+    printf("[NETWORLD] Building center: %.1f, 0, %.1f\n", GRID_W * TILE / 2, GRID_D * TILE / 2);
 }
 
 // ============================================================

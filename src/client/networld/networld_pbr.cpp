@@ -5,39 +5,11 @@
 #include <cstdlib>
 #include <cstring>
 
-// ============================================================
-// PBR LIGHT SYSTEM
-// ============================================================
-
-#define MAX_LIGHTS 4
-
-typedef enum {
-    LIGHT_DIRECTIONAL = 0,
-    LIGHT_POINT,
-    LIGHT_SPOT
-} LightType;
-
-typedef struct {
-    int type;
-    int enabled;
-    Vector3 position;
-    Vector3 target;
-    Color color;
-    float intensity;
-    
-    // Shader locations
-    int typeLoc;
-    int enabledLoc;
-    int positionLoc;
-    int targetLoc;
-    int colorLoc;
-    int intensityLoc;
-} Light;
-
 static Shader g_pbrShader = {0};
-static Light g_lights[MAX_LIGHTS] = {0};
-static int g_lightCount = 0;
 static bool g_pbrLoaded = false;
+static Texture2D g_defaultWhite = {0};
+static Texture2D g_defaultNormal = {0};
+static Texture2D g_defaultBlack = {0};
 
 // Shader uniform locations
 static int g_viewPosLoc = -1;
@@ -50,68 +22,6 @@ static int g_emissivePowerLoc = -1;
 static int g_emissiveColorLoc = -1;
 
 // ============================================================
-// CREATE LIGHT
-// ============================================================
-
-static Light CreateLight(int type, Vector3 position, Vector3 target, Color color, float intensity, Shader shader)
-{
-    Light light = {0};
-    if (g_lightCount < MAX_LIGHTS)
-    {
-        light.enabled = 1;
-        light.type = type;
-        light.position = position;
-        light.target = target;
-        light.color = color;
-        light.intensity = intensity;
-        
-        light.enabledLoc = GetShaderLocation(shader, TextFormat("lights[%i].enabled", g_lightCount));
-        light.typeLoc = GetShaderLocation(shader, TextFormat("lights[%i].type", g_lightCount));
-        light.positionLoc = GetShaderLocation(shader, TextFormat("lights[%i].position", g_lightCount));
-        light.targetLoc = GetShaderLocation(shader, TextFormat("lights[%i].target", g_lightCount));
-        light.colorLoc = GetShaderLocation(shader, TextFormat("lights[%i].color", g_lightCount));
-        light.intensityLoc = GetShaderLocation(shader, TextFormat("lights[%i].intensity", g_lightCount));
-        
-        // Send initial light data to shader
-        int enabledVal = light.enabled;
-        int typeVal = light.type;
-        float pos[3] = {light.position.x, light.position.y, light.position.z};
-        float target[3] = {light.target.x, light.target.y, light.target.z};
-        float col[4] = {light.color.r/255.0f, light.color.g/255.0f, light.color.b/255.0f, light.color.a/255.0f};
-        
-        SetShaderValue(shader, light.enabledLoc, &enabledVal, SHADER_UNIFORM_INT);
-        SetShaderValue(shader, light.typeLoc, &typeVal, SHADER_UNIFORM_INT);
-        SetShaderValue(shader, light.positionLoc, pos, SHADER_UNIFORM_VEC3);
-        SetShaderValue(shader, light.targetLoc, target, SHADER_UNIFORM_VEC3);
-        SetShaderValue(shader, light.colorLoc, col, SHADER_UNIFORM_VEC4);
-        SetShaderValue(shader, light.intensityLoc, &light.intensity, SHADER_UNIFORM_FLOAT);
-        
-        g_lightCount++;
-    }
-    return light;
-}
-
-// ============================================================
-// UPDATE LIGHT
-// ============================================================
-
-static void UpdateLight(Shader shader, Light light)
-{
-    int enabledVal = light.enabled;
-    int typeVal = light.type;
-    float pos[3] = {light.position.x, light.position.y, light.position.z};
-    float target[3] = {light.target.x, light.target.y, light.target.z};
-    float col[4] = {light.color.r/255.0f, light.color.g/255.0f, light.color.b/255.0f, light.color.a/255.0f};
-    
-    SetShaderValue(shader, light.enabledLoc, &enabledVal, SHADER_UNIFORM_INT);
-    SetShaderValue(shader, light.typeLoc, &typeVal, SHADER_UNIFORM_INT);
-    SetShaderValue(shader, light.positionLoc, pos, SHADER_UNIFORM_VEC3);
-    SetShaderValue(shader, light.targetLoc, target, SHADER_UNIFORM_VEC3);
-    SetShaderValue(shader, light.colorLoc, col, SHADER_UNIFORM_VEC4);
-    SetShaderValue(shader, light.intensityLoc, &light.intensity, SHADER_UNIFORM_FLOAT);
-}
-
-// ============================================================
 // LOAD PBR SHADER
 // ============================================================
 
@@ -119,11 +29,7 @@ void LoadNetWorldPBR(void)
 {
     if (g_pbrLoaded) return;
     
-    // ==== ASSET LOAD: PBR VERTEX+FRAGMENT SHADER ====
-    // GPU resource acquired here. Every light created below via
-    // CreateLight() only holds shader-uniform locations (ints), not GPU
-    // handles of its own, so it needs no separate unload step — it lives
-    // and dies with g_pbrShader. Must be paired with UnloadNetWorldPBR().
+    // ==== ASSET LOAD: PBR SHADER + DEFAULT TEXTURES ====
     g_pbrShader = LoadShader(
         "src/client/render/shaders/networld.vs",
         "src/client/render/shaders/networld.fs"
@@ -139,7 +45,6 @@ void LoadNetWorldPBR(void)
         g_pbrShader.locs[SHADER_LOC_COLOR_DIFFUSE] = GetShaderLocation(g_pbrShader, "albedoColor");
         g_pbrShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(g_pbrShader, "viewPos");
         
-        // Get other uniform locations
         g_viewPosLoc = g_pbrShader.locs[SHADER_LOC_VECTOR_VIEW];
         g_ambientColorLoc = GetShaderLocation(g_pbrShader, "ambientColor");
         g_ambientIntensityLoc = GetShaderLocation(g_pbrShader, "ambientIntensity");
@@ -149,34 +54,43 @@ void LoadNetWorldPBR(void)
         g_emissivePowerLoc = GetShaderLocation(g_pbrShader, "emissivePower");
         g_emissiveColorLoc = GetShaderLocation(g_pbrShader, "emissiveColor");
         
-        // Setup light count
-        int lightCountLoc = GetShaderLocation(g_pbrShader, "numOfLights");
-        int maxLightCount = MAX_LIGHTS;
-        SetShaderValue(g_pbrShader, lightCountLoc, &maxLightCount, SHADER_UNIFORM_INT);
+        // ---- Create default textures ----
+        Image whiteImg = GenImageColor(1, 1, WHITE);
+        g_defaultWhite = LoadTextureFromImage(whiteImg);
+        UnloadImage(whiteImg);
         
-        // ---- BRIGHTER AMBIENT ----
-        float ambientIntensity = 0.15f; // Was 0.08f
-        Color ambientColor = {30, 40, 80, 255}; // Brighter blue
+        Image normalImg = GenImageColor(1, 1, Color{128, 128, 255, 255}); // (0.5,0.5,1)
+        g_defaultNormal = LoadTextureFromImage(normalImg);
+        UnloadImage(normalImg);
+        
+        Image blackImg = GenImageColor(1, 1, BLACK);
+        g_defaultBlack = LoadTextureFromImage(blackImg);
+        UnloadImage(blackImg);
+        
+        // ---- Bind default textures to shader ----
+        SetShaderValueTexture(g_pbrShader, g_pbrShader.locs[SHADER_LOC_MAP_ALBEDO], g_defaultWhite);
+        SetShaderValueTexture(g_pbrShader, g_pbrShader.locs[SHADER_LOC_MAP_NORMAL], g_defaultNormal);
+        SetShaderValueTexture(g_pbrShader, g_pbrShader.locs[SHADER_LOC_MAP_METALNESS], g_defaultWhite);
+        SetShaderValueTexture(g_pbrShader, g_pbrShader.locs[SHADER_LOC_MAP_EMISSION], g_defaultBlack);
+        
+        // ---- Default material parameters ----
+        Vector4 defaultAlbedo = {1.0f, 1.0f, 1.0f, 1.0f};
+        SetShaderValue(g_pbrShader, g_albedoColorLoc, &defaultAlbedo, SHADER_UNIFORM_VEC4);
+        float metallic = 0.0f;
+        SetShaderValue(g_pbrShader, g_metallicValueLoc, &metallic, SHADER_UNIFORM_FLOAT);
+        float roughness = 0.5f;
+        SetShaderValue(g_pbrShader, g_roughnessValueLoc, &roughness, SHADER_UNIFORM_FLOAT);
+        float emissivePower = 0.0f;
+        SetShaderValue(g_pbrShader, g_emissivePowerLoc, &emissivePower, SHADER_UNIFORM_FLOAT);
+        Vector4 emissiveCol = {0.0f, 0.0f, 0.0f, 0.0f};
+        SetShaderValue(g_pbrShader, g_emissiveColorLoc, &emissiveCol, SHADER_UNIFORM_VEC4);
+        
+        // ---- Ambient ----
+        float ambientIntensity = 0.15f;
+        Color ambientColor = {30, 40, 80, 255};
         Vector3 ambientNormalized = {ambientColor.r/255.0f, ambientColor.g/255.0f, ambientColor.b/255.0f};
         SetShaderValue(g_pbrShader, g_ambientColorLoc, &ambientNormalized, SHADER_UNIFORM_VEC3);
         SetShaderValue(g_pbrShader, g_ambientIntensityLoc, &ambientIntensity, SHADER_UNIFORM_FLOAT);
-
-        // ---- BRIGHTER CYBERPUNK LIGHTS ----
-        // Neon cyan (much brighter)
-        g_lights[0] = CreateLight(LIGHT_POINT, Vector3{-8.0f, 5.0f, -6.0f}, Vector3{0,0,0}, 
-                                Color{0, 220, 255, 255}, 25.0f, g_pbrShader);
-
-        // Neon magenta/pink
-        g_lights[1] = CreateLight(LIGHT_POINT, Vector3{8.0f, 5.0f, -6.0f}, Vector3{0,0,0}, 
-                                Color{255, 0, 120, 255}, 25.0f, g_pbrShader);
-
-        // Toxic green (very bright)
-        g_lights[2] = CreateLight(LIGHT_POINT, Vector3{0.0f, 8.0f, 8.0f}, Vector3{0,0,0}, 
-                                Color{40, 255, 120, 255}, 30.0f, g_pbrShader);
-
-        // Amber glow from core
-        g_lights[3] = CreateLight(LIGHT_POINT, Vector3{0.0f, 3.0f, 0.0f}, Vector3{0,0,0}, 
-                                Color{255, 180, 40, 255}, 15.0f, g_pbrShader);
         
         g_pbrLoaded = true;
         printf("[PBR] NetWorld PBR shader loaded successfully.\n");
@@ -184,34 +98,52 @@ void LoadNetWorldPBR(void)
     else
     {
         printf("[PBR] Failed to load NetWorld PBR shader.\n");
-        printf("[PBR] Make sure shader files exist at:\n");
-        printf("[PBR]   src/client/render/shaders/networld.vs\n");
-        printf("[PBR]   src/client/render/shaders/networld.fs\n");
     }
     // ==== END ASSET LOAD ====
 }
 
 // ============================================================
-// APPLY PBR SHADER
+// APPLY PBR SHADER (uploads dynamic lights)
 // ============================================================
 
 void ApplyNetWorldPBR(Camera3D camera)
 {
     if (!g_pbrLoaded) return;
-    if (!g_netWorld.active) return;
-    if (g_netWorld.state != NetWorldState::ACTIVE) return;
+    if (!g_netWorld.active || g_netWorld.state != NetWorldState::ACTIVE) return;
     
     // Update view position
     float cameraPos[3] = {camera.position.x, camera.position.y, camera.position.z};
     SetShaderValue(g_pbrShader, g_viewPosLoc, cameraPos, SHADER_UNIFORM_VEC3);
     
-    // Update all lights
-    for (int i = 0; i < g_lightCount; i++)
-    {
-        UpdateLight(g_pbrShader, g_lights[i]);
+    // Upload number of lights
+    int lightCount = g_netWorld.dynamicLightCount;
+    int lightCountLoc = GetShaderLocation(g_pbrShader, "numOfLights");
+    SetShaderValue(g_pbrShader, lightCountLoc, &lightCount, SHADER_UNIFORM_INT);
+    
+    // Upload each light
+    for (int i = 0; i < lightCount && i < MAX_DYNAMIC_LIGHTS; i++) {
+        DynamicLight& l = g_netWorld.dynamicLights[i];
+        char name[64];
+        
+        snprintf(name, sizeof(name), "lights[%i].enabled", i);
+        int enabled = l.active ? 1 : 0;
+        SetShaderValue(g_pbrShader, GetShaderLocation(g_pbrShader, name), &enabled, SHADER_UNIFORM_INT);
+        
+        snprintf(name, sizeof(name), "lights[%i].type", i);
+        int type = 1; // point light
+        SetShaderValue(g_pbrShader, GetShaderLocation(g_pbrShader, name), &type, SHADER_UNIFORM_INT);
+        
+        snprintf(name, sizeof(name), "lights[%i].position", i);
+        SetShaderValue(g_pbrShader, GetShaderLocation(g_pbrShader, name), &l.position, SHADER_UNIFORM_VEC3);
+        
+        snprintf(name, sizeof(name), "lights[%i].color", i);
+        Vector4 col = {l.color.x, l.color.y, l.color.z, 1.0f};
+        SetShaderValue(g_pbrShader, GetShaderLocation(g_pbrShader, name), &col, SHADER_UNIFORM_VEC4);
+        
+        snprintf(name, sizeof(name), "lights[%i].intensity", i);
+        SetShaderValue(g_pbrShader, GetShaderLocation(g_pbrShader, name), &l.intensity, SHADER_UNIFORM_FLOAT);
     }
     
-    // Begin shader mode
     BeginShaderMode(g_pbrShader);
 }
 
@@ -228,19 +160,20 @@ void EndNetWorldPBR(void)
 }
 
 // ============================================================
-// UNLOAD PBR SHADER
+// UNLOAD PBR SHADER AND DEFAULT TEXTURES
 // ============================================================
 
 void UnloadNetWorldPBR(void)
 {
     if (g_pbrLoaded)
     {
-        // ==== ASSET UNLOAD: PBR VERTEX+FRAGMENT SHADER ====
-        // Must run before the graphics context shuts down, and must not be
-        // called more than once for the same successful LoadShader() call.
+        // ==== ASSET UNLOAD: PBR SHADER & TEXTURES ====
         UnloadShader(g_pbrShader);
+        UnloadTexture(g_defaultWhite);
+        UnloadTexture(g_defaultNormal);
+        UnloadTexture(g_defaultBlack);
         g_pbrLoaded = false;
-        printf("[PBR] NetWorld PBR shader unloaded.\n");
+        printf("[PBR] NetWorld PBR shader and default textures unloaded.\n");
         // ==== END ASSET UNLOAD ====
     }
 }
