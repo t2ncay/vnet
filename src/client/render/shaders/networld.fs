@@ -28,7 +28,7 @@ uniform float roughnessValue;
 uniform float emissivePower;
 uniform vec4 emissiveColor;
 
-// Lights - MUST match CPU struct exactly!
+// Lights
 #define MAX_LIGHTS 12
 uniform int numOfLights;
 
@@ -39,7 +39,6 @@ struct Light {
     vec4 color;
     float intensity;
 };
-
 uniform Light lights[MAX_LIGHTS];
 
 // Constants
@@ -99,7 +98,7 @@ void main() {
     
     vec3 emissive = texture(emissiveMap, fragTexCoord).rgb * emissiveColor.rgb * emissivePower;
     
-    // ---- 2. LIGHTING CALCULATIONS ----
+    // ---- 2. LIGHTING ----
     vec3 V = normalize(viewPos - fragPosition);
     vec3 F0 = mix(vec3(0.04), albedo, metalness);
     
@@ -141,22 +140,26 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
     
-    // ---- 3. AMBIENT LIGHT ----
-    float ambientIntensityFinal = 0.15f;
-    vec3 ambient = ambientColor * ambientIntensityFinal * albedo * ao;
+    // ---- 3. AMBIENT (now uses uniform) ----
+    vec3 ambient = ambientColor * ambientIntensity * albedo * ao;
     vec3 color = ambient + Lo;
     
-    // ---- 4. EMISSIVE ----
-    color += emissive * 3.0;
+    // ---- 4. EMISSIVE (tuned down) ----
+    color += emissive * 1.5; // reduced from 3.0
     
-    // ---- 5. POST-PROCESS ----
-    // ACES tone mapping
-    color = (color * (2.51 * color + 0.03)) / (color * (2.43 * color + 0.59) + 0.14);
-    // Gamma
+    // ---- 5. POST-PROCESS (improved tone mapping) ----
+    // Reinhard tone mapping (preserves colors better)
+    color = color / (color + vec3(1.0));
+    
+    // Optional: Apply a subtle contrast boost
+    color = pow(color, vec3(1.0 / 1.1)); // slightly brighten
+    
+    // Gamma correction (2.2)
     color = pow(color, vec3(1.0/2.2));
-    // Cyan tint boost
-    color.g *= 1.1;
-    color.b *= 1.15;
+    
+    // Slight cyan/neon tint (tasteful)
+    color.g *= 1.05;
+    color.b *= 1.08;
     
     // ---- 6. OUTPUT ----
     finalColor = vec4(color, alpha);

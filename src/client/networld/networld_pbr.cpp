@@ -76,9 +76,9 @@ void LoadNetWorldPBR(void)
         // ---- Default material parameters ----
         Vector4 defaultAlbedo = {1.0f, 1.0f, 1.0f, 1.0f};
         SetShaderValue(g_pbrShader, g_albedoColorLoc, &defaultAlbedo, SHADER_UNIFORM_VEC4);
-        float metallic = 0.0f;
+        float metallic = 0.2f;
         SetShaderValue(g_pbrShader, g_metallicValueLoc, &metallic, SHADER_UNIFORM_FLOAT);
-        float roughness = 0.5f;
+        float roughness = 0.3f;
         SetShaderValue(g_pbrShader, g_roughnessValueLoc, &roughness, SHADER_UNIFORM_FLOAT);
         float emissivePower = 0.0f;
         SetShaderValue(g_pbrShader, g_emissivePowerLoc, &emissivePower, SHADER_UNIFORM_FLOAT);
