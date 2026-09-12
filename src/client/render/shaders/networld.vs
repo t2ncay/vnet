@@ -1,36 +1,33 @@
 #version 330
 
-// Input vertex attributes
+// Vertex attributes as supplied by raylib for the default vertex layout.
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 in vec3 vertexNormal;
-in vec3 vertexTangent;
 in vec4 vertexColor;
 
-// Output vertex attributes (to fragment shader)
 out vec2 fragTexCoord;
 out vec3 fragPosition;
 out vec3 fragNormal;
-out vec3 fragTangent;
 out vec4 fragColor;
 
-// Uniforms
+// Raylib auto-populates both of these for any custom shader:
+//   mvp       -> SHADER_LOC_MATRIX_MVP
+//   matModel  -> SHADER_LOC_MATRIX_MODEL
 uniform mat4 mvp;
-uniform mat4 model;
-uniform mat4 view;
+uniform mat4 matModel;
 
 void main()
 {
-    // Send texture coordinates
     fragTexCoord = vertexTexCoord;
     fragColor = vertexColor;
-    
-    // Calculate fragment position and normal in world space
-    vec3 n = (dot(vertexNormal, vertexNormal) > 0.0001) ? vertexNormal : vec3(0.0, 1.0, 0.0);
-    vec3 t = (dot(vertexTangent, vertexTangent) > 0.0001) ? vertexTangent : vec3(1.0, 0.0, 0.0);
-    fragNormal  = normalize(mat3(model) * n);
-    fragTangent = normalize(mat3(model) * t);
-    
-    // Calculate final vertex position
+
+    // World-space position and normal. The fragment shader needs these for
+    // rim lighting and light falloff; both are computed here rather than in
+    // the fragment shader so we pay the mat4 mult per-vertex, not per-pixel.
+    vec4 worldPos = matModel * vec4(vertexPosition, 1.0);
+    fragPosition = worldPos.xyz;
+    fragNormal = mat3(matModel) * vertexNormal;
+
     gl_Position = mvp * vec4(vertexPosition, 1.0);
 }

@@ -1,24 +1,29 @@
 #version 330
 
-uniform sampler2D sceneTexture;
-uniform vec2 direction;
+uniform sampler2D texture0;
+uniform vec2 direction;    // (1,0) for horizontal, (0,1) for vertical
 uniform vec2 resolution;
 
-in vec2 texCoord;
-out vec4 fragColor;
+in vec2 fragTexCoord;      // <-- was "texCoord"
+in vec4 fragColor;
+out vec4 finalColor;
 
-void main() {
-    vec2 texelSize = 1.0 / resolution;
-    vec3 result = vec3(0.0);
-    // 9‑tap weights for a separable Gaussian blur
-    float weights[9] = float[](
-        0.016216, 0.054054, 0.1216216, 0.1945946, 0.227027,
-        0.1945946, 0.1216216, 0.054054, 0.016216
+void main()
+{
+    vec2 step = direction / resolution;
+
+    // 13-tap Gaussian, sigma ~3.0, DC gain = 1.0. Same spread as two passes
+    // of a 9-tap but only one pass of texture fetches per axis.
+    float w[7] = float[](
+        0.196482, 0.174666, 0.121622, 0.065861, 0.027630, 0.008977, 0.002105
     );
-    for (int i = 0; i < 9; i++) {
-        int offset = i - 4;                       // -4 … +4
-        vec2 offsetVec = vec2(float(offset)) * direction * texelSize * 1.5;
-        result += texture(sceneTexture, texCoord + offsetVec).rgb * weights[i];
+
+    vec3 sum = texture(texture0, fragTexCoord).rgb * w[0];
+    for (int i = 1; i < 7; i++) {
+        vec2 o = step * float(i) * 1.4;
+        sum += texture(texture0, fragTexCoord + o).rgb * w[i];
+        sum += texture(texture0, fragTexCoord - o).rgb * w[i];
     }
-    fragColor = vec4(result, 1.0);
+
+    finalColor = vec4(sum, 1.0);
 }
