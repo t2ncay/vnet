@@ -165,7 +165,7 @@ void Desktop::Init() {
     }
 
     m_vfs.SetRoot(vfsPath);
-    m_fileManager.currentPath = "/";
+    m_fileManager.currentPath = "/assets";
 }
 
 void Desktop::Shutdown() {
