@@ -1,0 +1,23 @@
+-- SQLite format 3
+-- MASTER ENCRYPTION KEYS
+
+CREATE TABLE IF NOT EXISTS master_keys (
+    id INTEGER PRIMARY KEY,
+    key_name TEXT,
+    key_value TEXT,
+    location TEXT
+);
+
+INSERT INTO master_keys VALUES (1, 'K1_ALPHA', '0x7F4A3B2C1D0E9F8E', 'terminal.vnet');
+INSERT INTO master_keys VALUES (2, 'K2_BETA', '0xAA55BB66CC77DD88', 'vault.vnet');
+INSERT INTO master_keys VALUES (3, 'K3_GAMMA', '0x1122334455667788', 'crypto.vnet');
+
+CREATE TABLE IF NOT EXISTS access_log (
+    id INTEGER PRIMARY KEY,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    user TEXT,
+    action TEXT
+);
+
+INSERT INTO access_log (user, action) VALUES ('sh4d0w', 'Mined Block #2142');
+INSERT INTO access_log (user, action) VALUES ('ghost_0x99', 'Overloaded market.vnet');

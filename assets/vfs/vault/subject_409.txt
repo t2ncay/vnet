@@ -1,0 +1,22 @@
+=========================================
+   SUBJECT 409-B // AUTOPSY REPORT
+   AGENCY: VEKTRA INTELLIGENCE DIVISION
+=========================================
+
+SUBJECT: T. Vance (alias "Trench")
+STATUS: TERMINATED (Digital Erasure)
+DATE: 2026-09-01
+
+NOTES:
+Subject 409 was a former Vektra Network Engineer.
+He attempted to leak the master keys to an external party
+(identified as "The Syndicate").
+
+HIS FINAL TRANSMISSION:
+"I see the CRT glare in my eyes. The network is alive.
+It is drinking your heat. Vektra... is a lie."
+
+RECOMMENDATION:
+Transfer all data to vault.vnet. Burn all physical records.
+
+SECURITY CLEARANCE: LEVEL 5 REQUIRED TO ACCESS THIS FILE.

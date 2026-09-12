@@ -1,0 +1,11 @@
+# Password Hashes (NTLM / MD5 / SHA1)
+# Cracked hashes marked with [CRACKED]
+
+admin:5f4dcc3b5aa765d61d8327deb882cf99 [CRACKED: password123]
+root:63a9f0ea7bb98050796b649e85481845 [CRACKED: admin]
+sh4d0w:e99a18c428cb38d5f260853678922e03 [CRACKED: sh4d0w_net]
+d34d_7dp:0cc175b9c0f1b6a831c399e269772661 [CRACKED: old_net]
+
+# SHA256 - Unresolved
+ghost_0x99: e5e9fa1ba31ecd1ae84f75caaa474f3a663f05f4c6c4d9d6dca5c4d0d2c5e9f7
+neon_byte: 7c8d5d1b4e5f9a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5g6h7
