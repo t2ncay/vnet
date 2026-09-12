@@ -1,7 +1,0 @@
-Sep 08 14:22:10 terminal sshd[1024]: Failed password for invalid user admin from 10.0.0.45 port 45322
-Sep 08 14:22:15 terminal sshd[1024]: Failed password for invalid user root from 10.0.0.45 port 45322
-Sep 08 14:22:20 terminal sshd[1024]: Accepted password for sh4d0w from 192.168.1.1 port 55566
-Sep 08 14:30:01 terminal sudo: sh4d0w : TTY=pts/0 ; PWD=/home/sh4d0w ; USER=root ; COMMAND=/usr/bin/overload
-Sep 08 14:45:33 terminal sshd[2048]: Connection closed by 10.0.0.5 port 44522 [preauth]
-Sep 08 15:00:00 terminal login: ROOT LOGIN ON tty1
-Sep 08 15:01:12 terminal kernel: [UFW BLOCK] IN=eth0 OUT= MAC=... SRC=10.0.0.23 DST=192.168.1.1 PROTO=TCP SPT=8001 DPT=1337
