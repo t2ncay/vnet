@@ -1,37 +1,40 @@
 #version 330
 
-// Input vertex attributes
 in vec2 fragTexCoord;
 in vec3 fragPosition;
 in vec3 fragNormal;
-in vec3 fragTangent;
 in vec4 fragColor;
 
-// Output fragment color
 out vec4 finalColor;
 
-// Uniforms
+// ---- Auto-bound by raylib ----
+uniform sampler2D texture0;   // albedo
+uniform vec4 colDiffuse;      // material tint — MUST be set to WHITE by the app
+
+// ---- Set per-frame in ApplyNetWorldPBR() ----
 uniform vec3 viewPos;
+uniform float time;
+
+uniform vec3 emissiveColor;
+uniform float emissivePower;
+
+uniform vec3 rimColor;
+uniform float rimPower;
+uniform float rimIntensity;
+
+uniform float scanlineAmount;
+
 uniform vec3 ambientColor;
 uniform float ambientIntensity;
 
-// Texture maps
-uniform sampler2D albedoMap;
-uniform sampler2D normalMap;
-uniform sampler2D mraMap;
-uniform sampler2D emissiveMap;
+// Hard floor so no unlit surface ever falls below this fraction of its
+// own albedo. Without it, geometry that isn't near a dynamic light is
+// invisible — the shader becomes "emissive + rim only", which is what
+// happened before this was added.
+const float AMBIENT_FLOOR = 0.35;
 
-// Material properties
-uniform vec4 albedoColor;
-uniform float metallicValue;
-uniform float roughnessValue;
-uniform float emissivePower;
-uniform vec4 emissiveColor;
-
-// Lights
 #define MAX_LIGHTS 12
 uniform int numOfLights;
-
 struct Light {
     int type;
     int enabled;
@@ -41,126 +44,50 @@ struct Light {
 };
 uniform Light lights[MAX_LIGHTS];
 
-// Constants
-const float PI = 3.14159265359;
+void main()
+{
+    vec4 tex = texture(texture0, fragTexCoord);
+    vec3 base = tex.rgb * colDiffuse.rgb * fragColor.rgb;
+    float alpha = tex.a * colDiffuse.a * fragColor.a;
 
-// ---- PBR FUNCTIONS ----
-float DistributionGGX(vec3 N, vec3 H, float roughness) {
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH * NdotH;
-    float num = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-    return num / denom;
-}
-
-float GeometrySchlickGGX(float NdotV, float roughness) {
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
-    float num = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-    return num / denom;
-}
-
-float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
-    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
-    return ggx1 * ggx2;
-}
-
-vec3 FresnelSchlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-// ---- MAIN ----
-void main() {
-    // ---- 1. SAMPLE TEXTURES ----
-    vec4 albedoSampled = texture(albedoMap, fragTexCoord);
-    vec3 albedo = albedoSampled.rgb * albedoColor.rgb;
-    float alpha = albedoSampled.a * albedoColor.a;
-    
-    vec3 mraSampled = texture(mraMap, fragTexCoord).rgb;
-    float metalness = mraSampled.r * metallicValue;
-    float roughness = mraSampled.g * roughnessValue;
-    float ao = mraSampled.b;
-    
-    // Normal map
-    vec3 normal = normalize(fragNormal);
-    vec3 tangent = normalize(fragTangent);
-    vec3 bitangent = normalize(cross(normal, tangent));
-    mat3 TBN = mat3(tangent, bitangent, normal);
-    vec3 normalMap = texture(normalMap, fragTexCoord).xyz * 2.0 - 1.0;
-    normal = normalize(TBN * normalMap);
-    
-    vec3 emissive = texture(emissiveMap, fragTexCoord).rgb * emissiveColor.rgb * emissivePower;
-    
-    // ---- 2. LIGHTING ----
+    // Reconstruct a flat normal for raylib primitives, which never emit
+    // vertexNormal. Loaded meshes still use their real normal.
+    vec3 Ng = cross(dFdx(fragPosition), dFdy(fragPosition));
+    vec3 N = vec3(0.0, 1.0, 0.0);
+    if (length(fragNormal) > 0.001) {
+        N = normalize(fragNormal);
+    } else if (length(Ng) > 0.001) {
+        N = normalize(Ng);
+    }
     vec3 V = normalize(viewPos - fragPosition);
-    vec3 F0 = mix(vec3(0.04), albedo, metalness);
-    
-    vec3 Lo = vec3(0.0);
-    
+
+    float rim = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), rimPower);
+
+    float scan = 1.0 - scanlineAmount * 0.5
+               + scanlineAmount * 0.5 * sin(fragPosition.y * 60.0 + time * 4.0);
+
+    // Soft proximity glow. Deliberately not a BRDF — no specular, no
+    // energy conservation, just a halo so moving lights read.
+    vec3 glow = vec3(0.0);
     for (int i = 0; i < numOfLights && i < MAX_LIGHTS; i++) {
         if (lights[i].enabled == 0) continue;
-        
-        vec3 L = vec3(0.0);
-        float attenuation = 1.0;
-        float distance = 0.0;
-        
-        if (lights[i].type == 1) { // point light
-            L = lights[i].position - fragPosition;
-            distance = length(L);
-            L = normalize(L);
-            attenuation = 1.0 / (distance * distance + 1.0);
-        } else if (lights[i].type == 0) { // directional
-            L = normalize(-lights[i].position);
-            attenuation = 1.0;
-        }
-        
-        vec3 H = normalize(V + L);
-        float NdotL = max(dot(normal, L), 0.0);
-        
-        float NDF = DistributionGGX(normal, H, roughness);
-        float G = GeometrySmith(normal, V, L, roughness);
-        vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
-        
-        vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metalness;
-        
-        vec3 numerator = NDF * G * F;
-        float denom = 4.0 * max(dot(normal, V), 0.0) * NdotL + 0.0001;
-        vec3 specular = numerator / denom;
-        
-        vec3 radiance = lights[i].color.rgb * lights[i].intensity * attenuation;
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        vec3 toL = lights[i].position - fragPosition;
+        float dist2 = dot(toL, toL);
+        float atten = 1.0 / (1.0 + dist2 * 0.015);
+        float facing = 0.5 + 0.5 * dot(N, normalize(toL));
+        glow += lights[i].color.rgb * atten * facing * lights[i].intensity * 0.02;
     }
-    
-    // ---- 3. AMBIENT (now uses uniform) ----
-    vec3 ambient = ambientColor * ambientIntensity * albedo * ao;
-    vec3 color = ambient + Lo;
-    
-    // ---- 4. EMISSIVE (tuned down) ----
-    color += emissive * 1.5; // reduced from 3.0
-    
-    // ---- 5. POST-PROCESS (improved tone mapping) ----
-    // Reinhard tone mapping (preserves colors better)
-    color = color / (color + vec3(1.0));
-    
-    // Optional: Apply a subtle contrast boost
-    color = pow(color, vec3(1.0 / 1.1)); // slightly brighten
-    
-    // Gamma correction (2.2)
-    color = pow(color, vec3(1.0/2.2));
-    
-    // Slight cyan/neon tint (tasteful)
-    color.g *= 1.05;
-    color.b *= 1.08;
-    
-    // ---- 6. OUTPUT ----
+
+    // Ambient = tinted contribution + hard floor. Together this is the
+    // "unlit readability light" — surfaces read as their own color, just
+    // tinted by the ambient hue and lifted by nearby point lights.
+    vec3 ambient = ambientColor * ambientIntensity;
+    vec3 totalLight = ambient + glow + vec3(AMBIENT_FLOOR);
+
+    vec3 lit = base * scan * totalLight;
+    vec3 emissive = emissiveColor * emissivePower;
+    vec3 rimTerm = rimColor * rim * rimIntensity;
+
+    vec3 color = lit + emissive + rimTerm;
     finalColor = vec4(color, alpha);
 }
