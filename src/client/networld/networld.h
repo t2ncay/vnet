@@ -5,6 +5,7 @@
 
 #define MAX_DYNAMIC_LIGHTS 12
 #define MAX_GLITCH_LAYERS  4
+#define MAX_DATA_FIELDS    8
 
 // ============================================================
 // NETWORLD ENUMS
@@ -22,6 +23,12 @@ enum class NodeType {
     DATA_NODE,      // Information/collectible
     ENEMY,          // Glitch enemy / bot
     CORE            // Central node (hub)
+};
+
+enum class DataFieldType {
+    ENCRYPTION,     // Cyan. Slows movement, reduces effective scan.
+    ICE,            // Amber. Drains shield, accelerates enemies inside.
+    NOISE           // Magenta. Raises glitch intensity, corrupts minimap.
 };
 
 struct DynamicLight {
@@ -42,6 +49,25 @@ struct GlitchLayer {
 };
 
 // ============================================================
+// DATA FIELD — diegetic haze. A localized zone of visible "data"
+// (signal, encryption noise, ICE) that the player can see, enter,
+// and be affected by. Deliberately not atmospheric fog: it renders
+// as discrete points and glyphs on a lattice, not as a soft haze.
+// ============================================================
+
+struct DataField {
+    DataFieldType type;
+    Vector3 center;
+    float radius;
+    float intensity;    // 0..1 — scales both visuals and gameplay effects
+    Vector3 color;      // primary tint
+    float phase;        // animation offset so fields don't sync
+    float damageTimer;  // ICE tick pacing
+    float pulseTimer;   // scan-ring progress, 0..3
+    bool active;
+};
+
+// ============================================================
 // NETWORLD NODE STRUCT
 // ============================================================
 
@@ -51,8 +77,8 @@ struct NetNode {
     std::string label;
     Vector3 position;
     Vector3 spawnPosition;       // Anchor point used for patrol/orbit motion so
-                                  // moving nodes (e.g. ENEMY) circle a fixed
-                                  // origin instead of drifting via integration.
+                                 // moving nodes (e.g. ENEMY) circle a fixed
+                                 // origin instead of drifting via integration.
     Vector3 color;               // RGB float for glow
     float radius;
     bool active;
@@ -112,6 +138,8 @@ struct NetWorld {
     float worldSize;            // 100.0f units
     int gridSize;              // 20x20 grid
     float terrainHeight;
+    Vector3 arenaCenter;
+    float   arenaRadius;
     
     // Visual state
     float glitchIntensity;
@@ -132,6 +160,10 @@ struct NetWorld {
 
     DynamicLight dynamicLights[MAX_DYNAMIC_LIGHTS];
     int dynamicLightCount;
+
+    DataField dataFields[MAX_DATA_FIELDS];
+    int dataFieldCount;
+
     float distortionStrength;
     GlitchLayer glitchLayers[MAX_GLITCH_LAYERS];
     int glitchLayerCount;
@@ -140,8 +172,8 @@ struct NetWorld {
     RenderTexture2D sceneRT;        // full resolution
     RenderTexture2D bloomRT;        // half resolution
     RenderTexture2D blurTemp;       // ping-pong
-    RenderTexture2D fogRT;          // optional
-    RenderTexture2D compositeRT;    // Add this line
+    RenderTexture2D fogRT;          // optional (unused)
+    RenderTexture2D compositeRT;
 
     struct Building {
         int gridWidth;          // number of tiles in X
@@ -149,7 +181,6 @@ struct NetWorld {
         float tileSize;         // world units per tile (e.g., 4.0f)
         std::vector<std::vector<int>> tiles; // 0 = floor, 1 = wall
         std::vector<Rectangle> rooms;        // for node placement (x, y, width, depth)
-        // We'll also store wall bounding boxes for collision
         std::vector<BoundingBox> wallBoxes;
     } building;
 
@@ -185,12 +216,12 @@ bool IsPlayerDashing(void);
 int GetDashCount(void);
 float GetPlayerSpeed(void);
 
-// PBR Rendering
+// Material + post-process rendering
 void LoadNetWorldPBR(void);
 void UnloadNetWorldPBR(void);
 void ApplyNetWorldPBR(Camera3D camera);
 void EndNetWorldPBR(void);
-void ApplyDistortion(RenderTexture2D scene);
+void ApplyDistortion(RenderTexture2D source, RenderTexture2D dest);
 void ApplyBloom(RenderTexture2D scene, RenderTexture2D output);
 
 // Rendering
@@ -211,6 +242,14 @@ void UnloadNetWorldShader(void);
 void ApplyNetWorldShader(void);
 void EndNetWorldShader(void);
 void DisableNetWorldShader(void);
+
+// Data fields
+void  InitDataFields(void);
+void  UpdateDataFields(float dt);
+void  UpdateDataFieldEffects(float dt);
+void  DrawDataFields(void);
+float GetDataFieldInfluence(Vector3 position, DataFieldType type);
+void  SpawnDataField(Vector3 center, float radius, DataFieldType type);
 
 // World Generation
 void GenerateNetWorld(void);

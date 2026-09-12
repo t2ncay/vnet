@@ -8,6 +8,10 @@
 #include <cstring>
 
 static void DrawGlitchCubes3D(void); 
+static void DrawVoidPlane(void);
+static void DrawVoidHorizon(void);
+static void DrawPylons(void);
+static void DrawArenaHub(void);
 
 // ============================================================
 // GLITCHED CUBE STRUCT
@@ -181,30 +185,26 @@ static void DrawGlitchedCube(const GlitchCube& cube, float time) {
 
 void DrawNetWorld(void) {
     if (!g_netWorld.active) return;
-    
-    // Init glitch cubes and effects if needed
-    if (!g_glitchCubesInit) {
-        InitGlitchCubes();
-    }
-    if (!g_netEffectsInit) {
-        InitNetEffects();
-    }
-    
-    // ---- GLITCH TRANSITION OVERLAY ----
-    if (g_netWorld.state == NetWorldState::ENTERING || g_netWorld.state == NetWorldState::EXITING) {
+
+    if (!g_glitchCubesInit) InitGlitchCubes();
+    if (!g_netEffectsInit) InitNetEffects();
+
+    if (g_netWorld.state == NetWorldState::ENTERING ||
+        g_netWorld.state == NetWorldState::EXITING) {
         DrawTransitionOverlay();
         return;
     }
 
-    // ============================================================
-    // 1. RENDER 3D SCENE TO RENDER TEXTURE
-    // ============================================================
+    // =======================================================================
+    // PASS 1 — 3D scene -> sceneRT (full resolution)
+    // =======================================================================
     BeginTextureMode(g_netWorld.sceneRT);
         ClearBackground(BLACK);
-        ApplyNetWorldPBR(g_netWorld.camera);
+        ApplyNetWorldPBR(g_netWorld.camera);   // sets uniforms, begins shader
         BeginMode3D(g_netWorld.camera);
             DrawCyberSkybox();
             DrawNetTerrain();
+            DrawDataFields(); 
             DrawGlitchCubes3D();
             DrawNetNodes();
             DrawNetPortals();
@@ -212,39 +212,39 @@ void DrawNetWorld(void) {
             DrawNetEffects();
             DrawDataRings();
         EndMode3D();
-        EndNetWorldPBR();
+        EndNetWorldPBR();                      // ends material shader
     EndTextureMode();
 
-    // ============================================================
-    // 2. POST-PROCESSING PIPELINE
-    // ============================================================
-
-    // Bloom (reads sceneRT, outputs to compositeRT)
+    // =======================================================================
+    // PASS 2 — Bloom (sceneRT + blurred bloom -> compositeRT)
+    // =======================================================================
     ApplyBloom(g_netWorld.sceneRT, g_netWorld.compositeRT);
 
-    // Distortion/Glitch (draws compositeRT to screen with distortion shader)
-    ApplyDistortion(g_netWorld.compositeRT);
+    // =======================================================================
+    // PASS 3 — Distortion / glitch (compositeRT -> sceneRT)
+    //
+    // sceneRT is free to reuse here: ApplyBloom already consumed it as its
+    // source and won't touch it again. Reusing it saves one full-res RT.
+    // =======================================================================
+    ApplyDistortion(g_netWorld.compositeRT, g_netWorld.sceneRT);
 
-    // ---- CRT Overlay ----
-    if (g_netWorld.state == NetWorldState::ACTIVE) {
-        ApplyNetWorldShader();
-    }
+    // =======================================================================
+    // PASS 4 — CRT to screen (sceneRT -> default framebuffer)
+    //
+    // ApplyNetWorldShader begins shader mode and sets uniforms; the blit
+    // happens between Apply and End so the render code, not the shader
+    // system, controls what's being sampled.
+    // =======================================================================
+    ApplyNetWorldShader();
+        Rectangle src = {0, 0, (float)g_netWorld.sceneRT.texture.width,
+                              -(float)g_netWorld.sceneRT.texture.height};
+        Rectangle dst = {0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()};
+        DrawTexturePro(g_netWorld.sceneRT.texture, src, dst, {0, 0}, 0.0f, WHITE);
+    EndNetWorldShader();
 
-    // ---- UI ----
+    // 2D UI is drawn AFTER the CRT pass so it stays readable. Move this
+    // inside the Apply/End bracket if you want the UI to get scanlines too.
     DrawNetUI();
-
-    // ---- Additional scanlines/vignette (fallback) ----
-    float t = g_netWorld.time;
-    for (int y = 0; y < GetScreenHeight(); y += 4) {
-        float scanY = y + fmodf(t * 30.0f + g_netWorld.scanlineOffset, 4.0f);
-        DrawRectangle(0, (int)scanY, GetScreenWidth(), 1, {0, 0, 0, 4});
-    }
-    int w = GetScreenWidth();
-    int h = GetScreenHeight();
-    DrawRectangle(0, 0, w, 4, {0, 0, 0, 80});
-    DrawRectangle(0, h - 4, w, 4, {0, 0, 0, 80});
-    DrawRectangle(0, 0, 4, h, {0, 0, 0, 80});
-    DrawRectangle(w - 4, 0, 4, h, {0, 0, 0, 80});
 }
 
 // ============================================================
@@ -274,51 +274,76 @@ static void DrawGlitchCubes3D(void) {
 // ============================================================
 
 void DrawNetTerrain(void) {
-    float size = g_netWorld.worldSize;
-    float halfSize = size / 2.0f;
-    float gridSize = size / g_netWorld.gridSize;
-    float height = g_netWorld.terrainHeight;
-    float t = g_netWorld.time;
-    float pulse = sinf(t * 1.5f) * 0.3f + 0.7f;
+    // --- Distant void scenery first, so the depth buffer sits behind it ---
+    DrawVoidPlane();
+    DrawVoidHorizon();
+    DrawPylons();
 
-    // Draw neon grid lines
-    for (int x = 0; x <= g_netWorld.gridSize; x++) {
-        float xPos = -halfSize + x * gridSize;
-        Color col = (x % 2 == 0) ? Fade(COLOR_CYAN, 0.15f * pulse) : Fade(COLOR_TOXIC, 0.1f * pulse);
-        DrawLine3D({xPos, height, -halfSize}, {xPos, height, halfSize}, col);
+    // --- Floor grid, using the BUILDING's tile size ---
+    // The previous version used a derived gridSize that didn't match
+    // building.tileSize, so the floor lines didn't align with walls.
+    const float TILE = g_netWorld.building.tileSize;
+    const int   GW   = g_netWorld.building.gridWidth;
+    const int   GD   = g_netWorld.building.gridDepth;
+    const float t    = g_netWorld.time;
+    const float pulse = sinf(t * 1.5f) * 0.3f + 0.7f;
+
+    for (int x = 0; x <= GW; x++) {
+        float xPos = x * TILE;
+        Color col = (x % 2 == 0) ? Fade(COLOR_CYAN, 0.15f * pulse)
+                                 : Fade(COLOR_TOXIC, 0.10f * pulse);
+        DrawLine3D({xPos, 0.0f, 0.0f}, {xPos, 0.0f, GD * TILE}, col);
     }
-    for (int z = 0; z <= g_netWorld.gridSize; z++) {
-        float zPos = -halfSize + z * gridSize;
-        Color col = (z % 2 == 0) ? Fade(COLOR_CYAN, 0.15f * pulse) : Fade(COLOR_TOXIC, 0.1f * pulse);
-        DrawLine3D({-halfSize, height, zPos}, {halfSize, height, zPos}, col);
+    for (int z = 0; z <= GD; z++) {
+        float zPos = z * TILE;
+        Color col = (z % 2 == 0) ? Fade(COLOR_CYAN, 0.15f * pulse)
+                                 : Fade(COLOR_TOXIC, 0.10f * pulse);
+        DrawLine3D({0.0f, 0.0f, zPos}, {GW * TILE, 0.0f, zPos}, col);
     }
-    
-    // ---- CONCENTRIC RINGS ----
-    for (int r = 1; r <= 6; r++) {
-        float radius = r * 7.0f;
-        float alpha = 0.02f + (1.0f - r / 6.0f) * 0.06f * pulse;
-        DrawCircle3D({0, height + 0.1f, 0}, radius, {0, 1, 0}, t * 0.05f * r, Fade(COLOR_CYAN, alpha));
-        DrawCircle3D({0, height + 0.1f, 0}, radius, {0, 1, 0}, -t * 0.03f * r, Fade(COLOR_TOXIC, alpha * 0.5f));
+
+    // --- Wall tiles as glowing slabs ---
+    // The tile grid has been generated since day one and rendered by
+    // nothing. This is the visible half of the same data that already
+    // drives node placement and (once collision is wired up) walls.
+    const float WALL_H = 3.0f;
+    const auto& tiles = g_netWorld.building.tiles;
+
+    for (int x = 0; x < GW; x++) {
+        for (int z = 0; z < GD; z++) {
+            if (tiles[x][z] != 1) continue;
+
+            Vector3 center = {x * TILE + TILE * 0.5f, 0.0f, z * TILE + TILE * 0.5f};
+            Vector3 size   = {TILE * 0.98f, WALL_H, TILE * 0.98f};
+
+            // Body. DrawCubeWiresV centres its box at the given position,
+            // so lift by half-height to sit the slab on the floor.
+            DrawCubeWiresV(
+                {center.x, center.y + WALL_H * 0.5f, center.z},
+                size, Fade(COLOR_CYAN, 0.20f)
+            );
+
+            // Top cap as a thin filled quad. Reads as a "signal surface"
+            // on top of every wall rather than as a bare wireframe.
+            DrawCubeV(
+                {center.x, center.y + WALL_H, center.z},
+                {TILE * 0.98f, 0.02f, TILE * 0.98f},
+                Fade(COLOR_TOXIC, 0.06f)
+            );
+        }
     }
-    
-    // ---- CENTER GLOW (CORE) ----
-    DrawCircle3D({0, height + 0.1f, 0}, 4.0f, {0, 1, 0}, 0.0f, Fade(COLOR_TOXIC, 0.4f * pulse));
-    DrawCircle3D({0, height + 0.1f, 0}, 2.0f, {0, 1, 0}, 0.0f, Fade(COLOR_TOXIC, 0.6f * pulse));
-    DrawCircle3D({0, height + 0.1f, 0}, 1.0f, {0, 1, 0}, 0.0f, Fade(COLOR_AMBER, 0.8f * pulse));
-    
-    // ---- BOUNDARY GLOW ----
-    Color boundaryCol = Fade(COLOR_BLOOD, 0.15f * pulse);
-    DrawLine3D({-halfSize, height, -halfSize}, {halfSize, height, -halfSize}, boundaryCol);
-    DrawLine3D({halfSize, height, -halfSize}, {halfSize, height, halfSize}, boundaryCol);
-    DrawLine3D({halfSize, height, halfSize}, {-halfSize, height, halfSize}, boundaryCol);
-    DrawLine3D({-halfSize, height, halfSize}, {-halfSize, height, -halfSize}, boundaryCol);
-    
-    // Boundary corner glows
-    float cornerGlow = 0.15f + 0.1f * pulse;
-    DrawCircle3D({-halfSize, height, -halfSize}, 3.0f, {0, 1, 0}, 0.0f, Fade(COLOR_BLOOD, cornerGlow));
-    DrawCircle3D({halfSize, height, -halfSize}, 3.0f, {0, 1, 0}, 0.0f, Fade(COLOR_BLOOD, cornerGlow));
-    DrawCircle3D({halfSize, height, halfSize}, 3.0f, {0, 1, 0}, 0.0f, Fade(COLOR_BLOOD, cornerGlow));
-    DrawCircle3D({-halfSize, height, halfSize}, 3.0f, {0, 1, 0}, 0.0f, Fade(COLOR_BLOOD, cornerGlow));
+
+    // --- World boundary ---
+    // Drawn at the physical edge of the building rather than at worldSize.
+    Color boundaryCol = Fade(COLOR_BLOOD, 0.20f * pulse);
+    float bx = GW * TILE;
+    float bz = GD * TILE;
+    DrawLine3D({0.0f, 0.0f, 0.0f}, { bx, 0.0f, 0.0f}, boundaryCol);
+    DrawLine3D({ bx,   0.0f, 0.0f}, { bx, 0.0f,  bz}, boundaryCol);
+    DrawLine3D({ bx,   0.0f, bz},   {0.0f, 0.0f, bz}, boundaryCol);
+    DrawLine3D({0.0f, 0.0f, bz},    {0.0f, 0.0f, 0.0f}, boundaryCol);
+
+    // --- Arena hub ---
+    DrawArenaHub();
 }
 
 // ============================================================
@@ -797,6 +822,9 @@ void DrawCyberSkybox(void) {
 // ============================================================
 // CINEMATIC TRANSITION OVERLAY
 // ============================================================
+// ============================================================
+// CINEMATIC TRANSITION OVERLAY – KERNEL/SNIFFER STYLE
+// ============================================================
 void DrawTransitionOverlay(void) {
     float intensity = g_netWorld.glitchIntensity;
     float progress = g_netWorld.stateTimer / g_netWorld.transitionDuration;
@@ -805,24 +833,15 @@ void DrawTransitionOverlay(void) {
     int w = GetScreenWidth();
     int h = GetScreenHeight();
 
-    // ---- 1. BACKGROUND GRADIENT ----
+    // ---- 1. BACKGROUND (dark gradient) ----
     for (int y = 0; y < h; y++) {
         float alpha = 1.0f - (float)y / h;
-        Color col = {0, (unsigned char)(20 * alpha), (unsigned char)(40 * alpha), 255};
+        Color col = {0, (unsigned char)(10 * alpha), (unsigned char)(20 * alpha), 255};
         DrawPixel(0, y, col);
     }
 
-    // ---- 2. GRID LINES ----
-    float gridSize = 40.0f;
-    for (float x = fmod(t * 50.0f, gridSize) - gridSize; x < w + gridSize; x += gridSize) {
-        DrawLine((int)x, 0, (int)x, h, {40, 180, 255, (unsigned char)(20 * (1.0f - intensity))});
-    }
-    for (float y = fmod(t * 30.0f, gridSize) - gridSize; y < h + gridSize; y += gridSize) {
-        DrawLine(0, (int)y, w, (int)y, {40, 180, 255, (unsigned char)(20 * (1.0f - intensity))});
-    }
-
-    // ---- 3. MATRIX DATA RAIN (falling characters) ----
-    static const int RAIN_COUNT = 60;
+    // ---- 2. SUBTLE MATRIX RAIN (muted) ----
+    static const int RAIN_COUNT = 40;
     static struct RainDrop {
         float x, y, speed;
         char ch;
@@ -832,7 +851,7 @@ void DrawTransitionOverlay(void) {
         for (int i = 0; i < RAIN_COUNT; i++) {
             rain[i].x = (rand() % w);
             rain[i].y = (rand() % h) - h;
-            rain[i].speed = 50.0f + rand() % 100;
+            rain[i].speed = 30.0f + rand() % 80;
             rain[i].ch = "0123456789ABCDEF"[rand() % 16];
         }
         rainInit = true;
@@ -844,79 +863,319 @@ void DrawTransitionOverlay(void) {
             rain[i].x = rand() % w;
             rain[i].ch = "0123456789ABCDEF"[rand() % 16];
         }
-        // Fade out near top/bottom
-        float alpha = 0.3f * (1.0f - intensity * 0.5f) * (1.0f - fabs(rain[i].y - h/2) / (h/2));
-        DrawText(TextFormat("%c", rain[i].ch), (int)rain[i].x, (int)rain[i].y, 14, Fade(COLOR_CYAN, alpha));
+        float alpha = 0.08f * (1.0f - intensity * 0.5f) * (1.0f - fabs(rain[i].y - h/2) / (h/2));
+        DrawScaledText(TextFormat("%c", rain[i].ch), (int)rain[i].x, (int)rain[i].y, 12, Fade(COLOR_CYAN, alpha));
     }
 
-    // ---- 4. GLITCH BARS (chromatic + flicker) ----
-    for (int i = 0; i < (int)(intensity * 30 + 5); i++) {
-        int y = rand() % h;
-        int hBar = 2 + rand() % 8;
-        unsigned char alpha = (unsigned char)(intensity * (150 + rand() % 100));
-        // Red channel offset
-        DrawRectangle(rand() % 5 - 2, y, w + 4, hBar, {255, 40, 40, (unsigned char)(alpha * 0.7f)});
-        DrawRectangle(0, y, w, hBar, {220, 20, 40, alpha});
-        // Blue channel offset
-        DrawRectangle(rand() % 5 - 2, y + 2, w + 4, hBar, {40, 40, 255, (unsigned char)(alpha * 0.5f)});
+    // ---- 3. WINDOW SYSTEM ----
+    struct TransitionWindow {
+        Rectangle rect;
+        std::string title;
+        std::vector<std::string> lines;
+        float alpha;
+        float targetAlpha;
+        float lifetime;
+        float phase;
+        int type; // 0=log, 1=hex, 2=packet
+    };
+    static std::vector<TransitionWindow> windows;
+    static bool windowsInit = false;
+
+    if (!windowsInit) {
+        windows.clear();
+        // Generate 8-12 windows with random positions, sizes, and contents
+        const char* titles[] = {
+            "KERNEL_LOAD", "PKT_SNIFF", "NET_INIT", "ROUTE_TABLE",
+            "MODULE", "SYSLOG", "FIREWALL", "ARP_CACHE", "DNS_RESOLV",
+            "TCP_STACK", "UDP_SOCKET", "ICMP_ECHO"
+        };
+        int numWindows = 8 + rand() % 5;
+        for (int i = 0; i < numWindows; i++) {
+            TransitionWindow win;
+            int winW = 180 + rand() % 220;
+            int winH = 80 + rand() % 100;
+            win.rect = {
+                (float)(rand() % (w - winW)),
+                (float)(rand() % (h - winH)),
+                (float)winW,
+                (float)winH
+            };
+            win.title = titles[rand() % 12];
+            win.alpha = 0.0f;
+            win.targetAlpha = 0.6f + (rand() % 100) / 200.0f; // 0.6-1.0
+            win.lifetime = 2.0f + (rand() % 100) / 50.0f;     // 2-4 seconds
+            win.phase = (rand() % 1000) / 1000.0f * 2.0f * PI;
+            win.type = rand() % 3;
+
+            // Generate content lines based on type
+            for (int j = 0; j < 4 + rand() % 4; j++) {
+                std::string line;
+                switch (win.type) {
+                    case 0: { // system log
+                        const char* msgs[] = {
+                            "loading module...", "init complete", "allocated buffer",
+                            "handshake OK", "auth success", "packet queued",
+                            "sync lost", "retry...", "connection established"
+                        };
+                        line = msgs[rand() % 9];
+                        break;
+                    }
+                    case 1: { // hex dump
+                        char hex[32];
+                        for (int k = 0; k < 8; k++) {
+                            sprintf(hex + k*3, "%02X ", rand() % 256);
+                        }
+                        line = hex;
+                        break;
+                    }
+                    case 2: { // packet sniff
+                        char pkt[64];
+                        sprintf(pkt, "SRC %d.%d.%d.%d : DST %d.%d.%d.%d",
+                                rand()%256, rand()%256, rand()%256, rand()%256,
+                                rand()%256, rand()%256, rand()%256, rand()%256);
+                        line = pkt;
+                        break;
+                    }
+                }
+                win.lines.push_back(line);
+            }
+            windows.push_back(win);
+        }
+        windowsInit = true;
     }
 
-    // ---- 5. SCANLINES (CRT effect) ----
+    // Update window alphas (fade in/out over time)
+    float dt = GetFrameTime();
+    for (auto& win : windows) {
+        // Slight random movement
+        win.rect.x += sinf(t * 0.2f + win.phase) * 0.1f;
+        win.rect.y += cosf(t * 0.15f + win.phase * 1.3f) * 0.1f;
+        // Fade target: windows disappear/reappear randomly
+        if (rand() % 100 < 2) {
+            win.targetAlpha = (win.targetAlpha > 0.5f) ? 0.2f : 0.7f + (rand()%60)/100.0f;
+        }
+        win.alpha += (win.targetAlpha - win.alpha) * dt * 2.0f;
+        win.alpha = fmaxf(0.0f, fminf(1.0f, win.alpha));
+    }
+
+    // Draw windows
+    for (const auto& win : windows) {
+        if (win.alpha < 0.01f) continue;
+        Color winBg = {10, 14, 28, (unsigned char)(180 * win.alpha)};
+        Color titleBg = {20, 40, 80, (unsigned char)(220 * win.alpha)};
+        Color borderCol = {80, 180, 255, (unsigned char)(150 * win.alpha)};
+        Color textCol = {180, 220, 255, (unsigned char)(200 * win.alpha)};
+
+        // Window body
+        DrawRectangleRec(win.rect, winBg);
+        DrawRectangleLinesEx(win.rect, 1, borderCol);
+
+        // Title bar
+        Rectangle titleRect = {win.rect.x, win.rect.y, win.rect.width, 20};
+        DrawRectangleRec(titleRect, titleBg);
+        DrawScaledText(win.title.c_str(), (int)win.rect.x + 6, (int)win.rect.y + 4, 12, Fade(COLOR_CYAN, win.alpha));
+
+        // Close/minimize buttons (fake)
+        DrawRectangle((int)(win.rect.x + win.rect.width - 18), (int)win.rect.y + 4, 12, 12, {200,40,40, (unsigned char)(150*win.alpha)});
+        DrawRectangle((int)(win.rect.x + win.rect.width - 34), (int)win.rect.y + 4, 12, 12, {40,200,40, (unsigned char)(150*win.alpha)});
+
+        // Content lines
+        float lineY = win.rect.y + 24;
+        int fontSize = 10;
+        for (const auto& line : win.lines) {
+            if (lineY + fontSize > win.rect.y + win.rect.height - 4) break;
+            // Add a little random offset for a "jitter" effect
+            int xOff = (rand() % 3) - 1;
+            DrawScaledText(line.c_str(), (int)win.rect.x + 6 + xOff, (int)lineY, fontSize, textCol);
+            lineY += fontSize + 2;
+        }
+    }
+
+    // ---- 4. PROGRESS INDICATOR (optional, subtle) ----
+    int cx = w / 2;
+    int cy = h / 2 - 20;
+    int radius = 60;
+    float progressAngle = (isEntering ? progress : 1.0f - progress) * 360.0f;
+    DrawCircleSector({(float)cx, (float)cy}, radius, -90, -90 + progressAngle, 36, Fade(COLOR_TOXIC, 0.4f));
+    DrawCircleLines(cx, cy, radius + 4, Fade(COLOR_CYAN, 0.2f));
+
+    // ---- 5. SCANLINES (keep) ----
     for (int y = 0; y < h; y += 3) {
         float scanY = y + fmodf(t * 60.0f + g_netWorld.scanlineOffset, 3.0f);
-        unsigned char alpha = (unsigned char)(intensity * 30 + 10);
+        unsigned char alpha = (unsigned char)(intensity * 20 + 8);
         DrawRectangle(0, (int)scanY, w, 1, {0, 0, 0, alpha});
     }
 
-    // ---- 6. FLICKER (random full-screen flashes) ----
-    if (rand() % 100 < 3) {
-        DrawRectangle(0, 0, w, h, {255, 255, 255, (unsigned char)(rand() % 20)});
-    }
-
-    // ---- 7. PROGRESS INDICATOR (circular ring) ----
-    int cx = w / 2;
-    int cy = h / 2 - 20;
-    int radius = 100;
-    float angle = t * 2.0f;
-    float progressAngle = (isEntering ? progress : 1.0f - progress) * 360.0f;
-
-    // Outer glow ring
-    DrawCircleLines(cx, cy, radius + 10, Fade(COLOR_CYAN, 0.2f * (1.0f - intensity)));
-    // Progress arc
-    DrawCircleSector({(float)cx, (float)cy}, radius, -90, -90 + progressAngle, 36, Fade(COLOR_TOXIC, 0.8f));
-    // Inner ring
-    DrawCircleLines(cx, cy, radius - 5, Fade(COLOR_TOXIC, 0.4f));
-    // Spinning dot
-    float dotAngle = angle;
-    Vector3 dotPos = {cx + cosf(dotAngle) * radius, cy + sinf(dotAngle) * radius, 0};
-    DrawCircle((int)dotPos.x, (int)dotPos.y, 6, Fade(COLOR_AMBER, 0.8f));
-
-    // ---- 8. MESSAGE TEXT (with glow) ----
-    const char* messages[] = {
-        "INITIALIZING CYBERSPACE...",
-        "MAPPING NEURAL TOPOLOGY...",
-        "SYNCHRONIZING WITH VNET...",
-        "JACKING IN..."
-    };
-    int msgIdx = (int)(progress * 4) % 4;
-    int fontSize = 32;
-    int tw = MeasureText(messages[msgIdx], fontSize);
-    int tx = (w - tw) / 2;
-    int ty = cy + radius + 40;
-
-    // Glow effect: draw multiple copies with offset and different colors
-    for (int offset = 4; offset >= 0; offset--) {
-        Color col = (offset == 0) ? COLOR_TOXIC : Fade(COLOR_CYAN, 0.1f * (5 - offset));
-        DrawText(messages[msgIdx], tx + (offset == 0 ? 0 : (offset % 2 == 0 ? offset : -offset)),
-                 ty + (offset == 0 ? 0 : (offset % 2 == 0 ? -offset : offset)), fontSize, col);
-    }
-
-    // ---- 9. STATUS TEXT (VERSION INFO) ----
-    DrawText("VEKTRA NET 3.0", 20, h - 30, 14, Fade(COLOR_GHOST, 0.5f));
-
-    // ---- 10. VIGNETTE (dark edges) ----
+    // ---- 6. VIGNETTE (dark edges) ----
     DrawRectangle(0, 0, w, 4, {0, 0, 0, 80});
     DrawRectangle(0, h - 4, w, 4, {0, 0, 0, 80});
     DrawRectangle(0, 0, 4, h, {0, 0, 0, 80});
     DrawRectangle(w - 4, 0, 4, h, {0, 0, 0, 80});
+}
+
+// ============================================================
+// VOID SCENERY
+//
+// Everything that establishes "we are floating in a data void."
+// None of this is gameplay geometry — it exists so the eye has
+// three distinct scales to read (near platforms, mid pylons,
+// far horizon) instead of one flat grid against black.
+// ============================================================
+
+static void DrawVoidPlane(void) {
+    const Vector3 c = g_netWorld.arenaCenter;
+    const float Y = -8.0f;
+    const float extent = 70.0f;
+    const float step = 8.0f;
+    Color col = Fade(COLOR_CYAN, 0.035f);
+
+    for (float d = -extent; d <= extent; d += step) {
+        DrawLine3D({c.x + d, Y, c.z - extent}, {c.x + d, Y, c.z + extent}, col);
+        DrawLine3D({c.x - extent, Y, c.z + d}, {c.x + extent, Y, c.z + d}, col);
+    }
+    // Concentric markers give the plane a "scanned region" feel.
+    DrawCircle3D({c.x, Y, c.z}, extent,       {0, 1, 0}, 0, Fade(COLOR_TOXIC, 0.06f));
+    DrawCircle3D({c.x, Y, c.z}, extent * 0.5f, {0, 1, 0}, 0, Fade(COLOR_CYAN,  0.04f));
+}
+
+static void DrawVoidHorizon(void) {
+    const Vector3 c = g_netWorld.arenaCenter;
+    const float t = g_netWorld.time;
+    const float radius = 60.0f;
+    const int count = 64;
+
+    // Alternating vertical bars, height-modulated so the horizon breathes.
+    // This is what tells the player "the void extends past what you can
+    // walk on" without any actual geometry out there.
+    for (int i = 0; i < count; i++) {
+        float angle = (i / (float)count) * 2.0f * PI;
+        float x = c.x + cosf(angle) * radius;
+        float z = c.z + sinf(angle) * radius;
+        float h = 10.0f + 6.0f * sinf(t * 0.15f + i * 0.2f);
+        float a = 0.05f + 0.03f * sinf(t * 0.5f + i * 0.4f);
+        DrawLine3D({x, 0.0f, z}, {x, h, z}, Fade(COLOR_CYAN, a));
+    }
+}
+
+static void DrawPylons(void) {
+    const Vector3 c = g_netWorld.arenaCenter;
+    const float t = g_netWorld.time;
+    const float ringR = 42.0f;
+    const int count = 8;
+
+    // Pylons sit between the near platforms and the far horizon. They give
+    // the void a middle distance and anchor the arena's cardinal directions
+    // visually, so the player has a compass even without the minimap.
+    for (int i = 0; i < count; i++) {
+        float angle = (i / (float)count) * 2.0f * PI + PI / 8.0f;
+        float x = c.x + cosf(angle) * ringR;
+        float z = c.z + sinf(angle) * ringR;
+        float h = 14.0f + 2.5f * sinf(t * 0.3f + i * 1.7f);
+        float pulse = 0.5f + 0.5f * sinf(t * 0.8f + i * 1.3f);
+
+        DrawLine3D({x, 0.0f, z}, {x, h, z}, Fade(COLOR_CYAN, 0.35f));
+
+        DrawCircle3D({x, 0.05f, z}, 1.0f, {0, 1, 0}, 0, Fade(COLOR_CYAN, 0.4f));
+
+        float mid = h * 0.5f;
+        DrawLine3D({x - 0.8f, mid, z}, {x + 0.8f, mid, z}, Fade(COLOR_TOXIC, 0.20f));
+        DrawLine3D({x, mid, z - 0.8f}, {x, mid, z + 0.8f}, Fade(COLOR_TOXIC, 0.20f));
+
+        DrawSphere({x, h, z}, 0.2f, Fade(COLOR_CYAN, 0.70f * pulse));
+        DrawSphere({x, h, z}, 0.5f, Fade(COLOR_CYAN, 0.15f * pulse));
+    }
+}
+
+// ============================================================
+// ARENA HUB
+//
+// The designed centerpiece. Reads as a place rather than as
+// terrain: floor ring, raised dais, pillar ring, observation
+// ring, and an overhead light-frame that suggests a room
+// without sealing the sky.
+// ============================================================
+
+static void DrawArenaHub(void) {
+    const Vector3 c = g_netWorld.arenaCenter;
+    const float t = g_netWorld.time;
+    const float pulse = 0.5f + 0.5f * sinf(t * 1.5f);
+    const float outerR  = g_netWorld.arenaRadius;    // 10
+    const float daisR   = outerR * 0.5f;             //  5
+    const float pillarR = outerR * 0.7f;             //  7
+    const float pillarH = 4.5f;
+
+    // --- Floor ring ---
+    DrawCircle3D({c.x, c.y + 0.03f, c.z}, outerR, {0, 1, 0}, 0, Fade(COLOR_CYAN, 0.45f));
+    DrawCircle3D({c.x, c.y + 0.03f, c.z}, outerR, {0, 1, 0}, 0, Fade(COLOR_TOXIC, 0.15f + 0.15f * pulse));
+
+    // Radial spokes from dais edge to outer ring. Without these the floor
+    // reads as empty even though it's bounded — the eye needs to see the
+    // edges "held" by something structural.
+    for (int i = 0; i < 8; i++) {
+        float a = (i / 8.0f) * 2.0f * PI;
+        Vector3 p1 = {c.x + cosf(a) * daisR,  c.y + 0.03f, c.z + sinf(a) * daisR};
+        Vector3 p2 = {c.x + cosf(a) * outerR, c.y + 0.03f, c.z + sinf(a) * outerR};
+        DrawLine3D(p1, p2, Fade(COLOR_CYAN, 0.12f));
+    }
+
+    // --- Raised dais ---
+    // A short filled cylinder for volume, then a bright rim at the top so
+    // the lip reads as designed rather than as a smoothing artifact.
+    DrawCylinderEx(
+        {c.x, c.y,         c.z},
+        {c.x, c.y + 0.6f,  c.z},
+        daisR, daisR, 32, Fade(COLOR_CYAN, 0.10f)
+    );
+    DrawCircle3D({c.x, c.y + 0.6f, c.z}, daisR,        {0, 1, 0}, 0, Fade(COLOR_CYAN,  0.70f));
+    DrawCircle3D({c.x, c.y + 0.6f, c.z}, daisR * 0.55f, {0, 1, 0}, 0, Fade(COLOR_TOXIC, 0.40f));
+
+    // --- Pillar ring ---
+    // Six slim boxy spires between the dais and the outer ring. They frame
+    // the centerpiece without blocking sightlines to it.
+    const float halfW = 0.35f;
+    for (int i = 0; i < 6; i++) {
+        float a = (i / 6.0f) * 2.0f * PI + PI / 6.0f;
+        float px = c.x + cosf(a) * pillarR;
+        float pz = c.z + sinf(a) * pillarR;
+
+        Vector3 corners[4] = {
+            {px - halfW, 0.0f, pz - halfW},
+            {px + halfW, 0.0f, pz - halfW},
+            {px + halfW, 0.0f, pz + halfW},
+            {px - halfW, 0.0f, pz + halfW}
+        };
+        for (int j = 0; j < 4; j++) {
+            DrawLine3D(corners[j], {corners[j].x, pillarH, corners[j].z}, Fade(COLOR_CYAN, 0.35f));
+        }
+        for (int j = 0; j < 4; j++) {
+            int k = (j + 1) % 4;
+            DrawLine3D({corners[j].x, pillarH, corners[j].z},
+                       {corners[k].x, pillarH, corners[k].z}, Fade(COLOR_TOXIC, 0.50f));
+        }
+        DrawSphere({px, pillarH, pz}, 0.15f, Fade(COLOR_TOXIC, 0.60f * pulse));
+    }
+
+    // --- Observation ring ---
+    DrawCircle3D({c.x, c.y + 6.0f, c.z}, outerR * 0.85f, {0, 1, 0}, 0,
+                 Fade(COLOR_CYAN, 0.20f + 0.10f * pulse));
+    for (int i = 0; i < 8; i++) {
+        float a = (i / 8.0f) * 2.0f * PI;
+        float x = c.x + cosf(a) * outerR * 0.85f;
+        float z = c.z + sinf(a) * outerR * 0.85f;
+        DrawLine3D({x, 0.05f, z}, {x, 6.0f, z}, Fade(COLOR_CYAN, 0.08f));
+    }
+
+    // --- Overhead light-frame ---
+    // A large ring at Y=11 plus four spokes to a hub. This is what turns
+    // the arena from "a floor with pillars" into "a room" — the eye reads
+    // an implied ceiling without actually committing to geometry that
+    // would block the void sky.
+    DrawCircle3D({c.x, c.y + 11.0f, c.z}, outerR * 1.2f, {0, 1, 0}, 0, Fade(COLOR_CYAN, 0.15f));
+    for (int i = 0; i < 4; i++) {
+        float a = (i / 4.0f) * 2.0f * PI + PI / 4.0f;
+        Vector3 p1 = {c.x + cosf(a) * outerR * 1.2f, c.y + 11.0f, c.z + sinf(a) * outerR * 1.2f};
+        Vector3 p2 = {c.x, c.y + 13.0f, c.z};
+        DrawLine3D(p1, p2, Fade(COLOR_CYAN, 0.08f));
+    }
+    DrawSphere({c.x, c.y + 13.0f, c.z}, 0.3f, Fade(COLOR_TOXIC, 0.40f * pulse));
 }

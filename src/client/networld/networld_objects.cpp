@@ -84,6 +84,53 @@ void GenerateNetWorld(void) {
     g_netWorld.building.tiles = tiles;
     g_netWorld.building.rooms = rooms;
 
+        // --- 3a. Carve the arena ---
+    // The arena lives at the geometric center of the building, not at the
+    // world origin — those are different points because the building
+    // occupies [0, span] rather than [-span/2, span/2]. The clearing is
+    // forced after all rooms are placed so a random room can't swallow it.
+    Vector3 arenaCenter = {
+        g_netWorld.building.gridWidth * TILE * 0.5f,
+        0.0f,
+        g_netWorld.building.gridDepth * TILE * 0.5f
+    };
+    g_netWorld.arenaCenter = arenaCenter;
+    g_netWorld.arenaRadius = 10.0f;
+
+    const float arenaClearRadius = 10.0f;
+    for (int x = 0; x < GRID_W; x++) {
+        for (int z = 0; z < GRID_D; z++) {
+            float wx = x * TILE + TILE * 0.5f;
+            float wz = z * TILE + TILE * 0.5f;
+            float dx = wx - arenaCenter.x;
+            float dz = wz - arenaCenter.z;
+            if (dx * dx + dz * dz <= arenaClearRadius * arenaClearRadius) {
+                tiles[x][z] = 0;
+            }
+        }
+    }
+
+    // Punch four entrance corridors through the arena perimeter. Without
+    // these the clearing can end up completely ringed by wall tiles and
+    // the arena becomes a sealed box the player can't reach.
+    for (int i = 0; i < 4; i++) {
+        float angle = (i / 4.0f) * 2.0f * PI;
+        for (float r = arenaClearRadius - 1.0f; r <= arenaClearRadius + 7.0f; r += 0.5f) {
+            int tx = (int)((arenaCenter.x + cosf(angle) * r) / TILE);
+            int tz = (int)((arenaCenter.z + sinf(angle) * r) / TILE);
+            if (tx >= 0 && tx < GRID_W && tz >= 0 && tz < GRID_D) {
+                // Carve a 1-tile-wide corridor. Widen to 2 if the arena
+                // feels cramped on the approach.
+                tiles[tx][tz] = 0;
+            }
+        }
+    }
+
+    // Re-store the modified tile map. The wall-box loop below reads from
+    // `tiles`, not from g_netWorld.building.tiles, so this assignment is
+    // for anything that inspects the grid later.
+    g_netWorld.building.tiles = tiles;
+
     // --- 4. Build wall collision boxes ---
     // For each wall tile, create a bounding box (tile size, height 3 units)
     for (int x = 0; x < GRID_W; x++) {
@@ -104,11 +151,11 @@ void GenerateNetWorld(void) {
     // Use the rooms list; place at least one portal per room, plus random nodes.
 
     // Core node at the first room's center
-    Rectangle firstRoom = rooms[0];
+    Rectangle firstRoom = rooms[0];   // still used later for player spawn
     Vector3 corePos = {
-        (firstRoom.x + firstRoom.width/2) * TILE,
-        1.0f,
-        (firstRoom.y + firstRoom.height/2) * TILE
+        arenaCenter.x,
+        3.5f,       // floats above the dais, visible from the arena edge
+        arenaCenter.z
     };
     NetNode core;
     core.type = NodeType::CORE;
@@ -125,7 +172,7 @@ void GenerateNetWorld(void) {
     g_netWorld.nodes.push_back(core);
 
     // Place portals in each room (skip the first room if already core)
-    for (int i = 1; i < (int)rooms.size(); i++) {
+    for (int i = 0; i < (int)rooms.size(); i++) {
         Rectangle r = rooms[i];
         Vector3 pos = {
             (r.x + r.width/2) * TILE,
@@ -398,6 +445,35 @@ void NetWorldCommand(const char* args) {
         } else {
             PushCliLog("[NETWORLD] Status: IDLE (not in cyberspace)");
         }
+    }
+
+    else if (strncmp(args, "field", 5) == 0) {
+        const char* type = args + 5;
+        while (*type == ' ') type++;
+
+        DataFieldType t = DataFieldType::NOISE;
+        if      (strcmp(type, "encryption") == 0) t = DataFieldType::ENCRYPTION;
+        else if (strcmp(type, "ice")        == 0) t = DataFieldType::ICE;
+        else if (strcmp(type, "noise")      == 0) t = DataFieldType::NOISE;
+        else {
+            PushCliLog("[NETWORLD] Unknown field type: %s", type);
+            PushCliLog("[NETWORLD]   usage: networld field <encryption|ice|noise>");
+            return;
+        }
+
+        // Spawn 6 units in front of the player, floating at eye height.
+        Vector3 fwd = {
+            -sinf(g_netWorld.player.yaw),
+            0.0f,
+            -cosf(g_netWorld.player.yaw)
+        };
+        Vector3 pos = {
+            g_netWorld.player.position.x + fwd.x * 6.0f,
+            g_netWorld.player.position.y + 2.0f,
+            g_netWorld.player.position.z + fwd.z * 6.0f
+        };
+        SpawnDataField(pos, 6.0f, t);
+        PushCliLog("[NETWORLD] Spawned %s field (radius 6.0).", type);
     }
     else {
         PushCliLog("[NETWORLD] Unknown subcommand: %s", args);

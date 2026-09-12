@@ -221,8 +221,10 @@ void ApplyNetPhysics(float dt) {
         worldInput.z /= worldLen;
     }
     
-    // ---- CALCULATE TARGET SPEED ----
     float targetSpeed = g_physics.sprinting ? PLAYER_SPRINT_SPEED : PLAYER_SPEED;
+
+    float encryptInf = GetDataFieldInfluence(pos, DataFieldType::ENCRYPTION);
+    targetSpeed *= (1.0f - 0.45f * encryptInf);
     
     // ---- APPLY MOVEMENT ----
     Vector3& vel = g_physics.velocity;
@@ -379,11 +381,19 @@ void ApplyNetPhysics(float dt) {
     }
     
     // ---- BOUNDARY COLLISION ----
-    float halfSize = g_netWorld.worldSize / 2.0f - 0.5f;
-    if (pos.x < -halfSize) { pos.x = -halfSize; vel.x = 0; }
-    if (pos.x > halfSize) { pos.x = halfSize; vel.x = 0; }
-    if (pos.z < -halfSize) { pos.z = -halfSize; vel.z = 0; }
-    if (pos.z > halfSize) { pos.z = halfSize; vel.z = 0; }
+    // Clamp to the actual building footprint, not worldSize. The building
+    // occupies [0, GRID_W*TILE] x [0, GRID_D*TILE] in world space, so the
+    // play area is centered at the building's midpoint, not at the world
+    // origin. The previous worldSize-based clamp silently confined the
+    // player to the +X+Z quadrant and made far rooms unreachable.
+    float bSpanX = g_netWorld.building.gridWidth  * g_netWorld.building.tileSize;
+    float bSpanZ = g_netWorld.building.gridDepth  * g_netWorld.building.tileSize;
+    float bMinX = 0.5f,  bMaxX = bSpanX - 0.5f;
+    float bMinZ = 0.5f,  bMaxZ = bSpanZ - 0.5f;
+    if (pos.x < bMinX) { pos.x = bMinX; vel.x = 0; }
+    if (pos.x > bMaxX) { pos.x = bMaxX; vel.x = 0; }
+    if (pos.z < bMinZ) { pos.z = bMinZ; vel.z = 0; }
+    if (pos.z > bMaxZ) { pos.z = bMaxZ; vel.z = 0; }
     
     // ---- WALK CYCLE ----
     float speed = sqrtf(vel.x * vel.x + vel.z * vel.z);

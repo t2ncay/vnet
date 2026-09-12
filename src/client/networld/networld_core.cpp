@@ -29,6 +29,8 @@ void InitNetWorld(void) {
     g_netWorld.worldSize = 100.0f;
     g_netWorld.gridSize = 20;
     g_netWorld.terrainHeight = 0.0f;
+    g_netWorld.arenaCenter = {0.0f, 0.0f, 0.0f};  // set properly in GenerateNetWorld
+    g_netWorld.arenaRadius = 10.0f;
     g_netWorld.showMinimap = true;
     g_netWorld.showNodeLabels = true;
     g_netWorld.selectedNodeIndex = -1;
@@ -151,9 +153,13 @@ void EnterNetWorld(void) {
     g_netWorld.state = NetWorldState::ENTERING;
     g_netWorld.stateTimer = 0.0f;
     g_netWorld.transitionGlitchTimer = 0.0f;
-    g_netWorld.player.position = {0.0f, 3.0f, 0.0f};
-    g_netWorld.player.yaw = 0.0f;
-    g_netWorld.player.pitch = 0.0f;
+    g_netWorld.player.position = {
+        g_netWorld.arenaCenter.x,
+        0.5f,
+        g_netWorld.arenaCenter.z + g_netWorld.arenaRadius + 3.0f
+    };
+    g_netWorld.player.yaw = 0.0f;   // forward = (0, 0, -1) = north
+    g_netWorld.player.pitch = -0.05f;  // slight downward tilt to frame the dais
     g_netWorld.player.velocity = {0.0f, 0.0f, 0.0f};
     g_netWorld.player.onGround = true;
     g_netWorld.camera.fovy = NETWORLD_BASE_FOV;
@@ -248,6 +254,9 @@ void UpdateNetWorld(float dt) {
                     }
                 }
             }
+
+            UpdateDataFields(dt);
+            UpdateDataFieldEffects(dt);
 
             UpdateNetSelection();
 
